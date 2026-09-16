@@ -32,9 +32,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -280.0
-offset_top = -140.0
+offset_top = -170.0
 offset_right = 280.0
-offset_bottom = 140.0
+offset_bottom = 170.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 18
@@ -62,10 +62,15 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "1  -  Play Tutorial (Arrakeen Training)"
 
+[node name="Raid" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "2  -  Play Mission: Harvester Raid"
+
 [node name="Arena" type="Button" parent="Rows/Buttons"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-text = "2  -  Open Test Arena (Harvester Raid)"
+text = "3  -  Open Test Arena (technical sandbox)"
 
 [node name="Footer" type="Label" parent="Rows"]
 layout_mode = 2

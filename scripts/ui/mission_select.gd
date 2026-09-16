@@ -3,11 +3,13 @@ extends Control
 ## default entry point without hiding the technical test arena.
 
 const TUTORIAL: String = "res://scenes/missions/tutorial/tutorial_arrakeen.tscn"
+const RAID: String = "res://scenes/missions/harvester_raid/harvester_raid.tscn"
 const ARENA: String = "res://scenes/missions/harvester_raid_test.tscn"
 
 
 func _ready() -> void:
 	$Rows/Buttons/Tutorial.pressed.connect(_open.bind(TUTORIAL))
+	$Rows/Buttons/Raid.pressed.connect(_open.bind(RAID))
 	$Rows/Buttons/Arena.pressed.connect(_open.bind(ARENA))
 	$Rows/Buttons/Tutorial.grab_focus()
 
@@ -18,9 +20,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if event.physical_keycode == KEY_1:
 		_open(TUTORIAL)
 	elif event.physical_keycode == KEY_2:
+		_open(RAID)
+	elif event.physical_keycode == KEY_3:
 		_open(ARENA)
 
 
+## Launching anything starts it clean; checkpoints are for retrying in place.
 func _open(path: String) -> void:
-	get_node("/root/GameManager").tutorial_checkpoint = &""
+	var game: Node = get_node("/root/GameManager")
+	game.tutorial_checkpoint = &""
+	game.mission_checkpoint = &""
 	get_tree().change_scene_to_file(path)

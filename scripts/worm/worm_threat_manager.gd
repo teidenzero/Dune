@@ -251,11 +251,18 @@ func reset_threat() -> void:
 	worm_sign_changed.emit(worm_sign, threshold)
 
 
+## Developer control, so it must always do what it says. In a desert that has
+## sensed nothing there is no target to travel to, and _commit would silently
+## refuse; the worm then comes for the intruder, who is the only thing there.
 func force_arrival() -> void:
 	if state == EventState.ARRIVAL or state == EventState.COOLDOWN:
 		return
 	worm_sign = threshold
 	if state != EventState.APPROACHING:
+		if not _choose_target().is_finite():
+			var intruder: Node2D = get_tree().get_first_node_in_group("player") as Node2D
+			if is_instance_valid(intruder):
+				report_sign(intruder.global_position, 1.0, "Forced arrival")
 		_commit()
 	if event != null and not event.erupting():
 		event.erupt()

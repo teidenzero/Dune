@@ -7,6 +7,9 @@ signal debug_visibility_changed(is_visible: bool)
 ## save-game persistence.
 var tutorial_checkpoint: StringName = &""
 
+## Same idea for missions: the phase a restart resumes from.
+var mission_checkpoint: StringName = &""
+
 var debug_visible: bool = false:
 	set(value):
 		if debug_visible == value:

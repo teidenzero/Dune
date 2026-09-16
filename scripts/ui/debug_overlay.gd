@@ -60,6 +60,7 @@ func _process(_delta: float) -> void:
 	_update_worm_metrics()
 	_update_prescience_metrics()
 	_update_tutorial_metrics()
+	_update_mission_metrics()
 	_update_melee_metrics()
 	_update_camera_metrics()
 	_update_link_metrics()
@@ -119,6 +120,15 @@ func _update_tutorial_metrics() -> void:
 	if tutorial == null:
 		return
 	var rows: Dictionary = tutorial.debug_rows()
+	for title in rows:
+		set_metric(title, rows[title])
+
+
+func _update_mission_metrics() -> void:
+	var controller: Node = get_tree().get_first_node_in_group("mission_controller")
+	if controller == null:
+		return
+	var rows: Dictionary = controller.debug_rows()
 	for title in rows:
 		set_metric(title, rows[title])
 

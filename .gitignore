@@ -17,3 +17,9 @@ tests/*.log
 *.tmp
 .DS_Store
 Thumbs.db
+
+# Private design and development documentation (not for the public repo)
+ARCHITECTURE.md
+DEVLOG.md
+DUNE_PROTOTYPE_PLAN.md
+tests/README.md
