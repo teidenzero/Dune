@@ -1,0 +1,441 @@
+[gd_scene load_steps=26 format=3]
+
+[ext_resource type="Script" path="res://scripts/environment/desert_ground.gd" id="1_ground"]
+[ext_resource type="PackedScene" path="res://scenes/environment/rock_formation.tscn" id="2_rock"]
+[ext_resource type="PackedScene" path="res://scenes/environment/harvester_placeholder.tscn" id="3_harvester"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="4_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="5_ui"]
+[ext_resource type="PackedScene" path="res://scenes/characters/test_dummy.tscn" id="6_dummy"]
+[ext_resource type="Script" path="res://scripts/environment/arena_navigation.gd" id="7_navigation"]
+[ext_resource type="Script" path="res://scripts/ai/disturbance_bus.gd" id="8_noise"]
+[ext_resource type="Script" path="res://scripts/ai/patrol_route.gd" id="9_route"]
+[ext_resource type="PackedScene" path="res://scenes/characters/enemies/harkonnen_guard.tscn" id="10_guard"]
+[ext_resource type="PackedScene" path="res://scenes/characters/allies/fremen_ally.tscn" id="11_ally"]
+[ext_resource type="Resource" path="res://resources/allies/warrior.tres" id="12_warrior"]
+[ext_resource type="Script" path="res://scripts/squad/squad_manager.gd" id="13_squad"]
+[ext_resource type="Script" path="res://scripts/recon/recon_manager.gd" id="14_recon"]
+[ext_resource type="PackedScene" path="res://scenes/characters/enemies/harkonnen_elite.tscn" id="15_elite"]
+[ext_resource type="Script" path="res://scripts/worm/worm_threat_manager.gd" id="16_worm"]
+[ext_resource type="Script" path="res://scripts/worm/worm_approach_event.gd" id="17_wormevent"]
+[ext_resource type="Script" path="res://scripts/worm/worm_warning_director.gd" id="18_wormwarn"]
+[ext_resource type="Script" path="res://scripts/worm/terrain_zone.gd" id="19_terrain"]
+[ext_resource type="PackedScene" path="res://scenes/environment/spice_machine.tscn" id="20_machine"]
+
+[sub_resource type="RectangleShape2D" id="Rectangle_horizontal"]
+size = Vector2(3248, 48)
+
+[sub_resource type="RectangleShape2D" id="Rectangle_vertical"]
+size = Vector2(48, 2200)
+
+[sub_resource type="RectangleShape2D" id="Rectangle_sand"]
+size = Vector2(760, 620)
+
+[sub_resource type="CircleShape2D" id="Circle_rock"]
+radius = 130.0
+
+[sub_resource type="RectangleShape2D" id="Rectangle_silo"]
+size = Vector2(116, 100)
+
+[sub_resource type="Gradient" id="Gradient_dust"]
+offsets = PackedFloat32Array(0, 0.25, 0.8, 1)
+colors = PackedColorArray(0.91, 0.81, 0.61, 0, 0.91, 0.81, 0.61, 0.24, 0.91, 0.81, 0.61, 0.16, 0.91, 0.81, 0.61, 0)
+
+[node name="HarvesterRaidTest" type="Node2D"]
+
+[node name="Disturbances" type="Node" parent="." groups=["disturbance_bus"]]
+script = ExtResource("8_noise")
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]
+script = ExtResource("7_navigation")
+
+[node name="Environment" type="Node2D" parent="."]
+
+[node name="DesertGround" type="Node2D" parent="Environment"]
+script = ExtResource("1_ground")
+
+[node name="SandPatchA" type="Polygon2D" parent="Environment"]
+polygon = PackedVector2Array(-1500, -800, -1000, -940, -350, -840, -600, -610, -1200, -500)
+color = Color(0.66, 0.49, 0.29, 0.2)
+
+[node name="SandPatchB" type="Polygon2D" parent="Environment"]
+polygon = PackedVector2Array(-70, 450, 470, 250, 1430, 480, 1500, 920, 670, 850)
+color = Color(0.89, 0.75, 0.52, 0.25)
+
+[node name="SpawnClearing" type="Polygon2D" parent="Environment"]
+position = Vector2(-600, 280)
+polygon = PackedVector2Array(-125, -40, -55, -82, 78, -67, 132, 0, 66, 66, -81, 58)
+color = Color(0.9, 0.78, 0.56, 0.5)
+
+[node name="SpawnMarker" type="Marker2D" parent="Environment"]
+position = Vector2(-600, 280)
+
+[node name="Boundary" type="StaticBody2D" parent="Environment"]
+collision_layer = 1
+collision_mask = 2
+
+[node name="North" type="CollisionShape2D" parent="Environment/Boundary"]
+position = Vector2(0, -1100)
+shape = SubResource("Rectangle_horizontal")
+
+[node name="South" type="CollisionShape2D" parent="Environment/Boundary"]
+position = Vector2(0, 1100)
+shape = SubResource("Rectangle_horizontal")
+
+[node name="West" type="CollisionShape2D" parent="Environment/Boundary"]
+position = Vector2(-1600, 0)
+shape = SubResource("Rectangle_vertical")
+
+[node name="East" type="CollisionShape2D" parent="Environment/Boundary"]
+position = Vector2(1600, 0)
+shape = SubResource("Rectangle_vertical")
+
+[node name="Obstacles" type="Node2D" parent="." groups=["navigation_geometry"]]
+
+[node name="ApproachRock" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(-340, 220)
+
+[node name="WestRidge" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(-950, 90)
+scale = Vector2(1.7, 1.4)
+
+[node name="SouthRock" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(-480, 650)
+rotation = 0.4
+scale = Vector2(1.3, 1.3)
+
+[node name="NorthApproach" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(-460, -310)
+scale = Vector2(1.8, 1.4)
+
+[node name="CentralRock" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(30, 150)
+rotation = -0.3
+
+[node name="EastRock" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(980, 220)
+scale = Vector2(1.6, 1.8)
+
+[node name="FarRidge" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(220, -780)
+scale = Vector2(2.1, 1.5)
+
+[node name="SouthEastRock" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(600, 730)
+scale = Vector2(1.6, 1.2)
+
+[node name="SouthLaneCover" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(-80, 610)
+scale = Vector2(1.3, 1.1)
+
+[node name="SouthLaneBend" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(400, 620)
+scale = Vector2(1.3, 1.2)
+
+[node name="EastLaneCover" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(790, 390)
+scale = Vector2(1.2, 1.5)
+
+[node name="MachineryApproachCover" parent="Obstacles" instance=ExtResource("2_rock")]
+position = Vector2(750, 80)
+scale = Vector2(1.0, 1.3)
+
+[node name="RouteHints" type="Node2D" parent="."]
+
+[node name="OpenRoute" type="Label" parent="RouteHints"]
+offset_left = -580.0
+offset_top = 370.0
+offset_right = -250.0
+offset_bottom = 400.0
+theme_override_colors/font_color = Color(0.3, 0.23, 0.15, 0.85)
+theme_override_font_sizes/font_size = 16
+text = "EAST: open crossing / patrols"
+mouse_filter = 2
+
+[node name="ReconRidge" type="Label" parent="RouteHints"]
+offset_left = 760.0
+offset_top = -840.0
+offset_right = 1300.0
+offset_bottom = -810.0
+theme_override_colors/font_color = Color(0.3, 0.23, 0.15, 0.85)
+theme_override_font_sizes/font_size = 16
+text = "NORTH-EAST RIDGE: scout recon overlook"
+mouse_filter = 2
+
+[node name="ShieldRangeHint" type="Label" parent="RouteHints"]
+offset_left = -1180.0
+offset_top = 690.0
+offset_right = -640.0
+offset_bottom = 720.0
+theme_override_colors/font_color = Color(0.3, 0.23, 0.15, 0.85)
+theme_override_font_sizes/font_size = 16
+text = "SHIELD RANGE: dummy / guard / shielded elite"
+mouse_filter = 2
+
+[node name="RockRoute" type="Label" parent="RouteHints"]
+offset_left = -570.0
+offset_top = 795.0
+offset_right = -160.0
+offset_bottom = 835.0
+theme_override_colors/font_color = Color(0.3, 0.23, 0.15, 0.85)
+theme_override_font_sizes/font_size = 16
+text = "SOUTH / EAST: longer rock approach"
+mouse_filter = 2
+
+[node name="PlaceholderMachinery" type="Node2D" parent="." groups=["navigation_geometry"]]
+
+[node name="Harvester" parent="PlaceholderMachinery" instance=ExtResource("3_harvester")]
+position = Vector2(370, -210)
+
+[node name="StorageSilo" type="StaticBody2D" parent="PlaceholderMachinery"]
+position = Vector2(790, -520)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Base" type="Polygon2D" parent="PlaceholderMachinery/StorageSilo"]
+polygon = PackedVector2Array(-58, -50, 58, -50, 58, 50, -58, 50)
+color = Color(0.35, 0.34, 0.28, 1)
+
+[node name="Top" type="Polygon2D" parent="PlaceholderMachinery/StorageSilo"]
+polygon = PackedVector2Array(-58, -50, -30, -70, 40, -70, 58, -50, 35, -25, -32, -25)
+color = Color(0.54, 0.51, 0.39, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlaceholderMachinery/StorageSilo"]
+shape = SubResource("Rectangle_silo")
+
+[node name="Player" parent="." instance=ExtResource("4_player")]
+position = Vector2(-600, 280)
+
+[node name="TacticalCamera" parent="Player" index="6"]
+limit_left = -1600
+limit_top = -1100
+limit_right = 1600
+limit_bottom = 1100
+
+[node name="Effects" type="Node2D" parent="."]
+
+[node name="Dust" type="CPUParticles2D" parent="Effects"]
+position = Vector2(0, 0)
+amount = 70
+lifetime = 12.0
+preprocess = 12.0
+visibility_rect = Rect2(-1800, -1300, 3600, 2600)
+emission_shape = 3
+emission_rect_extents = Vector2(1550, 1050)
+direction = Vector2(1, 0.15)
+spread = 8.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 12.0
+initial_velocity_max = 22.0
+scale_amount_min = 2.0
+scale_amount_max = 4.0
+color_ramp = SubResource("Gradient_dust")
+
+[node name="TestTargets" type="Node2D" parent="." groups=["navigation_geometry"]]
+
+[node name="OpenTarget" parent="TestTargets" instance=ExtResource("6_dummy")]
+position = Vector2(-580, 40)
+target_name = "OPEN TARGET"
+
+[node name="RockTarget" parent="TestTargets" instance=ExtResource("6_dummy")]
+position = Vector2(-160, 180)
+target_name = "ROCK COVER TARGET"
+
+[node name="RangeTarget" parent="TestTargets" instance=ExtResource("6_dummy")]
+position = Vector2(-800, 480)
+target_name = "RANGE TARGET"
+
+[node name="PatrolRoutes" type="Node2D" parent="."]
+
+[node name="OpenDesert" type="Node2D" parent="PatrolRoutes"]
+script = ExtResource("9_route")
+
+[node name="Point1" type="Marker2D" parent="PatrolRoutes/OpenDesert"]
+position = Vector2(250, 430)
+
+[node name="Point2" type="Marker2D" parent="PatrolRoutes/OpenDesert"]
+position = Vector2(650, 430)
+
+[node name="RockLoop" type="Node2D" parent="PatrolRoutes"]
+script = ExtResource("9_route")
+
+[node name="Point1" type="Marker2D" parent="PatrolRoutes/RockLoop"]
+position = Vector2(-210, -310)
+
+[node name="Point2" type="Marker2D" parent="PatrolRoutes/RockLoop"]
+position = Vector2(-460, -120)
+
+[node name="Point3" type="Marker2D" parent="PatrolRoutes/RockLoop"]
+position = Vector2(-710, -310)
+
+[node name="Point4" type="Marker2D" parent="PatrolRoutes/RockLoop"]
+position = Vector2(-460, -540)
+
+[node name="MachineryLoop" type="Node2D" parent="PatrolRoutes"]
+script = ExtResource("9_route")
+
+[node name="Point1" type="Marker2D" parent="PatrolRoutes/MachineryLoop"]
+position = Vector2(650, -350)
+
+[node name="Point2" type="Marker2D" parent="PatrolRoutes/MachineryLoop"]
+position = Vector2(650, 0)
+
+[node name="Point3" type="Marker2D" parent="PatrolRoutes/MachineryLoop"]
+position = Vector2(120, 0)
+
+[node name="Point4" type="Marker2D" parent="PatrolRoutes/MachineryLoop"]
+position = Vector2(120, -400)
+
+[node name="ListeningPost" type="Node2D" parent="PatrolRoutes"]
+script = ExtResource("9_route")
+
+[node name="Point1" type="Marker2D" parent="PatrolRoutes/ListeningPost"]
+position = Vector2(-120, 200)
+
+[node name="Point2" type="Marker2D" parent="PatrolRoutes/ListeningPost"]
+position = Vector2(-140, -40)
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Guard_A" parent="Enemies" node_paths=PackedStringArray("patrol_route") instance=ExtResource("10_guard")]
+position = Vector2(250, 430)
+patrol_route = NodePath("../../PatrolRoutes/OpenDesert")
+
+[node name="Guard_B" parent="Enemies" node_paths=PackedStringArray("patrol_route") instance=ExtResource("10_guard")]
+position = Vector2(-210, -310)
+patrol_route = NodePath("../../PatrolRoutes/RockLoop")
+initial_facing_degrees = -90.0
+
+[node name="Guard_C" parent="Enemies" node_paths=PackedStringArray("patrol_route") instance=ExtResource("10_guard")]
+position = Vector2(650, -350)
+patrol_route = NodePath("../../PatrolRoutes/MachineryLoop")
+
+[node name="Guard_D" parent="Enemies" node_paths=PackedStringArray("patrol_route") instance=ExtResource("10_guard")]
+position = Vector2(-120, 200)
+patrol_route = NodePath("../../PatrolRoutes/ListeningPost")
+initial_facing_degrees = -90.0
+
+[node name="Allies" type="Node2D" parent="."]
+
+[node name="Scout" parent="Allies" instance=ExtResource("11_ally")]
+position = Vector2(-660, 350)
+
+[node name="Warrior" parent="Allies" instance=ExtResource("11_ally")]
+position = Vector2(-540, 350)
+data = ExtResource("12_warrior")
+follow_offset = Vector2(60, 70)
+selection_slot = 3
+
+[node name="DesertRange" type="Node2D" parent="."]
+
+[node name="OpenSand" type="Area2D" parent="DesertRange" groups=["terrain_zones"]]
+position = Vector2(1150, 690)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("19_terrain")
+kind = 1
+
+[node name="Shape" type="CollisionShape2D" parent="DesertRange/OpenSand"]
+shape = SubResource("Rectangle_sand")
+
+[node name="SafeRock" type="Area2D" parent="DesertRange" groups=["terrain_zones"]]
+position = Vector2(1420, 880)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("19_terrain")
+kind = 2
+
+[node name="Shape" type="CollisionShape2D" parent="DesertRange/SafeRock"]
+shape = SubResource("Circle_rock")
+
+[node name="RockIsland" parent="DesertRange" instance=ExtResource("2_rock")]
+position = Vector2(1420, 880)
+scale = Vector2(1.4, 1.2)
+
+[node name="Machine" parent="DesertRange" instance=ExtResource("20_machine")]
+position = Vector2(960, 560)
+
+[node name="DesertGuard" parent="DesertRange" instance=ExtResource("10_guard")]
+position = Vector2(1110, 470)
+initial_facing_degrees = 90.0
+display_name = "DESERT GUARD"
+
+[node name="DesertHint" type="Label" parent="DesertRange"]
+offset_left = 790.0
+offset_top = 340.0
+offset_right = 1470.0
+offset_bottom = 370.0
+theme_override_colors/font_color = Color(0.3, 0.23, 0.15, 0.85)
+theme_override_font_sizes/font_size = 16
+text = "DESERT RANGE: open sand / rig / safe rock"
+mouse_filter = 2
+
+[node name="PrescienceRange" type="Node2D" parent="."]
+
+[node name="PrescienceRoute" type="Node2D" parent="PrescienceRange"]
+script = ExtResource("9_route")
+
+[node name="Point1" type="Marker2D" parent="PrescienceRange/PrescienceRoute"]
+position = Vector2(-1150, -820)
+
+[node name="Point2" type="Marker2D" parent="PrescienceRange/PrescienceRoute"]
+position = Vector2(-1150, -380)
+
+[node name="PatrolSubject" parent="PrescienceRange" node_paths=PackedStringArray("patrol_route") instance=ExtResource("10_guard")]
+position = Vector2(-1150, -820)
+patrol_route = NodePath("../PrescienceRoute")
+display_name = "PATROL SUBJECT"
+
+[node name="CombatSubject" parent="PrescienceRange" instance=ExtResource("10_guard")]
+position = Vector2(-1430, -250)
+initial_facing_degrees = 0.0
+display_name = "COMBAT SUBJECT"
+
+[node name="PrescienceHint" type="Label" parent="PrescienceRange"]
+offset_left = -1480.0
+offset_top = -930.0
+offset_right = -900.0
+offset_bottom = -900.0
+theme_override_colors/font_color = Color(0.3, 0.23, 0.15, 0.85)
+theme_override_font_sizes/font_size = 16
+text = "PRESCIENCE RANGE: patrol / investigate / combat"
+mouse_filter = 2
+
+[node name="ShieldRange" type="Node2D" parent="."]
+
+[node name="TrainingGuard" parent="ShieldRange" instance=ExtResource("10_guard")]
+position = Vector2(-760, 820)
+initial_facing_degrees = 180.0
+
+[node name="TrainingElite" parent="ShieldRange" instance=ExtResource("15_elite")]
+position = Vector2(-780, 980)
+initial_facing_degrees = 180.0
+
+[node name="SquadManager" type="Node2D" parent="." groups=["squad_manager"] node_paths=PackedStringArray("player")]
+z_index = 5
+script = ExtResource("13_squad")
+player = NodePath("../Player")
+
+[node name="WormEvent" type="Node2D" parent="."]
+z_index = 3
+script = ExtResource("17_wormevent")
+
+[node name="WormThreat" type="Node2D" parent="." node_paths=PackedStringArray("event") groups=["worm_threat"]]
+z_index = 2
+script = ExtResource("16_worm")
+event = NodePath("../WormEvent")
+
+[node name="WormWarnings" type="Node" parent="." node_paths=PackedStringArray("manager", "player")]
+script = ExtResource("18_wormwarn")
+manager = NodePath("../WormThreat")
+player = NodePath("../Player")
+
+[node name="ReconManager" type="Node2D" parent="." groups=["recon_manager"]]
+z_index = 4
+script = ExtResource("14_recon")
+
+[node name="UI" parent="." node_paths=PackedStringArray("player", "squad", "recon") instance=ExtResource("5_ui")]
+player = NodePath("../Player")
+squad = NodePath("../SquadManager")
+recon = NodePath("../ReconManager")
+
+[editable path="Player"]

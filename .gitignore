@@ -1,0 +1,19 @@
+# Godot engine cache and import data
+.godot/
+*.import
+.import/
+
+# Godot editor data that lands in the project directory
+export_templates/
+feature_profiles/
+script_templates/
+text_editor_themes/
+
+# Local validation output: redirected editor data, screenshots, engine logs
+.validation/
+tests/*.log
+
+# OS and scratch
+*.tmp
+.DS_Store
+Thumbs.db

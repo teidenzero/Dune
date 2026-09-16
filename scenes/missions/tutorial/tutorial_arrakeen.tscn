@@ -1,0 +1,1473 @@
+[gd_scene load_steps=41 format=3]
+
+[ext_resource type="Script" path="res://scripts/environment/tutorial_ground.gd" id="ground"]
+[ext_resource type="Script" path="res://scripts/environment/arena_navigation.gd" id="nav"]
+[ext_resource type="Script" path="res://scripts/ai/disturbance_bus.gd" id="bus"]
+[ext_resource type="Script" path="res://scripts/ai/patrol_route.gd" id="route"]
+[ext_resource type="Script" path="res://scripts/recon/recon_manager.gd" id="recon"]
+[ext_resource type="Script" path="res://scripts/squad/squad_manager.gd" id="squad"]
+[ext_resource type="Script" path="res://scripts/tutorial/tutorial_manager.gd" id="tutorial"]
+[ext_resource type="Script" path="res://scripts/tutorial/tutorial_marker.gd" id="marker"]
+[ext_resource type="Script" path="res://scripts/tutorial/tutorial_trigger_area.gd" id="trigger"]
+[ext_resource type="Script" path="res://scripts/tutorial/tutorial_gate.gd" id="gate"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="player"]
+[ext_resource type="PackedScene" path="res://scenes/characters/test_dummy.tscn" id="dummy"]
+[ext_resource type="PackedScene" path="res://scenes/characters/shield_dummy.tscn" id="shielddummy"]
+[ext_resource type="PackedScene" path="res://scenes/characters/enemies/harkonnen_guard.tscn" id="guard"]
+[ext_resource type="PackedScene" path="res://scenes/characters/enemies/harkonnen_elite.tscn" id="elite"]
+[ext_resource type="PackedScene" path="res://scenes/characters/allies/fremen_ally.tscn" id="ally"]
+[ext_resource type="Resource" path="res://resources/allies/warrior.tres" id="warrior"]
+[ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/tutorial_prompt.tscn" id="prompt"]
+[ext_resource type="Script" path="res://scripts/worm/worm_threat_manager.gd" id="wormthreat"]
+[ext_resource type="Script" path="res://scripts/worm/worm_approach_event.gd" id="wormevent"]
+[ext_resource type="Script" path="res://scripts/worm/worm_warning_director.gd" id="wormwarn"]
+[ext_resource type="Script" path="res://scripts/worm/terrain_zone.gd" id="terrain"]
+[ext_resource type="PackedScene" path="res://scenes/environment/spice_machine.tscn" id="machine"]
+
+[sub_resource type="RectangleShape2D" id="GateShape"]
+size = Vector2(40.0, 190.0)
+
+[sub_resource type="RectangleShape2D" id="Shape_move_a"]
+size = Vector2(110.0, 110.0)
+
+[sub_resource type="RectangleShape2D" id="Shape_move_b"]
+size = Vector2(110.0, 110.0)
+
+[sub_resource type="RectangleShape2D" id="Shape_stealth_exit"]
+size = Vector2(110.0, 200.0)
+
+[sub_resource type="RectangleShape2D" id="Shape_extraction"]
+size = Vector2(130.0, 240.0)
+
+[sub_resource type="RectangleShape2D" id="Shape_mid_rock"]
+size = Vector2(200.0, 240.0)
+
+[sub_resource type="RectangleShape2D" id="Shape_far_rock"]
+size = Vector2(200.0, 240.0)
+
+[sub_resource type="RectangleShape2D" id="Shape_presc_watch"]
+size = Vector2(130.0, 130.0)
+
+[sub_resource type="RectangleShape2D" id="Shape_presc_exit"]
+size = Vector2(130.0, 200.0)
+
+[sub_resource type="RectangleShape2D" id="Terrain_desertsand"]
+size = Vector2(1640.0, 1200.0)
+
+[sub_resource type="RectangleShape2D" id="Terrain_startrock"]
+size = Vector2(240.0, 300.0)
+
+[sub_resource type="RectangleShape2D" id="Terrain_midrock"]
+size = Vector2(240.0, 280.0)
+
+[sub_resource type="RectangleShape2D" id="Terrain_farrock"]
+size = Vector2(240.0, 280.0)
+
+[sub_resource type="RectangleShape2D" id="Terrain_havenrock"]
+size = Vector2(260.0, 320.0)
+
+[sub_resource type="RectangleShape2D" id="Terrain_combinedsand"]
+size = Vector2(700.0, 1100.0)
+
+[sub_resource type="RectangleShape2D" id="Terrain_combinedrock"]
+size = Vector2(240.0, 400.0)
+
+[node name="TutorialArrakeen" type="Node2D"]
+
+[node name="Disturbances" type="Node" parent="." groups=["disturbance_bus"]]
+script = ExtResource("bus")
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]
+script = ExtResource("nav")
+walkable_rect = Rect2(-1660.0, -600.0, 11400.0, 1200.0)
+
+[node name="Environment" type="Node2D" parent="."]
+
+[node name="Ground" type="Node2D" parent="Environment"]
+script = ExtResource("ground")
+courtyard_rect = Rect2(-1680.0, -620.0, 11440.0, 1240.0)
+
+[node name="Floor" type="Node2D" parent="Environment"]
+
+[node name="Floor_movement" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(-1680.0, -620.0, -700.0, -620.0, -700.0, 620.0, -1680.0, 620.0)
+color = Color(0.44, 0.42, 0.40, 1)
+
+[node name="Floor_ranged" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(-700.0, -620.0, 380.0, -620.0, 380.0, 620.0, -700.0, 620.0)
+color = Color(0.41, 0.39, 0.38, 1)
+
+[node name="Floor_melee" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(380.0, -620.0, 1400.0, -620.0, 1400.0, 620.0, 380.0, 620.0)
+color = Color(0.38, 0.36, 0.38, 1)
+
+[node name="Floor_stealth" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(1400.0, -620.0, 2680.0, -620.0, 2680.0, 620.0, 1400.0, 620.0)
+color = Color(0.32, 0.31, 0.34, 1)
+
+[node name="Floor_squad" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(2680.0, -620.0, 3760.0, -620.0, 3760.0, 620.0, 2680.0, 620.0)
+color = Color(0.43, 0.40, 0.36, 1)
+
+[node name="Floor_recon" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(3760.0, -620.0, 5760.0, -620.0, 5760.0, 620.0, 3760.0, 620.0)
+color = Color(0.47, 0.43, 0.36, 1)
+
+[node name="Floor_prescience" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(5760.0, -620.0, 6880.0, -620.0, 6880.0, 620.0, 5760.0, 620.0)
+color = Color(0.34, 0.33, 0.40, 1)
+
+[node name="Floor_desert" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(6880.0, -620.0, 8560.0, -620.0, 8560.0, 620.0, 6880.0, 620.0)
+color = Color(0.62, 0.52, 0.34, 1)
+
+[node name="Floor_combined" type="Polygon2D" parent="Environment/Floor"]
+polygon = PackedVector2Array(8560.0, -620.0, 9760.0, -620.0, 9760.0, 620.0, 8560.0, 620.0)
+color = Color(0.45, 0.40, 0.34, 1)
+
+[node name="Walls" type="Node2D" parent="Environment" groups=["navigation_geometry"]]
+
+[node name="North" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(4040.0, -640.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/North"]
+polygon = PackedVector2Array(-5720.0, -20.0, 5720.0, -20.0, 5720.0, 20.0, -5720.0, 20.0)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/North"]
+position = Vector2(0, -13.0)
+polygon = PackedVector2Array(-5720.0, -7.0, 5720.0, -7.0, 5720.0, 7.0, -5720.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/North"]
+polygon = PackedVector2Array(-5720.0, -20.0, 5720.0, -20.0, 5720.0, 20.0, -5720.0, 20.0)
+
+[node name="South" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(4040.0, 640.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/South"]
+polygon = PackedVector2Array(-5720.0, -20.0, 5720.0, -20.0, 5720.0, 20.0, -5720.0, 20.0)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/South"]
+position = Vector2(0, -13.0)
+polygon = PackedVector2Array(-5720.0, -7.0, 5720.0, -7.0, 5720.0, 7.0, -5720.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/South"]
+polygon = PackedVector2Array(-5720.0, -20.0, 5720.0, -20.0, 5720.0, 20.0, -5720.0, 20.0)
+
+[node name="West" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(-1700.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/West"]
+polygon = PackedVector2Array(-20.0, -660.0, 20.0, -660.0, 20.0, 660.0, -20.0, 660.0)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/West"]
+position = Vector2(0, -653.0)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/West"]
+polygon = PackedVector2Array(-20.0, -660.0, 20.0, -660.0, 20.0, 660.0, -20.0, 660.0)
+
+[node name="East" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(9780.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/East"]
+polygon = PackedVector2Array(-20.0, -660.0, 20.0, -660.0, 20.0, 660.0, -20.0, 660.0)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/East"]
+position = Vector2(0, -653.0)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/East"]
+polygon = PackedVector2Array(-20.0, -660.0, 20.0, -660.0, 20.0, 660.0, -20.0, 660.0)
+
+[node name="Divider_movement_N" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(-700.0, -357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_movement_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_movement_N"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_movement_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_movement_S" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(-700.0, 357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_movement_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_movement_S"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_movement_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_ranged_N" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(380.0, -357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_ranged_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_ranged_N"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_ranged_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_ranged_S" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(380.0, 357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_ranged_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_ranged_S"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_ranged_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_melee_N" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(1400.0, -357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_melee_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_melee_N"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_melee_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_melee_S" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(1400.0, 357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_melee_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_melee_S"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_melee_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_stealth_N" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(2680.0, -357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_stealth_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_stealth_N"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_stealth_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_stealth_S" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(2680.0, 357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_stealth_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_stealth_S"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_stealth_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_squad_N" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(3760.0, -357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_squad_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_squad_N"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_squad_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_squad_S" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(3760.0, 357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_squad_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_squad_S"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_squad_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_recon_N" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(5760.0, -357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_recon_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_recon_N"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_recon_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_recon_S" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(5760.0, 357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_recon_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_recon_S"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_recon_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_prescience_N" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(6880.0, -357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_prescience_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_prescience_N"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_prescience_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_prescience_S" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(6880.0, 357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_prescience_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_prescience_S"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_prescience_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_desert_N" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(8560.0, -357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_desert_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_desert_N"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_desert_N"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Divider_desert_S" type="StaticBody2D" parent="Environment/Walls"]
+position = Vector2(8560.0, 357.5)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Environment/Walls/Divider_desert_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+color = Color(0.33, 0.30, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Environment/Walls/Divider_desert_S"]
+position = Vector2(0, -255.5)
+polygon = PackedVector2Array(-20.0, -7.0, 20.0, -7.0, 20.0, 7.0, -20.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/Walls/Divider_desert_S"]
+polygon = PackedVector2Array(-20.0, -262.5, 20.0, -262.5, 20.0, 262.5, -20.0, 262.5)
+
+[node name="Gates" type="Node2D" parent="."]
+
+[node name="Gate_movement" type="StaticBody2D" parent="Gates"]
+position = Vector2(-700.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("gate")
+span = Vector2(40.0, 190.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gates/Gate_movement"]
+shape = SubResource("GateShape")
+
+[node name="Gate_ranged" type="StaticBody2D" parent="Gates"]
+position = Vector2(380.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("gate")
+span = Vector2(40.0, 190.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gates/Gate_ranged"]
+shape = SubResource("GateShape")
+
+[node name="Gate_melee" type="StaticBody2D" parent="Gates"]
+position = Vector2(1400.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("gate")
+span = Vector2(40.0, 190.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gates/Gate_melee"]
+shape = SubResource("GateShape")
+
+[node name="Gate_stealth" type="StaticBody2D" parent="Gates"]
+position = Vector2(2680.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("gate")
+span = Vector2(40.0, 190.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gates/Gate_stealth"]
+shape = SubResource("GateShape")
+
+[node name="Gate_squad" type="StaticBody2D" parent="Gates"]
+position = Vector2(3760.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("gate")
+span = Vector2(40.0, 190.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gates/Gate_squad"]
+shape = SubResource("GateShape")
+
+[node name="Gate_recon" type="StaticBody2D" parent="Gates"]
+position = Vector2(5760.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("gate")
+span = Vector2(40.0, 190.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gates/Gate_recon"]
+shape = SubResource("GateShape")
+
+[node name="Gate_prescience" type="StaticBody2D" parent="Gates"]
+position = Vector2(6880.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("gate")
+span = Vector2(40.0, 190.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gates/Gate_prescience"]
+shape = SubResource("GateShape")
+
+[node name="Gate_desert" type="StaticBody2D" parent="Gates"]
+position = Vector2(8560.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("gate")
+span = Vector2(40.0, 190.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gates/Gate_desert"]
+shape = SubResource("GateShape")
+
+[node name="Markers" type="Node2D" parent="."]
+
+[node name="Marker_MoveA" type="Node2D" parent="Markers"]
+position = Vector2(-1180.0, 0.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "MOVE HERE"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_MoveB" type="Node2D" parent="Markers"]
+position = Vector2(-830.0, -330.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "SPRINT HERE"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_MoveC" type="Node2D" parent="Markers"]
+position = Vector2(-830.0, 330.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "CROUCH ACROSS"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_SquadMove" type="Node2D" parent="Markers"]
+position = Vector2(3340.0, -300.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "SEND THE SCOUT"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_Overlook" type="Node2D" parent="Markers"]
+position = Vector2(5540.0, -260.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "OVERLOOK"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_StealthExit" type="Node2D" parent="Markers"]
+position = Vector2(2600.0, 0.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "EXIT"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_Extraction" type="Node2D" parent="Markers"]
+position = Vector2(9620.0, 0.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "EXTRACTION"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_MidRock" type="Node2D" parent="Markers"]
+position = Vector2(7520.0, -200.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "ROCK"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_FarRock" type="Node2D" parent="Markers"]
+position = Vector2(8040.0, 200.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "ROCK"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_Haven" type="Node2D" parent="Markers"]
+position = Vector2(8460.0, -140.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "SAFE ROCK"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_PrescienceWatch" type="Node2D" parent="Markers"]
+position = Vector2(6060.0, 280.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "OBSERVATION POST"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Marker_PrescienceExit" type="Node2D" parent="Markers"]
+position = Vector2(6720.0, 280.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "CROSS TO HERE"
+color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Checkpoints" type="Node2D" parent="."]
+
+[node name="Checkpoint_movement" type="Marker2D" parent="Checkpoints"]
+position = Vector2(-1520.0, 0.0)
+
+[node name="Checkpoint_ranged" type="Marker2D" parent="Checkpoints"]
+position = Vector2(-560.0, 0.0)
+
+[node name="Checkpoint_melee" type="Marker2D" parent="Checkpoints"]
+position = Vector2(500.0, 0.0)
+
+[node name="Checkpoint_stealth" type="Marker2D" parent="Checkpoints"]
+position = Vector2(1500.0, 0.0)
+
+[node name="Checkpoint_squad" type="Marker2D" parent="Checkpoints"]
+position = Vector2(2800.0, 0.0)
+
+[node name="Checkpoint_recon" type="Marker2D" parent="Checkpoints"]
+position = Vector2(3900.0, 0.0)
+
+[node name="Checkpoint_prescience" type="Marker2D" parent="Checkpoints"]
+position = Vector2(5850.0, 280.0)
+
+[node name="Checkpoint_desert" type="Marker2D" parent="Checkpoints"]
+position = Vector2(6960.0, 0.0)
+
+[node name="Checkpoint_combined" type="Marker2D" parent="Checkpoints"]
+position = Vector2(8700.0, 0.0)
+
+[node name="Triggers" type="Node2D" parent="."]
+
+[node name="Trigger_MoveA" type="Area2D" parent="Triggers"]
+position = Vector2(-1180.0, 0.0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("trigger")
+id = &"move_a"
+
+[node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_MoveA"]
+shape = SubResource("Shape_move_a")
+
+[node name="Trigger_MoveB" type="Area2D" parent="Triggers"]
+position = Vector2(-830.0, -330.0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("trigger")
+id = &"move_b"
+
+[node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_MoveB"]
+shape = SubResource("Shape_move_b")
+
+[node name="Trigger_StealthExit" type="Area2D" parent="Triggers"]
+position = Vector2(2600.0, 0.0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("trigger")
+id = &"stealth_exit"
+
+[node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_StealthExit"]
+shape = SubResource("Shape_stealth_exit")
+
+[node name="Trigger_Extraction" type="Area2D" parent="Triggers"]
+position = Vector2(9620.0, 0.0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("trigger")
+id = &"extraction"
+
+[node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_Extraction"]
+shape = SubResource("Shape_extraction")
+
+[node name="Trigger_MidRock" type="Area2D" parent="Triggers"]
+position = Vector2(7520.0, -200.0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("trigger")
+id = &"mid_rock"
+
+[node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_MidRock"]
+shape = SubResource("Shape_mid_rock")
+
+[node name="Trigger_FarRock" type="Area2D" parent="Triggers"]
+position = Vector2(8040.0, 200.0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("trigger")
+id = &"far_rock"
+
+[node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_FarRock"]
+shape = SubResource("Shape_far_rock")
+
+[node name="Trigger_PrescienceWatch" type="Area2D" parent="Triggers"]
+position = Vector2(6060.0, 280.0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("trigger")
+id = &"presc_watch"
+
+[node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_PrescienceWatch"]
+shape = SubResource("Shape_presc_watch")
+
+[node name="Trigger_PrescienceExit" type="Area2D" parent="Triggers"]
+position = Vector2(6720.0, 280.0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("trigger")
+id = &"presc_exit"
+
+[node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_PrescienceExit"]
+shape = SubResource("Shape_presc_exit")
+
+[node name="Sections" type="Node2D" parent="."]
+
+[node name="Movement" type="Node2D" parent="Sections"]
+
+[node name="SandBed" type="Polygon2D" parent="Sections/Movement"]
+polygon = PackedVector2Array(-1080, 210, -640, 210, -640, 450, -1080, 450)
+color = Color(0.62, 0.53, 0.37, 1)
+
+[node name="Title" type="Label" parent="Sections/Movement"]
+offset_left = -1620.0
+offset_top = -560.0
+offset_right = -1100.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "ATREIDES TRAINING YARD"
+
+[node name="Ranged" type="Node2D" parent="Sections"]
+
+[node name="Target_Aim" parent="Sections/Ranged" instance=ExtResource("dummy") groups=["training_targets"]]
+position = Vector2(-60, -190)
+target_name = "TRAINING TARGET"
+
+[node name="Highlight_AimTarget" type="Node2D" parent="Sections/Ranged/Target_Aim"]
+script = ExtResource("marker")
+radius = 40.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="Target_Cover" parent="Sections/Ranged" instance=ExtResource("dummy") groups=["training_targets"]]
+position = Vector2(150, 250)
+target_name = "COVERED TARGET"
+
+[node name="Highlight_CoverTarget" type="Node2D" parent="Sections/Ranged/Target_Cover"]
+script = ExtResource("marker")
+radius = 40.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="Pillar" type="StaticBody2D" parent="Sections/Ranged"]
+position = Vector2(-60.0, 250.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Ranged/Pillar"]
+polygon = PackedVector2Array(-35.0, -100.0, 35.0, -100.0, 35.0, 100.0, -35.0, 100.0)
+color = Color(0.36, 0.33, 0.34, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Ranged/Pillar"]
+position = Vector2(0, -93.0)
+polygon = PackedVector2Array(-35.0, -7.0, 35.0, -7.0, 35.0, 7.0, -35.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Ranged/Pillar"]
+polygon = PackedVector2Array(-35.0, -100.0, 35.0, -100.0, 35.0, 100.0, -35.0, 100.0)
+
+[node name="Title" type="Label" parent="Sections/Ranged"]
+offset_left = -660.0
+offset_top = -560.0
+offset_right = -240.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "FIRING RANGE"
+
+[node name="Melee" type="Node2D" parent="Sections"]
+
+[node name="Target_Melee" parent="Sections/Melee" instance=ExtResource("dummy") groups=["training_targets"]]
+position = Vector2(760, -150)
+target_name = "PRACTICE DUMMY"
+
+[node name="Highlight_MeleeDummy" type="Node2D" parent="Sections/Melee/Target_Melee"]
+script = ExtResource("marker")
+radius = 40.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="Target_Shield" parent="Sections/Melee" instance=ExtResource("shielddummy") groups=["training_targets"]]
+position = Vector2(1060, 160)
+target_name = "SHIELD INSTRUCTOR"
+
+[node name="Highlight_ShieldDummy" type="Node2D" parent="Sections/Melee/Target_Shield"]
+script = ExtResource("marker")
+radius = 46.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="Title" type="Label" parent="Sections/Melee"]
+offset_left = 420.0
+offset_top = -560.0
+offset_right = 880.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "BLADE AND SHIELD YARD"
+
+[node name="Stealth" type="Node2D" parent="Sections"]
+
+[node name="Cover_1" type="StaticBody2D" parent="Sections/Stealth"]
+position = Vector2(1700.0, -250.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Stealth/Cover_1"]
+polygon = PackedVector2Array(-45.0, -150.0, 45.0, -150.0, 45.0, 150.0, -45.0, 150.0)
+color = Color(0.30, 0.28, 0.31, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Stealth/Cover_1"]
+position = Vector2(0, -143.0)
+polygon = PackedVector2Array(-45.0, -7.0, 45.0, -7.0, 45.0, 7.0, -45.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Stealth/Cover_1"]
+polygon = PackedVector2Array(-45.0, -150.0, 45.0, -150.0, 45.0, 150.0, -45.0, 150.0)
+
+[node name="Cover_2" type="StaticBody2D" parent="Sections/Stealth"]
+position = Vector2(1700.0, 330.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Stealth/Cover_2"]
+polygon = PackedVector2Array(-45.0, -130.0, 45.0, -130.0, 45.0, 130.0, -45.0, 130.0)
+color = Color(0.30, 0.28, 0.31, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Stealth/Cover_2"]
+position = Vector2(0, -123.0)
+polygon = PackedVector2Array(-45.0, -7.0, 45.0, -7.0, 45.0, 7.0, -45.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Stealth/Cover_2"]
+polygon = PackedVector2Array(-45.0, -130.0, 45.0, -130.0, 45.0, 130.0, -45.0, 130.0)
+
+[node name="Cover_3" type="StaticBody2D" parent="Sections/Stealth"]
+position = Vector2(2050.0, 60.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Stealth/Cover_3"]
+polygon = PackedVector2Array(-45.0, -170.0, 45.0, -170.0, 45.0, 170.0, -45.0, 170.0)
+color = Color(0.30, 0.28, 0.31, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Stealth/Cover_3"]
+position = Vector2(0, -163.0)
+polygon = PackedVector2Array(-45.0, -7.0, 45.0, -7.0, 45.0, 7.0, -45.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Stealth/Cover_3"]
+polygon = PackedVector2Array(-45.0, -170.0, 45.0, -170.0, 45.0, 170.0, -45.0, 170.0)
+
+[node name="Cover_4" type="StaticBody2D" parent="Sections/Stealth"]
+position = Vector2(2050.0, -400.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Stealth/Cover_4"]
+polygon = PackedVector2Array(-45.0, -120.0, 45.0, -120.0, 45.0, 120.0, -45.0, 120.0)
+color = Color(0.30, 0.28, 0.31, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Stealth/Cover_4"]
+position = Vector2(0, -113.0)
+polygon = PackedVector2Array(-45.0, -7.0, 45.0, -7.0, 45.0, 7.0, -45.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Stealth/Cover_4"]
+polygon = PackedVector2Array(-45.0, -120.0, 45.0, -120.0, 45.0, 120.0, -45.0, 120.0)
+
+[node name="Cover_5" type="StaticBody2D" parent="Sections/Stealth"]
+position = Vector2(2380.0, -220.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Stealth/Cover_5"]
+polygon = PackedVector2Array(-45.0, -150.0, 45.0, -150.0, 45.0, 150.0, -45.0, 150.0)
+color = Color(0.30, 0.28, 0.31, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Stealth/Cover_5"]
+position = Vector2(0, -143.0)
+polygon = PackedVector2Array(-45.0, -7.0, 45.0, -7.0, 45.0, 7.0, -45.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Stealth/Cover_5"]
+polygon = PackedVector2Array(-45.0, -150.0, 45.0, -150.0, 45.0, 150.0, -45.0, 150.0)
+
+[node name="Cover_6" type="StaticBody2D" parent="Sections/Stealth"]
+position = Vector2(2380.0, 340.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Stealth/Cover_6"]
+polygon = PackedVector2Array(-45.0, -120.0, 45.0, -120.0, 45.0, 120.0, -45.0, 120.0)
+color = Color(0.30, 0.28, 0.31, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Stealth/Cover_6"]
+position = Vector2(0, -113.0)
+polygon = PackedVector2Array(-45.0, -7.0, 45.0, -7.0, 45.0, 7.0, -45.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Stealth/Cover_6"]
+polygon = PackedVector2Array(-45.0, -120.0, 45.0, -120.0, 45.0, 120.0, -45.0, 120.0)
+
+[node name="Routes" type="Node2D" parent="Sections/Stealth"]
+
+[node name="Route_A" type="Node2D" parent="Sections/Stealth/Routes"]
+script = ExtResource("route")
+
+[node name="P1" type="Marker2D" parent="Sections/Stealth/Routes/Route_A"]
+position = Vector2(1880, -420)
+
+[node name="P2" type="Marker2D" parent="Sections/Stealth/Routes/Route_A"]
+position = Vector2(1880, 420)
+
+[node name="Route_B" type="Node2D" parent="Sections/Stealth/Routes"]
+script = ExtResource("route")
+
+[node name="P1" type="Marker2D" parent="Sections/Stealth/Routes/Route_B"]
+position = Vector2(2230, 400)
+
+[node name="P2" type="Marker2D" parent="Sections/Stealth/Routes/Route_B"]
+position = Vector2(2230, -400)
+
+[node name="StealthGuards" type="Node2D" parent="Sections/Stealth"]
+
+[node name="StealthGuard_A" parent="Sections/Stealth/StealthGuards" node_paths=PackedStringArray("patrol_route") instance=ExtResource("guard")]
+position = Vector2(1880, -420)
+patrol_route = NodePath("../../Routes/Route_A")
+display_name = "SENTRY"
+
+[node name="StealthGuard_B" parent="Sections/Stealth/StealthGuards" node_paths=PackedStringArray("patrol_route") instance=ExtResource("guard")]
+position = Vector2(2230, 400)
+patrol_route = NodePath("../../Routes/Route_B")
+display_name = "SENTRY"
+
+[node name="Title" type="Label" parent="Sections/Stealth"]
+offset_left = 1440.0
+offset_top = -560.0
+offset_right = 1860.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "INFILTRATION COURSE"
+
+[node name="Squad" type="Node2D" parent="Sections"]
+
+[node name="Baffle" type="StaticBody2D" parent="Sections/Squad"]
+position = Vector2(3120.0, 320.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Squad/Baffle"]
+polygon = PackedVector2Array(-40.0, -150.0, 40.0, -150.0, 40.0, 150.0, -40.0, 150.0)
+color = Color(0.36, 0.33, 0.32, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Squad/Baffle"]
+position = Vector2(0, -143.0)
+polygon = PackedVector2Array(-40.0, -7.0, 40.0, -7.0, 40.0, 7.0, -40.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Squad/Baffle"]
+polygon = PackedVector2Array(-40.0, -150.0, 40.0, -150.0, 40.0, 150.0, -40.0, 150.0)
+
+[node name="Target_SquadEnemy" parent="Sections/Squad" instance=ExtResource("guard")]
+position = Vector2(3600, 210)
+initial_facing_degrees = 180.0
+display_name = "TRAINING FOE"
+
+[node name="Highlight_SquadEnemy" type="Node2D" parent="Sections/Squad/Target_SquadEnemy"]
+script = ExtResource("marker")
+radius = 40.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="Title" type="Label" parent="Sections/Squad"]
+offset_left = 2720.0
+offset_top = -560.0
+offset_right = 3140.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "SQUAD YARD"
+
+[node name="Recon" type="Node2D" parent="Sections"]
+
+[node name="Shelter" type="StaticBody2D" parent="Sections/Recon"]
+position = Vector2(4020.0, -170.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Recon/Shelter"]
+polygon = PackedVector2Array(-45.0, -150.0, 45.0, -150.0, 45.0, 150.0, -45.0, 150.0)
+color = Color(0.38, 0.35, 0.33, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Recon/Shelter"]
+position = Vector2(0, -143.0)
+polygon = PackedVector2Array(-45.0, -7.0, 45.0, -7.0, 45.0, 7.0, -45.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Recon/Shelter"]
+polygon = PackedVector2Array(-45.0, -150.0, 45.0, -150.0, 45.0, 150.0, -45.0, 150.0)
+
+[node name="Ridge_A" type="StaticBody2D" parent="Sections/Recon"]
+position = Vector2(4600.0, 330.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Recon/Ridge_A"]
+polygon = PackedVector2Array(-120.0, -45.0, 120.0, -45.0, 120.0, 45.0, -120.0, 45.0)
+color = Color(0.40, 0.36, 0.31, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Recon/Ridge_A"]
+position = Vector2(0, -38.0)
+polygon = PackedVector2Array(-120.0, -7.0, 120.0, -7.0, 120.0, 7.0, -120.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Recon/Ridge_A"]
+polygon = PackedVector2Array(-120.0, -45.0, 120.0, -45.0, 120.0, 45.0, -120.0, 45.0)
+
+[node name="Ridge_B" type="StaticBody2D" parent="Sections/Recon"]
+position = Vector2(5100.0, -320.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Recon/Ridge_B"]
+polygon = PackedVector2Array(-120.0, -45.0, 120.0, -45.0, 120.0, 45.0, -120.0, 45.0)
+color = Color(0.40, 0.36, 0.31, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Recon/Ridge_B"]
+position = Vector2(0, -38.0)
+polygon = PackedVector2Array(-120.0, -7.0, 120.0, -7.0, 120.0, 7.0, -120.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Recon/Ridge_B"]
+polygon = PackedVector2Array(-120.0, -45.0, 120.0, -45.0, 120.0, 45.0, -120.0, 45.0)
+
+[node name="Title" type="Label" parent="Sections/Recon"]
+offset_left = 3800.0
+offset_top = -560.0
+offset_right = 4360.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "RECONNAISSANCE RUN"
+
+[node name="RangeHint" type="Label" parent="Sections/Recon"]
+offset_left = 4700.0
+offset_top = 180.0
+offset_right = 5320.0
+offset_bottom = 210.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 15
+text = "beyond this line Paul cannot be heard"
+
+[node name="Prescience" type="Node2D" parent="Sections"]
+
+[node name="Post" type="StaticBody2D" parent="Sections/Prescience"]
+position = Vector2(6060.0, 470.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Prescience/Post"]
+polygon = PackedVector2Array(-110.0, -45.0, 110.0, -45.0, 110.0, 45.0, -110.0, 45.0)
+color = Color(0.36, 0.34, 0.40, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Prescience/Post"]
+position = Vector2(0, -38.0)
+polygon = PackedVector2Array(-110.0, -7.0, 110.0, -7.0, 110.0, 7.0, -110.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Prescience/Post"]
+polygon = PackedVector2Array(-110.0, -45.0, 110.0, -45.0, 110.0, 45.0, -110.0, 45.0)
+
+[node name="Screen_N" type="StaticBody2D" parent="Sections/Prescience"]
+position = Vector2(6320.0, -420.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Prescience/Screen_N"]
+polygon = PackedVector2Array(-55.0, -170.0, 55.0, -170.0, 55.0, 170.0, -55.0, 170.0)
+color = Color(0.33, 0.31, 0.38, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Prescience/Screen_N"]
+position = Vector2(0, -163.0)
+polygon = PackedVector2Array(-55.0, -7.0, 55.0, -7.0, 55.0, 7.0, -55.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Prescience/Screen_N"]
+polygon = PackedVector2Array(-55.0, -170.0, 55.0, -170.0, 55.0, 170.0, -55.0, 170.0)
+
+[node name="Screen_S" type="StaticBody2D" parent="Sections/Prescience"]
+position = Vector2(6320.0, 620.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Prescience/Screen_S"]
+polygon = PackedVector2Array(-55.0, -100.0, 55.0, -100.0, 55.0, 100.0, -55.0, 100.0)
+color = Color(0.33, 0.31, 0.38, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Prescience/Screen_S"]
+position = Vector2(0, -93.0)
+polygon = PackedVector2Array(-55.0, -7.0, 55.0, -7.0, 55.0, 7.0, -55.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Prescience/Screen_S"]
+polygon = PackedVector2Array(-55.0, -100.0, 55.0, -100.0, 55.0, 100.0, -55.0, 100.0)
+
+[node name="PrescienceRoute" type="Node2D" parent="Sections/Prescience"]
+script = ExtResource("route")
+
+[node name="P1" type="Marker2D" parent="Sections/Prescience/PrescienceRoute"]
+position = Vector2(6320, -60)
+
+[node name="P2" type="Marker2D" parent="Sections/Prescience/PrescienceRoute"]
+position = Vector2(6320, 500)
+
+[node name="PrescienceGuards" type="Node2D" parent="Sections/Prescience"]
+
+[node name="PrescienceSentry" parent="Sections/Prescience/PrescienceGuards" node_paths=PackedStringArray("patrol_route") instance=ExtResource("guard")]
+position = Vector2(6320, -60)
+patrol_route = NodePath("../../PrescienceRoute")
+display_name = "SENTRY"
+
+[node name="Title" type="Label" parent="Sections/Prescience"]
+offset_left = 5800.0
+offset_top = -560.0
+offset_right = 6260.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "PRESCIENCE YARD"
+
+[node name="Desert" type="Node2D" parent="Sections"]
+
+[node name="DesertSand" type="Area2D" parent="Sections/Desert" groups=["terrain_zones"]]
+position = Vector2(7720.0, 0.0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("terrain")
+kind = 1
+
+[node name="Shape" type="CollisionShape2D" parent="Sections/Desert/DesertSand"]
+shape = SubResource("Terrain_desertsand")
+
+[node name="StartRock" type="Area2D" parent="Sections/Desert" groups=["terrain_zones"]]
+position = Vector2(6980.0, 0.0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("terrain")
+kind = 2
+
+[node name="Shape" type="CollisionShape2D" parent="Sections/Desert/StartRock"]
+shape = SubResource("Terrain_startrock")
+
+[node name="MidRock" type="Area2D" parent="Sections/Desert" groups=["terrain_zones"]]
+position = Vector2(7520.0, -200.0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("terrain")
+kind = 2
+
+[node name="Shape" type="CollisionShape2D" parent="Sections/Desert/MidRock"]
+shape = SubResource("Terrain_midrock")
+
+[node name="FarRock" type="Area2D" parent="Sections/Desert" groups=["terrain_zones"]]
+position = Vector2(8040.0, 200.0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("terrain")
+kind = 2
+
+[node name="Shape" type="CollisionShape2D" parent="Sections/Desert/FarRock"]
+shape = SubResource("Terrain_farrock")
+
+[node name="HavenRock" type="Area2D" parent="Sections/Desert" groups=["terrain_zones"]]
+position = Vector2(8460.0, -140.0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("terrain")
+kind = 2
+
+[node name="Shape" type="CollisionShape2D" parent="Sections/Desert/HavenRock"]
+shape = SubResource("Terrain_havenrock")
+
+[node name="StartSlab" type="Polygon2D" parent="Sections/Desert"]
+position = Vector2(6980.0, 0.0)
+polygon = PackedVector2Array(-120.0, -150.0, 120.0, -150.0, 120.0, 150.0, -120.0, 150.0)
+color = Color(0.4, 0.37, 0.33, 1)
+
+[node name="MidSlab" type="Polygon2D" parent="Sections/Desert"]
+position = Vector2(7520.0, -200.0)
+polygon = PackedVector2Array(-120.0, -140.0, 120.0, -140.0, 120.0, 140.0, -120.0, 140.0)
+color = Color(0.4, 0.37, 0.33, 1)
+
+[node name="FarSlab" type="Polygon2D" parent="Sections/Desert"]
+position = Vector2(8040.0, 200.0)
+polygon = PackedVector2Array(-120.0, -140.0, 120.0, -140.0, 120.0, 140.0, -120.0, 140.0)
+color = Color(0.4, 0.37, 0.33, 1)
+
+[node name="HavenSlab" type="Polygon2D" parent="Sections/Desert"]
+position = Vector2(8460.0, -140.0)
+polygon = PackedVector2Array(-130.0, -160.0, 130.0, -160.0, 130.0, 160.0, -130.0, 160.0)
+color = Color(0.4, 0.37, 0.33, 1)
+
+[node name="Target_Desert" parent="Sections/Desert" instance=ExtResource("dummy") groups=["training_targets"]]
+position = Vector2(7780, 330)
+target_name = "SAND TARGET"
+
+[node name="Highlight_DesertTarget" type="Node2D" parent="Sections/Desert/Target_Desert"]
+script = ExtResource("marker")
+radius = 40.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="Machine" parent="Sections/Desert" instance=ExtResource("machine")]
+position = Vector2(8200, -80)
+machine_name = "TRAINING RIG"
+
+[node name="Highlight_Rig" type="Node2D" parent="Sections/Desert/Machine"]
+script = ExtResource("marker")
+radius = 78.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="Title" type="Label" parent="Sections/Desert"]
+offset_left = 6920.0
+offset_top = -560.0
+offset_right = 7440.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "OPEN DESERT - SURVIVAL YARD"
+
+[node name="Combined" type="Node2D" parent="Sections"]
+
+[node name="Cover_1" type="StaticBody2D" parent="Sections/Combined"]
+position = Vector2(8850.0, -300.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Combined/Cover_1"]
+polygon = PackedVector2Array(-50.0, -110.0, 50.0, -110.0, 50.0, 110.0, -50.0, 110.0)
+color = Color(0.34, 0.31, 0.30, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Combined/Cover_1"]
+position = Vector2(0, -103.0)
+polygon = PackedVector2Array(-50.0, -7.0, 50.0, -7.0, 50.0, 7.0, -50.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Combined/Cover_1"]
+polygon = PackedVector2Array(-50.0, -110.0, 50.0, -110.0, 50.0, 110.0, -50.0, 110.0)
+
+[node name="Cover_2" type="StaticBody2D" parent="Sections/Combined"]
+position = Vector2(8850.0, 300.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Combined/Cover_2"]
+polygon = PackedVector2Array(-50.0, -110.0, 50.0, -110.0, 50.0, 110.0, -50.0, 110.0)
+color = Color(0.34, 0.31, 0.30, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Combined/Cover_2"]
+position = Vector2(0, -103.0)
+polygon = PackedVector2Array(-50.0, -7.0, 50.0, -7.0, 50.0, 7.0, -50.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Combined/Cover_2"]
+polygon = PackedVector2Array(-50.0, -110.0, 50.0, -110.0, 50.0, 110.0, -50.0, 110.0)
+
+[node name="Cover_3" type="StaticBody2D" parent="Sections/Combined"]
+position = Vector2(9230.0, 0.0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Slab" type="Polygon2D" parent="Sections/Combined/Cover_3"]
+polygon = PackedVector2Array(-55.0, -130.0, 55.0, -130.0, 55.0, 130.0, -55.0, 130.0)
+color = Color(0.34, 0.31, 0.30, 1)
+
+[node name="Cap" type="Polygon2D" parent="Sections/Combined/Cover_3"]
+position = Vector2(0, -123.0)
+polygon = PackedVector2Array(-55.0, -7.0, 55.0, -7.0, 55.0, 7.0, -55.0, 7.0)
+color = Color(0.52, 0.48, 0.45, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Sections/Combined/Cover_3"]
+polygon = PackedVector2Array(-55.0, -130.0, 55.0, -130.0, 55.0, 130.0, -55.0, 130.0)
+
+[node name="CombinedEnemies" type="Node2D" parent="Sections/Combined"]
+
+[node name="CombinedRoute" type="Node2D" parent="Sections/Combined"]
+script = ExtResource("route")
+
+[node name="P1" type="Marker2D" parent="Sections/Combined/CombinedRoute"]
+position = Vector2(8940, -380)
+
+[node name="P2" type="Marker2D" parent="Sections/Combined/CombinedRoute"]
+position = Vector2(8940, 380)
+
+[node name="Foe_A" parent="Sections/Combined/CombinedEnemies" node_paths=PackedStringArray("patrol_route") instance=ExtResource("guard")]
+position = Vector2(8940, -380)
+patrol_route = NodePath("../../CombinedRoute")
+initial_facing_degrees = 180.0
+
+[node name="Foe_B" parent="Sections/Combined/CombinedEnemies" instance=ExtResource("guard")]
+position = Vector2(9080, 330)
+initial_facing_degrees = 180.0
+
+[node name="Foe_C" parent="Sections/Combined/CombinedEnemies" instance=ExtResource("guard")]
+position = Vector2(9440, -120)
+initial_facing_degrees = 180.0
+
+[node name="Foe_Elite" parent="Sections/Combined/CombinedEnemies" instance=ExtResource("elite")]
+position = Vector2(9420, 190)
+initial_facing_degrees = 180.0
+
+[node name="CombinedSand" type="Area2D" parent="Sections/Combined" groups=["terrain_zones"]]
+position = Vector2(9240.0, 0.0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("terrain")
+kind = 1
+
+[node name="Shape" type="CollisionShape2D" parent="Sections/Combined/CombinedSand"]
+shape = SubResource("Terrain_combinedsand")
+
+[node name="CombinedRock" type="Area2D" parent="Sections/Combined" groups=["terrain_zones"]]
+position = Vector2(8700.0, 0.0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("terrain")
+kind = 2
+
+[node name="Shape" type="CollisionShape2D" parent="Sections/Combined/CombinedRock"]
+shape = SubResource("Terrain_combinedrock")
+
+[node name="CombinedSlab" type="Polygon2D" parent="Sections/Combined"]
+position = Vector2(9240, 0)
+polygon = PackedVector2Array(-350.0, -550.0, 350.0, -550.0, 350.0, 550.0, -350.0, 550.0)
+color = Color(0.62, 0.52, 0.34, 1)
+
+[node name="Title" type="Label" parent="Sections/Combined"]
+offset_left = 8600.0
+offset_top = -560.0
+offset_right = 9060.0
+offset_bottom = -530.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "COMBINED EXERCISE"
+
+[node name="Player" parent="." instance=ExtResource("player")]
+position = Vector2(-1520, 0)
+
+[node name="TacticalCamera" parent="Player" index="6"]
+limit_left = -1720
+limit_top = -660
+limit_right = 9800
+limit_bottom = 660
+
+[node name="Allies" type="Node2D" parent="."]
+
+[node name="Scout" parent="Allies" instance=ExtResource("ally")]
+position = Vector2(2780, 140)
+
+[node name="Highlight_Scout" type="Node2D" parent="Allies/Scout"]
+script = ExtResource("marker")
+radius = 34.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="Warrior" parent="Allies" instance=ExtResource("ally")]
+position = Vector2(2780, -140)
+data = ExtResource("warrior")
+follow_offset = Vector2(60, 70)
+selection_slot = 3
+
+[node name="Highlight_Warrior" type="Node2D" parent="Allies/Warrior"]
+script = ExtResource("marker")
+radius = 34.0
+color = Color(0.6, 0.95, 1, 1)
+
+[node name="SquadManager" type="Node2D" parent="." groups=["squad_manager"] node_paths=PackedStringArray("player")]
+z_index = 5
+script = ExtResource("squad")
+player = NodePath("../Player")
+commands_enabled = false
+
+[node name="WormEvent" type="Node2D" parent="."]
+z_index = 3
+script = ExtResource("wormevent")
+
+[node name="WormThreat" type="Node2D" parent="." node_paths=PackedStringArray("event") groups=["worm_threat"]]
+z_index = 2
+script = ExtResource("wormthreat")
+event = NodePath("../WormEvent")
+
+[node name="WormWarnings" type="Node" parent="." node_paths=PackedStringArray("manager", "player")]
+script = ExtResource("wormwarn")
+manager = NodePath("../WormThreat")
+player = NodePath("../Player")
+
+[node name="ReconManager" type="Node2D" parent="." groups=["recon_manager"]]
+z_index = 4
+script = ExtResource("recon")
+
+[node name="TutorialManager" type="Node2D" parent="." node_paths=PackedStringArray("player", "squad", "prompt")]
+script = ExtResource("tutorial")
+player = NodePath("../Player")
+squad = NodePath("../SquadManager")
+prompt = NodePath("../TutorialPrompt")
+
+[node name="UI" parent="." node_paths=PackedStringArray("player", "squad", "recon") instance=ExtResource("ui")]
+player = NodePath("../Player")
+squad = NodePath("../SquadManager")
+recon = NodePath("../ReconManager")
+
+[node name="Title" parent="UI/Screen" index="0"]
+text = "ARRAKEEN TRAINING
+Atreides residency - practice yards"
+
+[node name="Controls" parent="UI/Screen" index="1"]
+text = "WASD Move   CTRL Crouch   SHIFT Sprint   LMB Fire   E Knife   Q Prescience   F Interact   R Reload   TAB Squad   F1 Debug"
+
+[node name="TutorialPrompt" parent="." node_paths=PackedStringArray("manager") instance=ExtResource("prompt")]
+manager = NodePath("../TutorialManager")
+
+[editable path="Player"]

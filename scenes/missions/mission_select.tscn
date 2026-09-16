@@ -1,0 +1,75 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/mission_select.gd" id="1_select"]
+
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+bg_color = Color(0.07, 0.08, 0.1, 1)
+
+[node name="MissionSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_select")
+
+[node name="Background" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -140.0
+offset_right = 280.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 18
+
+[node name="Heading" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.78, 0.42, 1)
+theme_override_font_sizes/font_size = 30
+text = "DUNE PROTOTYPE"
+horizontal_alignment = 1
+
+[node name="Subheading" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.84, 1)
+theme_override_font_sizes/font_size = 15
+text = "Developer launcher"
+horizontal_alignment = 1
+
+[node name="Buttons" type="VBoxContainer" parent="Rows"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Tutorial" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "1  -  Play Tutorial (Arrakeen Training)"
+
+[node name="Arena" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "2  -  Open Test Arena (Harvester Raid)"
+
+[node name="Footer" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.64, 0.66, 1)
+theme_override_font_sizes/font_size = 13
+text = "The test arena remains the isolated technical sandbox for system debugging."
+horizontal_alignment = 1

@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[node name="RockFormation" type="StaticBody2D"]
+collision_layer = 1
+collision_mask = 2
+
+[node name="Shadow" type="Polygon2D" parent="."]
+position = Vector2(22, 22)
+polygon = PackedVector2Array(-74, -20, -44, -53, 29, -49, 70, -14, 57, 39, 0, 52, -62, 30)
+color = Color(0.26, 0.2, 0.14, 0.3)
+
+[node name="Base" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-74, -20, -44, -53, 29, -49, 70, -14, 57, 39, 0, 52, -62, 30)
+color = Color(0.34, 0.29, 0.23, 1)
+
+[node name="TopFace" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-74, -20, -44, -53, 29, -49, 70, -14, 27, 16, -39, 8)
+color = Color(0.54, 0.46, 0.34, 1)
+
+[node name="LightFace" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-44, -53, 29, -49, 10, -25, -39, 8, -74, -20)
+color = Color(0.65, 0.56, 0.41, 1)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+polygon = PackedVector2Array(-74, -20, -44, -53, 29, -49, 70, -14, 57, 39, 0, 52, -62, 30)

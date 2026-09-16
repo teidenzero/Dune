@@ -1,0 +1,44 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/characters/test_dummy.gd" id="1_dummy"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
+
+[sub_resource type="CircleShape2D" id="Shape"]
+radius = 19.0
+
+[node name="TestDummy" type="StaticBody2D"]
+collision_layer = 2
+collision_mask = 2
+script = ExtResource("1_dummy")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+max_health = 100.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Shape")
+
+[node name="Visuals" type="Node2D" parent="."]
+
+[node name="Base" type="Polygon2D" parent="Visuals"]
+polygon = PackedVector2Array(-22, -8, -8, -22, 8, -22, 22, -8, 22, 8, 8, 22, -8, 22, -22, 8)
+color = Color(0.26, 0.22, 0.19, 1)
+
+[node name="Target" type="Polygon2D" parent="Visuals"]
+polygon = PackedVector2Array(-15, -7, -7, -15, 7, -15, 15, -7, 15, 7, 7, 15, -7, 15, -15, 7)
+color = Color(0.8, 0.35, 0.17, 1)
+
+[node name="Center" type="Polygon2D" parent="Visuals"]
+polygon = PackedVector2Array(0, -8, 8, 0, 0, 8, -8, 0)
+color = Color(1, 0.87, 0.58, 1)
+
+[node name="Status" type="Label" parent="."]
+offset_left = -100.0
+offset_top = -62.0
+offset_right = 100.0
+offset_bottom = -25.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.17, 0.15, 0.13, 1)
+theme_override_font_sizes/font_size = 13
+text = "TARGET\n100 / 100 HP"
+horizontal_alignment = 1

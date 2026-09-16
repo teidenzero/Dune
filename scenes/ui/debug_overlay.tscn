@@ -1,0 +1,213 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/debug_overlay.gd" id="1_ui"]
+[ext_resource type="Script" path="res://scripts/ui/combat_hud.gd" id="2_combat"]
+[ext_resource type="Script" path="res://scripts/ui/squad_hud.gd" id="3_squad"]
+
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+bg_color = Color(0.09, 0.12, 0.13, 0.9)
+border_width_left = 2
+border_color = Color(0.54, 0.78, 0.77, 1)
+
+[sub_resource type="StyleBoxFlat" id="Style_squad"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.09, 0.12, 0.13, 0.9)
+border_width_left = 2
+border_color = Color(0.54, 0.78, 0.77, 1)
+
+[node name="UI" type="CanvasLayer"]
+script = ExtResource("1_ui")
+
+[node name="Screen" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Screen"]
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 500.0
+offset_bottom = 70.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.16, 0.19, 0.18, 1)
+theme_override_font_sizes/font_size = 20
+text = "HARVESTER RAID\nSquad test - flank the rocks toward the patrols"
+
+[node name="Controls" type="Label" parent="Screen"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -42.0
+offset_right = -24.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.16, 0.19, 0.18, 1)
+theme_override_font_sizes/font_size = 16
+text = "WASD Move   CTRL Crouch   SHIFT Sprint   MOUSE Aim   LMB Fire   E Knife (hold = slow)   Q Prescience   R Reload   TAB Squad   F1 Debug"
+
+[node name="DebugPanel" type="PanelContainer" parent="Screen"]
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -410.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="Margin" type="MarginContainer" parent="Screen/DebugPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="Scroll" type="ScrollContainer" parent="Screen/DebugPanel/Margin"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+horizontal_scroll_mode = 0
+
+[node name="Metrics" type="GridContainer" parent="Screen/DebugPanel/Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 4
+columns = 2
+
+[node name="CombatHUD" type="PanelContainer" parent="Screen"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -232.0
+offset_right = 306.0
+offset_bottom = -60.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Style_panel")
+script = ExtResource("2_combat")
+
+[node name="Margin" type="MarginContainer" parent="Screen/CombatHUD"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="Rows" type="VBoxContainer" parent="Screen/CombatHUD/Margin"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Weapon" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+layout_mode = 2
+mouse_filter = 2
+text = "Weapon: Maula Pistol"
+
+[node name="Ammo" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+layout_mode = 2
+mouse_filter = 2
+text = "Ammo: 8 / 8"
+
+[node name="Status" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+text = "Reloading..."
+
+[node name="Health" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+layout_mode = 2
+mouse_filter = 2
+text = "HP: 100 / 100"
+
+[node name="Down" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.65, 0.4, 1)
+text = "PLAYER DOWN\nENTER - restart mission"
+
+[node name="Stealth" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+layout_mode = 2
+mouse_filter = 2
+text = "STANDING | Noise: 0"
+
+[node name="Melee" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+layout_mode = 2
+mouse_filter = 2
+text = "Crysknife: READY"
+
+[node name="Prescience" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+layout_mode = 2
+mouse_filter = 2
+text = "PRESCIENCE"
+
+[node name="Worm" type="Label" parent="Screen/CombatHUD/Margin/Rows"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+text = "WORM SIGN"
+
+[node name="SquadHUD" type="PanelContainer" parent="Screen"]
+offset_left = 24.0
+offset_top = 95.0
+offset_right = 390.0
+offset_bottom = 240.0
+mouse_filter = 0
+theme_override_styles/panel = SubResource("Style_squad")
+script = ExtResource("3_squad")
+
+[node name="Rows" type="VBoxContainer" parent="Screen/SquadHUD"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Mode" type="Label" parent="Screen/SquadHUD/Rows"]
+layout_mode = 2
+mouse_filter = 2
+text = "FREMEN SQUAD"
+
+[node name="Scout" type="Label" parent="Screen/SquadHUD/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Warrior" type="Label" parent="Screen/SquadHUD/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Status" type="Label" parent="Screen/SquadHUD/Rows"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.45, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="Help" type="Label" parent="Screen/SquadHUD/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 14
+
+[node name="CommandCursor" type="Label" parent="Screen"]
+visible = false
+mouse_filter = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_outline_color = Color(0.05, 0.08, 0.07, 1)
+theme_override_constants/outline_size = 4
