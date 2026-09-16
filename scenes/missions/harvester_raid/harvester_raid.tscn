@@ -176,26 +176,32 @@ kind = 2
 shape = SubResource("T_midrock")
 
 [node name="Slab_StartRock" type="Polygon2D" parent="Environment"]
+z_index = -9
 polygon = PackedVector2Array(-337.5, 1300.0, 337.5, 1300.0, 450.0, 1365.0, 450.0, 1755.0, 337.5, 1820.0, -337.5, 1820.0, -450.0, 1755.0, -450.0, 1365.0)
 color = Color(0.5, 0.44, 0.35, 1)
 
 [node name="Slab_ExtractionRock" type="Polygon2D" parent="Environment"]
+z_index = -9
 polygon = PackedVector2Array(-412.5, -1820.0, 412.5, -1820.0, 550.0, -1750.0, 550.0, -1330.0, 412.5, -1260.0, -412.5, -1260.0, -550.0, -1330.0, -550.0, -1750.0)
 color = Color(0.5, 0.44, 0.35, 1)
 
 [node name="Slab_WestRidge" type="Polygon2D" parent="Environment"]
+z_index = -9
 polygon = PackedVector2Array(-1695.0, 190.0, -1305.0, 190.0, -1240.0, 247.5, -1240.0, 592.5, -1305.0, 650.0, -1695.0, 650.0, -1760.0, 592.5, -1760.0, 247.5)
 color = Color(0.5, 0.44, 0.35, 1)
 
 [node name="Slab_EastRidge" type="Polygon2D" parent="Environment"]
+z_index = -9
 polygon = PackedVector2Array(1300.0, -140.0, 1660.0, -140.0, 1720.0, -75.0, 1720.0, 315.0, 1660.0, 380.0, 1300.0, 380.0, 1240.0, 315.0, 1240.0, -75.0)
 color = Color(0.5, 0.44, 0.35, 1)
 
 [node name="Slab_CommsRock" type="Polygon2D" parent="Environment"]
+z_index = -9
 polygon = PackedVector2Array(-1277.5, -310.0, -962.5, -310.0, -910.0, -267.5, -910.0, -12.5, -962.5, 30.0, -1277.5, 30.0, -1330.0, -12.5, -1330.0, -267.5)
 color = Color(0.5, 0.44, 0.35, 1)
 
 [node name="Slab_MidRock" type="Polygon2D" parent="Environment"]
+z_index = -9
 polygon = PackedVector2Array(462.5, 600.0, 777.5, 600.0, 830.0, 640.0, 830.0, 880.0, 777.5, 920.0, 462.5, 920.0, 410.0, 880.0, 410.0, 640.0)
 color = Color(0.5, 0.44, 0.35, 1)
 

@@ -21,7 +21,8 @@ func _run() -> void:
 	await _suspicion_memory()
 	await _hearing_and_priorities()
 	await _independent_guards_and_impacts()
-	_check(completed == 5, "all stealth scenarios completed")
+	await _vision_cones()
+	_check(completed == 6, "all stealth scenarios completed")
 	print("STEALTH SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
 
@@ -315,6 +316,59 @@ func _footsteps(radius: float, priority: int) -> int:
 		if event.type == DisturbanceBus.Type.FOOTSTEP and event.radius == radius and event.priority == priority:
 			count += 1
 	return count
+
+
+# --------------------------------------------------------------------------
+# Scenario 6 - the cone the player is told to stay out of is on screen
+# --------------------------------------------------------------------------
+
+func _vision_cones() -> void:
+	await _setup()
+	var cone: VisionCone = guard.get_node("VisionCone")
+	_check(cone != null, "every guard carries a vision cone")
+	_check(not get_root().get_node("GameManager").debug_visible, "F1 diagnostics are off")
+	await _frames(20)
+	_check(cone.visible and cone.should_draw(), "the cone is drawn in normal play, not only under F1")
+	_check(cone.z_index == VisionCone.CONE_Z and VisionCone.CONE_Z > VisionCone.GROUND_Z, "it sits above the ground and below the actors")
+	_check(mission.get_node("Environment/DesertGround").z_index == VisionCone.GROUND_Z, "and the ground is behind that band")
+	# It has to be the perception the guard actually uses, or it teaches a lie.
+	var reach: float = 0.0
+	for point: Vector2 in cone._shape:
+		reach = maxf(reach, point.length())
+	_check(reach <= guard.perception.vision_distance + 1.0, "the cone reaches no further than the guard can see")
+	_check(reach > guard.perception.vision_distance * 0.5, "and is not a token stub")
+	var span: float = cone._shape[1].angle_to(cone._shape[cone._shape.size() - 1])
+	_check(absf(rad_to_deg(absf(span)) - guard.perception.field_of_view_degrees) < 2.0, "and spans the guard's real field of view")
+	# Colour is the same language the detection meter over his head speaks.
+	_check(cone._color == DetectionIndicator.CALM, "an unaware guard's cone is calm")
+	guard.perception.priority_target = player
+	player.position = guard.position + Vector2.LEFT * 150.0
+	guard.face_position(player.global_position)
+	var waited: int = 0
+	while guard.perception.detection_value <= 0.0 and waited < 240:
+		await _frames(10)
+		waited += 10
+	await _frames(cone.segments)
+	_check(guard.perception.detection_value > 0.0, "the guard starts noticing Paul")
+	_check(cone._color != DetectionIndicator.CALM, "and his cone warms to say so")
+	_check(cone._color == DetectionIndicator.alert_color(guard), "cone and detection meter read from one palette")
+	# Rock stops sight, so it has to stop the cone too - and only where the rock
+	# actually is, which is the difference between clipping and just shrinking.
+	guard.position = Vector2(-270, 150)
+	guard.face_position(Vector2(400, 150))
+	guard.perception.priority_target = null
+	await _frames(cone.segments + 20)
+	var ahead: float = cone._shape[1 + cone.segments / 2].length()
+	var furthest: float = 0.0
+	for point: Vector2 in cone._shape:
+		furthest = maxf(furthest, point.length())
+	_check(ahead < guard.perception.vision_distance * 0.8, "the rock ahead of the guard cuts his cone short")
+	_check(furthest > ahead + 100.0, "while the rays either side of it still run their full length")
+	# And a body has no field of view.
+	guard.health.die()
+	await _frames(10)
+	_check(not cone.should_draw() and not cone.visible, "a dead guard's cone is gone")
+	completed += 1
 
 
 func _capture(label: String) -> void:

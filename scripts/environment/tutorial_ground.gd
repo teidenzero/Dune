@@ -10,6 +10,13 @@ extends Node2D
 @export var detail_seed: int = 17
 
 
+func _ready() -> void:
+	# Ground art sits behind everything, which is what leaves the band just
+	# above it free for things painted on the ground - vision cones, for one.
+	# See VisionCone.GROUND_Z / VisionCone.CONE_Z.
+	z_index = VisionCone.GROUND_Z
+
+
 func _draw() -> void:
 	draw_rect(courtyard_rect.grow(60.0), Color("2a2724"))
 	draw_rect(courtyard_rect, stone_color)

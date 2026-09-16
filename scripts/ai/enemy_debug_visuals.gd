@@ -46,18 +46,8 @@ func _draw() -> void:
 	if not is_instance_valid(actor) or actor.ai == null or actor.health.is_dead:
 		return
 	var perception: PerceptionComponent = actor.perception
-	var angle: float = actor.aim_pivot.global_rotation - global_rotation
-	var half_fov: float = deg_to_rad(perception.field_of_view_degrees * 0.5)
-	var color: Color = Color(0.45, 0.85, 0.95, 0.55)
-	var cone: PackedVector2Array = PackedVector2Array([Vector2.ZERO])
-	for index in range(17):
-		cone.append(Vector2.RIGHT.rotated(angle - half_fov + 2.0 * half_fov * index / 16.0) * perception.vision_distance)
-	draw_colored_polygon(cone, Color(0.4, 0.8, 0.9, 0.06))
-	draw_line(Vector2.ZERO, cone[1], color, 1.0)
-	draw_line(Vector2.ZERO, cone[17], color, 1.0)
-	for edge in [-1.0, 1.0]:
-		draw_line(Vector2.ZERO, Vector2.RIGHT.rotated(angle + edge * half_fov * 0.55) * perception.vision_distance, Color(0.7, 0.9, 1.0, 0.3), 1.0)
-	draw_arc(Vector2.ZERO, perception.vision_distance, angle - half_fov, angle + half_fov, 32, color, 1.0, true)
+	# The cone itself is VisionCone's job and is on screen at all times now.
+	# What is left here is everything a player is not meant to see.
 	if is_instance_valid(perception.target):
 		var ray_color: Color = Color.GREEN if perception.can_see_target else Color(0.85, 0.35, 0.25, 0.5)
 		draw_line(Vector2.ZERO, to_local(perception.target.global_position), ray_color, 1.0)

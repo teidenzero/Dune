@@ -7,6 +7,13 @@ extends Node2D
 @export var detail_seed: int = 41
 
 
+func _ready() -> void:
+	# Ground art sits behind everything, which is what leaves the band just
+	# above it free for things painted on the ground - vision cones, for one.
+	# See VisionCone.GROUND_Z / VisionCone.CONE_Z.
+	z_index = VisionCone.GROUND_Z
+
+
 func _draw() -> void:
 	draw_rect(arena_rect, sand_color)
 	var random: RandomNumberGenerator = RandomNumberGenerator.new()

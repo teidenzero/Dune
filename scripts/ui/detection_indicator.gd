@@ -1,5 +1,14 @@
+class_name DetectionIndicator
 extends Node2D
 ## Read-only feedback for this observer; independent of F1 diagnostics.
+
+## One alert palette for every player-facing readout, so the cone drawn on the
+## ground and the meter drawn over the guard's head can never disagree.
+const CALM: Color = Color(0.62, 0.80, 0.88)
+const NOTICING: Color = Color(0.95, 0.9, 0.65)
+const SUSPICIOUS: Color = Color(1.0, 0.78, 0.25)
+const ALERT: Color = Color(1.0, 0.5, 0.15)
+const DETECTED: Color = Color(1.0, 0.3, 0.2)
 
 @export var visible_threshold: float = 5.0
 @onready var actor: EnemyCharacter = get_parent() as EnemyCharacter
@@ -17,20 +26,38 @@ func _process(_delta: float) -> void:
 		return
 	_fill = clampf(perception.detection_value / maxf(perception.detection_max, 1.0), 0.0, 1.0)
 	label.text = "NOTICING"
-	_color = Color(0.95, 0.9, 0.65)
+	_color = alert_color(actor)
 	if investigating or perception.perception_state == PerceptionComponent.Awareness.SUSPICIOUS:
 		label.text = "? SUSPICIOUS"
-		_color = Color(1.0, 0.78, 0.25)
 	if perception.perception_state == PerceptionComponent.Awareness.ALERT:
 		label.text = "! NEARLY DETECTED"
-		_color = Color(1.0, 0.5, 0.15)
 	if combat or perception.perception_state == PerceptionComponent.Awareness.DETECTED:
 		label.text = "! DETECTED"
-		_color = Color(1.0, 0.3, 0.2)
 		if combat and is_instance_valid(actor.ai.target) and actor.ai.target.is_in_group("allies"):
 			label.text = "! ENGAGING FREMEN"
 	label.modulate = _color
 	queue_redraw()
+
+
+## How alarmed this observer is, as a colour. Shared with the vision cone.
+static func alert_color(observer: EnemyCharacter) -> Color:
+	if not is_instance_valid(observer) or observer.perception == null or observer.ai == null:
+		return CALM
+	var perception: PerceptionComponent = observer.perception
+	if observer.ai.state == EnemyAIController.State.COMBAT or perception.perception_state == PerceptionComponent.Awareness.DETECTED:
+		return DETECTED
+	if perception.perception_state == PerceptionComponent.Awareness.ALERT:
+		return ALERT
+	var investigating: bool = observer.ai.state in [
+		EnemyAIController.State.SUSPICIOUS,
+		EnemyAIController.State.INVESTIGATE,
+		EnemyAIController.State.SEARCH,
+	]
+	if investigating or perception.perception_state == PerceptionComponent.Awareness.SUSPICIOUS:
+		return SUSPICIOUS
+	if perception.detection_value > 0.0:
+		return NOTICING
+	return CALM
 
 
 func _draw() -> void:

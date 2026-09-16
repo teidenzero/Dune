@@ -89,6 +89,7 @@ script = ExtResource("ground")
 courtyard_rect = Rect2(-1680.0, -620.0, 11440.0, 1240.0)
 
 [node name="Floor" type="Node2D" parent="Environment"]
+z_index = -9
 
 [node name="Floor_movement" type="Polygon2D" parent="Environment/Floor"]
 polygon = PackedVector2Array(-1680.0, -620.0, -700.0, -620.0, -700.0, 620.0, -1680.0, 620.0)

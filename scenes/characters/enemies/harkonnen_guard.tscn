@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/characters/enemy_character.gd" id="1_actor"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/ui/detection_indicator.gd" id="8_indicator"]
 [ext_resource type="Script" path="res://scripts/worm/terrain_safety_component.gd" id="9_terrain"]
 [ext_resource type="Script" path="res://scripts/worm/worm_sign_emitter.gd" id="10_worm"]
+[ext_resource type="Script" path="res://scripts/ai/vision_cone.gd" id="11_cone"]
 
 [sub_resource type="CircleShape2D" id="Shape"]
 radius = 14.0
@@ -69,6 +70,11 @@ avoidance_enabled = false
 script = ExtResource("5_sight")
 actor = NodePath("..")
 facing = NodePath("../AimPivot")
+
+[node name="VisionCone" type="Node2D" parent="." node_paths=PackedStringArray("actor", "perception")]
+script = ExtResource("11_cone")
+actor = NodePath("..")
+perception = NodePath("../Perception")
 
 [node name="AIController" type="Node" parent="."]
 script = ExtResource("6_ai")

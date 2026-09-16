@@ -62,9 +62,13 @@ a sandworm. Rock is silent and rock is safe. Safe rock is drawn as grey stone;
 sand is the tan ground. Sprinting across sand is loud, walking less so,
 crouching almost nothing. Gunfire is very loud.
 
-**Being seen is not instant.** Enemies build up detection and investigate
-before they commit. Breaking line of sight while they are still suspicious
-works. Once they are actually in combat, it does not.
+**Being seen is not instant.** Every enemy's field of view is drawn on the
+ground, and it stops where walls and rocks stop it — if the cone does not reach
+you, he cannot see you. Standing in one does not give you away immediately
+either: enemies build up detection first, and the meter over their head shows
+how far along they are. The cone warms from pale to amber to red as that
+happens. Breaking line of sight while a guard is still only suspicious works.
+Once he is actually in combat, it does not.
 
 ## Feedback that helps
 
