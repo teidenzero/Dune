@@ -49,7 +49,12 @@ Running the project opens a small launcher. Press the number or click:
 | `G` / `H` | Follow / Hold |
 | `MMB` | Watch the selected ally |
 | `Enter` | Restart after death |
+| Mouse wheel | Zoom out to plan / in for detail |
 | `F1` | Debug overlay |
+
+The camera opens at a planning distance — wide enough to see a whole enemy
+vision cone. Roll the wheel out to take in the site before you commit, and in
+when you need to work at close range.
 
 ## Three things worth knowing
 

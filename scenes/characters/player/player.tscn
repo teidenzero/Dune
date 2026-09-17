@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scripts/characters/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/systems/tactical_camera.gd" id="2_camera"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://scripts/prescience/prescience_visuals.gd" id="14_prescvis"]
 [ext_resource type="Script" path="res://scripts/worm/terrain_safety_component.gd" id="15_terrain"]
 [ext_resource type="Script" path="res://scripts/worm/worm_sign_emitter.gd" id="16_worm"]
+[ext_resource type="Script" path="res://scripts/ui/world_label.gd" id="95_worldlabel"]
 
 [sub_resource type="CircleShape2D" id="Circle_body"]
 radius = 12.0
@@ -69,6 +70,8 @@ polygon = PackedVector2Array(39, 0, 29, -5, 29, 5)
 color = Color(0.54, 0.92, 0.92, 1)
 
 [node name="NameLabel" type="Label" parent="."]
+script = ExtResource("95_worldlabel")
+screen_font_size = 13
 offset_left = -30.0
 offset_top = -38.0
 offset_right = 30.0

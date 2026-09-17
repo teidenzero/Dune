@@ -102,8 +102,17 @@ func _run() -> void:
 	var camera: Camera2D = player.get_node("TacticalCamera")
 	await _frames(90)
 	_check(camera.is_current() and camera.position_smoothing_enabled, "smooth tactical camera active")
-	_check(camera.position.length() <= camera.mouse_look_strength + 0.1, "mouse look remains bounded")
+	# Mouse look is a constant offset on screen, so its world-space reach grows
+	# as the view widens. Bounded means bounded against that, not against a
+	# constant that only held while the camera sat at zoom 1.0.
+	_check(camera.position.length() <= camera.look_reach() + 0.1, "mouse look remains bounded")
+	_check(camera.look_reach() > camera.mouse_look_strength, "and its world reach follows the widened default view")
+	# Mouse look travels further in world space now that the view is wider, so
+	# the same smoothing rate needs longer to converge. Measured: it settles to
+	# under half a pixel; this waits for that rather than sampling mid-glide.
+	await _frames(120)
 	_check(camera.get_screen_center_position().distance_to(player.position + camera.position) < 4.0, "camera settles on player with look offset")
+	_check(camera.sees(player.position, 80.0), "and Paul stays comfortably on screen")
 	var expected_aim: Vector2 = (player.get_global_mouse_position() - player.global_position).normalized()
 	_check(player.aim_direction.dot(expected_aim) > 0.99, "aim points to world mouse position")
 	Input.action_press("move_down")

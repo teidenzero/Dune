@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/characters/ally_character.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/worm/terrain_safety_component.gd" id="9"]
 [ext_resource type="Script" path="res://scripts/worm/worm_sign_emitter.gd" id="10"]
 [ext_resource type="Script" path="res://scripts/components/stealth_profile.gd" id="90_stealth"]
+[ext_resource type="Script" path="res://scripts/ui/world_label.gd" id="95_worldlabel"]
 [sub_resource type="CircleShape2D" id="Shape"]
 radius = 13.0
 
@@ -85,6 +86,8 @@ vision_radius = 650.0
 observer_label = "Fremen Scout"
 
 [node name="NameLabel" type="Label" parent="."]
+script = ExtResource("95_worldlabel")
+screen_font_size = 12
 offset_left = -65.0
 offset_top = -40.0
 offset_right = 65.0
@@ -98,6 +101,8 @@ mouse_filter = 2
 script = ExtResource("5")
 
 [node name="Details" type="Label" parent="SelectionIndicator"]
+script = ExtResource("95_worldlabel")
+screen_font_size = 12
 visible = false
 offset_left = -120.0
 offset_top = 42.0

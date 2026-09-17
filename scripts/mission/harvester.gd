@@ -88,7 +88,8 @@ func _draw() -> void:
 
 
 func _label(font: Font, text: String, color: Color) -> void:
-	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+	var size: int = WorldLabel.font_size(self, 16)
+	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var point: Vector2 = Vector2(-width * 0.5, -250)
-	draw_string_outline(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, 5, Color(0.06, 0.05, 0.04))
-	draw_string(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)
+	draw_string_outline(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 5, Color(0.06, 0.05, 0.04))
+	draw_string(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)

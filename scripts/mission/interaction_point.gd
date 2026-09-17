@@ -118,7 +118,8 @@ func _draw() -> void:
 	if not near:
 		return
 	var text: String = "[F] %s" % label
-	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-	var point: Vector2 = Vector2(-width * 0.5, -52.0)
-	draw_string_outline(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, 4, Color(0.05, 0.07, 0.08))
-	draw_string(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.85, 0.97, 1.0))
+	var size: int = WorldLabel.font_size(self, 14)
+	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var point: Vector2 = Vector2(-width * 0.5, -52.0 - (size - 14) * 0.5)
+	draw_string_outline(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color(0.05, 0.07, 0.08))
+	draw_string(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0.85, 0.97, 1.0))

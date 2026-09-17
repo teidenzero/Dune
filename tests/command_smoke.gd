@@ -92,7 +92,8 @@ func _camera_modes_and_framing() -> void:
 	await _frames(40)
 	_check(camera.mode == TacticalCamera.Mode.FOLLOW_SELECTION, "command mode with a selected ally frames the selection")
 	_check(camera.framing_subjects.has(player) and camera.framing_subjects.has(scout), "close separation frames Paul and the Scout together")
-	_check(is_equal_approx(camera.zoom.x, camera.max_tactical_zoom), "separation inside the dead zone keeps normal zoom")
+	_check(is_equal_approx(camera.tactical_zoom(), camera.planning_zoom_ceiling()), "separation inside the dead zone keeps normal zoom")
+	_check(camera.planning_zoom_ceiling() <= camera.gameplay_zoom, "and command mode never zooms in tighter than the gameplay view")
 	var near_zoom: float = camera.zoom.x
 	# Medium separation: both stay framed, the camera zooms out to hold them.
 	_place(scout, player.global_position + Vector2(0, 780))
@@ -106,14 +107,17 @@ func _camera_modes_and_framing() -> void:
 	await _frames(160)
 	_check(not camera.framing_subjects.has(player) and camera.framing_subjects.has(scout), "large separation drops Paul and anchors on the Scout")
 	_check(camera.zoom.x > wide_zoom, "a single distant anchor stops zooming out")
-	_check(camera.anchor.distance_to(scout.global_position) < 320, "camera travels to the distant Scout")
+	# Against a mission edge the camera cannot centre on him without showing
+	# past the map, so what matters is that he is on screen, not centred.
+	_check(camera.sees(scout.global_position, 40.0), "the distant Scout stays on screen")
+	_check(camera.anchor.distance_to(scout.global_position) < camera.anchor.distance_to(player.global_position), "and the camera has travelled toward him, away from Paul")
 	_check(camera.anchor.distance_to(player.global_position) > 700, "Paul is allowed to leave the framed area")
 	_check(squad.link_state(scout) == Link.OUT_OF_RANGE, "camera still observes an ally that lost its command link")
 	# Focusing Paul again returns the camera without leaving it stranded.
 	squad.select_slot(1)
 	await _frames(150)
 	_check(camera.mode == TacticalCamera.Mode.FOLLOW_PAUL, "clearing the selection restores FOLLOW_PAUL")
-	_check(camera.anchor.distance_to(player.global_position) < 90, "camera returns to Paul")
+	_check(camera.anchor.distance_to(player.global_position) < camera.look_reach() + 20.0, "camera returns to Paul")
 	_check(absf(camera.zoom.x - camera.gameplay_zoom) < 0.02, "gameplay zoom is restored")
 	squad.set_command_mode(false)
 	await _frames(20)
@@ -129,7 +133,7 @@ func _camera_modes_and_framing() -> void:
 	_button(MOUSE_BUTTON_MIDDLE, false)
 	await _frames(150)
 	_check(not camera.focus_hold and camera.mode == TacticalCamera.Mode.FOLLOW_PAUL, "releasing middle mouse ends temporary focus")
-	_check(camera.anchor.distance_to(player.global_position) < 90, "the camera eases back to Paul after temporary focus")
+	_check(camera.anchor.distance_to(player.global_position) < camera.look_reach() + 20.0, "the camera eases back to Paul after temporary focus")
 	squad.clear_selection()
 	completed += 1
 

@@ -42,7 +42,8 @@ func _draw() -> void:
 		Vector2(0, tip + 16.0), Vector2(-9, tip), Vector2(9, tip)]), Color(color, 0.9))
 	if label != "":
 		var font: Font = ThemeDB.fallback_font
-		var width: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		var size: int = WorldLabel.font_size(self, 13)
+		var width: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 		var point: Vector2 = Vector2(-width * 0.5, radius + 22.0)
-		draw_string_outline(font, point, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, 4, Color(0.06, 0.07, 0.09))
-		draw_string(font, point, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(color, 0.95))
+		draw_string_outline(font, point, label, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color(0.06, 0.07, 0.09))
+		draw_string(font, point, label, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, 0.95))

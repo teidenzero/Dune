@@ -14,7 +14,7 @@ enum Mode { FOLLOW_PAUL, FOLLOW_SELECTION, TACTICAL_FREE }
 @export_range(0.1, 20.0, 0.1) var follow_smoothing: float = 7.0
 @export_range(0.0, 200.0, 1.0) var mouse_look_strength: float = 75.0
 @export_range(0.1, 20.0, 0.1) var mouse_look_smoothing: float = 5.0
-@export var gameplay_zoom: float = 1.0
+@export var gameplay_zoom: float = 0.62
 
 @export_group("Tactical framing")
 @export var tactical_smoothing: float = 6.0
@@ -27,7 +27,9 @@ enum Mode { FOLLOW_PAUL, FOLLOW_SELECTION, TACTICAL_FREE }
 ## Fraction of the viewport the framed box should occupy before zooming out.
 @export_range(0.2, 1.0) var frame_fill: float = 0.68
 ## Most zoomed-out value; keep above the viewport/arena ratio so bounds stay sane.
-@export var min_tactical_zoom: float = 0.62
+@export var min_tactical_zoom: float = 0.5
+## Never closer than the gameplay view: tactical framing exists to pull back for
+## planning, so it must not zoom *in* the moment the player enters command mode.
 @export var max_tactical_zoom: float = 1.0
 @export var zoom_smoothing: float = 3.5
 ## Hysteresis: ignore smaller zoom requests so the camera does not feel nervous.
@@ -40,6 +42,16 @@ enum Mode { FOLLOW_PAUL, FOLLOW_SELECTION, TACTICAL_FREE }
 @export var shake_decay: float = 2.4
 @export var shake_strength: float = 26.0
 @export var shake_frequency: float = 26.0
+
+@export_group("Player zoom")
+## The mouse wheel scales the resolved zoom. Planning distance is a preference,
+## so it is the player's to set rather than something the camera decides.
+@export var player_zoom_enabled: bool = true
+@export_range(0.05, 0.5, 0.01) var player_zoom_step: float = 0.08
+## Closest the player may pull in. The far end is computed per scene from the
+## camera limits, so no mission can be zoomed out past its own edges.
+@export var player_zoom_max: float = 1.9
+@export var player_zoom_smoothing: float = 10.0
 
 @export_group("Tactical pan")
 @export var tactical_pan_speed: float = 900.0
@@ -66,6 +78,8 @@ var _trauma: float = 0.0
 var _shake_time: float = 0.0
 ## Edge scrolling follows the pointer through motion events rather than the
 ## polled cursor, so a stale default position cannot pan the camera on its own.
+var _player_zoom: float = 1.0
+var _player_zoom_target: float = 1.0
 var _pointer_seen: bool = false
 var _pointer_position: Vector2 = Vector2.ZERO
 
@@ -103,6 +117,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pointer_seen = true
 		_pointer_position = event.position
 		return
+	if player_zoom_enabled and event is InputEventMouseButton and event.pressed:
+		var step: float = 0.0
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			step = player_zoom_step
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			step = -player_zoom_step
+		if step != 0.0:
+			_player_zoom_target = clampf(_player_zoom_target + step, _minimum_player_zoom(), player_zoom_max)
+			get_viewport().set_input_as_handled()
+			return
 	if not InputMap.has_action("camera_focus_selection"):
 		return
 	if event.is_action_pressed("camera_focus_selection"):
@@ -228,21 +252,75 @@ func _resolve_shared_frame(subjects: Array[Node2D]) -> float:
 	framing_bounds = bounds
 	_frame_center = bounds.get_center()
 	if framing_separation <= shared_frame_start_distance:
-		return max_tactical_zoom
+		return planning_zoom_ceiling()
 	var view: Vector2 = get_viewport_rect().size
 	var usable: Vector2 = view * frame_fill
 	# Equal screen-space margin, not equal world-space margin.
 	var pad: Vector2 = Vector2(frame_padding, frame_padding * view.y / maxf(view.x, 1.0))
 	var needed: Vector2 = bounds.size + pad * 2.0
 	var fit: float = minf(usable.x / maxf(needed.x, 1.0), usable.y / maxf(needed.y, 1.0))
-	return clampf(fit, min_tactical_zoom, max_tactical_zoom)
+	return clampf(fit, min_tactical_zoom, planning_zoom_ceiling())
 
 
 func _commit_zoom(desired: float, unscaled: float) -> void:
 	if absf(desired - _zoom_target) > zoom_change_threshold or is_equal_approx(desired, gameplay_zoom):
 		_zoom_target = desired
 	_zoom_value = lerpf(_zoom_value, _zoom_target, 1.0 - exp(-zoom_smoothing * unscaled))
-	zoom = Vector2.ONE * _zoom_value
+	_player_zoom_target = clampf(_player_zoom_target, _minimum_player_zoom(), player_zoom_max)
+	_player_zoom = lerpf(_player_zoom, _player_zoom_target, 1.0 - exp(-player_zoom_smoothing * unscaled))
+	zoom = Vector2.ONE * effective_zoom()
+
+
+## The zoom actually applied: the camera's own framing decision scaled by the
+## player's standing preference, floored so the view never leaves the mission.
+func effective_zoom() -> float:
+	return maxf(maxf(_zoom_value * _player_zoom, _scene_minimum_zoom()), 0.01)
+
+
+## Closest the tactical framing may pull in. Clamped to the gameplay view so
+## entering command mode can only ever widen the picture, never tighten it.
+func planning_zoom_ceiling() -> float:
+	return minf(max_tactical_zoom, gameplay_zoom)
+
+
+## The camera's own framing component, without the player's preference. Tests
+## and diagnostics ask about this when they mean "did framing zoom out?".
+func tactical_zoom() -> float:
+	return _zoom_value
+
+
+## How far mouse look may pull the camera, in world units. Constant on screen,
+## so it grows in world space as the view widens.
+func look_reach() -> float:
+	return mouse_look_strength / effective_zoom()
+
+
+## The widest this mission can be shown without the view running past the camera
+## limits. Each scene gets whatever its own bounds can support.
+func _scene_minimum_zoom() -> float:
+	var span: Vector2 = Vector2(float(limit_right - limit_left), float(limit_bottom - limit_top))
+	if span.x <= 0.0 or span.y <= 0.0:
+		return 0.05
+	var view: Vector2 = get_viewport_rect().size
+	return maxf(view.x / span.x, view.y / span.y)
+
+
+func _minimum_player_zoom() -> float:
+	return clampf(_scene_minimum_zoom() / maxf(gameplay_zoom, 0.01), 0.35, player_zoom_max)
+
+
+## Whether a world point is actually on screen. Near a mission edge the camera
+## cannot centre on a distant unit without showing past the map, so "can the
+## player see him" is the requirement - not "is he in the middle".
+func sees(point: Vector2, margin: float = 0.0) -> bool:
+	var half: Vector2 = visible_world_size() * 0.5
+	var centre: Vector2 = get_screen_center_position()
+	return absf(point.x - centre.x) <= half.x - margin and absf(point.y - centre.y) <= half.y - margin
+
+
+## Diagnostics and tests read the effective view rather than the raw zoom.
+func visible_world_size() -> Vector2:
+	return get_viewport_rect().size / effective_zoom()
 
 
 func _read_pan_input(unscaled: float) -> void:
@@ -286,12 +364,12 @@ func _update_look_offset(unscaled: float) -> void:
 	if mode == Mode.FOLLOW_PAUL:
 		var half_size: Vector2 = get_viewport_rect().size * 0.5
 		var from_center: Vector2 = get_viewport().get_mouse_position() - half_size
-		desired = (from_center / half_size).limit_length(1.0) * mouse_look_strength / maxf(_zoom_value, 0.01)
+		desired = (from_center / half_size).limit_length(1.0) * look_reach()
 	_look_offset = _look_offset.lerp(desired, 1.0 - exp(-mouse_look_smoothing * unscaled))
 
 
 func _clamp_to_bounds(point: Vector2) -> Vector2:
-	var half_view: Vector2 = get_viewport_rect().size / maxf(_zoom_value, 0.01) * 0.5
+	var half_view: Vector2 = get_viewport_rect().size / effective_zoom() * 0.5
 	var result: Vector2 = point
 	var min_x: float = limit_left + half_view.x
 	var max_x: float = limit_right - half_view.x
