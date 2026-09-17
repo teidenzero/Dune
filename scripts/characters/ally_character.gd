@@ -16,6 +16,8 @@ var destination: Vector2
 var has_destination: bool = false
 var move_speed: float = 0.0
 var face_travel: bool = true
+## Set by the AI: Fremen match Paul's stance and go low when holding.
+var is_crouching: bool = false
 var command_feedback_text: String = ""
 var _command_feedback_until: int = 0
 @onready var health: HealthComponent = $HealthComponent
@@ -25,6 +27,7 @@ var _command_feedback_until: int = 0
 @onready var agent: NavigationAgent2D = $NavigationAgent2D
 @onready var ai: AllyAIController = $AllyAIController
 @onready var aim_pivot: Node2D = $AimPivot
+@onready var stealth: StealthProfile = $StealthProfile
 
 
 func _enter_tree() -> void:
@@ -50,6 +53,10 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# A Fremen who moves like a target gets seen like one. Before this, allies
+	# had no stealth profile at all and every guard saw them at full visibility
+	# whatever they were doing - which gave the player away within seconds.
+	stealth.update_profile(is_crouching, false, velocity.length(), delta, not health.is_dead)
 	if health.is_dead or not navigation_ready():
 		return
 	var desired: Vector2 = Vector2.ZERO

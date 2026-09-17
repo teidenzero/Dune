@@ -130,4 +130,4 @@ script = ExtResource("10_worm")
 actor = NodePath("..")
 terrain = NodePath("../TerrainSafety")
 label = "Harkonnen"
-movement_multiplier = 1.0
+movement_multiplier = 0.15

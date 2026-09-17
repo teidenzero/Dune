@@ -6,11 +6,13 @@
 script = ExtResource("1")
 weapon_name = "Harkonnen Rifle"
 damage = 10.0
-fire_rate = 2.0
+fire_rate = 1.5
 magazine_size = 12
 reload_time = 1.6
 projectile_speed = 750.0
 projectile_lifetime = 2.0
-spread_degrees = 4.0
+spread_degrees = 9.0
 automatic = false
 noise_radius = 500.0
+worm_sign_shot = 0.8
+worm_sign_impact = 1.5

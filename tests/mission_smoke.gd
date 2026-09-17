@@ -381,7 +381,12 @@ func _sabotage_escalation() -> void:
 	_check(harvester.is_sabotaged, "both panels cripple the crawler")
 	_check(_state(&"sabotage") == MissionObjective.State.COMPLETE, "the objective completes")
 	_check(alarms[0] == 1, "sabotage raises the alarm exactly once")
-	_check(worm.worm_sign > before_sign + 30.0, "the crawler tearing open spikes worm sign hard")
+	_check(worm.worm_sign > before_sign + 20.0, "the crawler tearing open spikes worm sign")
+	# The spike alone is no longer the escalation: a crippled crawler keeps
+	# shaking, which is what actually brings the worm during the escape.
+	var after_spike: float = worm.worm_sign
+	await _frames(180)
+	_check(worm.worm_sign > after_spike + 10.0, "and the wreck keeps driving it up afterwards")
 	_check(harvester.emitter.continuous_sign > quiet_sign, "and a crippled crawler keeps shaking harder than a working one")
 	_check(raid.escape_active, "the escape opens the moment the crawler is broken")
 	_check(mission.phase == &"ESCAPE", "the mission moves to its escape phase")

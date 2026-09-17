@@ -332,6 +332,7 @@ position = Vector2(300, -220)
 collision_layer = 1
 collision_mask = 2
 script = ExtResource("harvester")
+sabotaged_sign = 10.0
 
 [node name="Shadow" type="Polygon2D" parent="Harvester"]
 position = Vector2(26, 30)
@@ -386,7 +387,7 @@ label = "SABOTAGE ENGINE CONTROL"
 hold_seconds = 2.2
 
 [node name="Sabotage_Intake" type="Area2D" parent="." groups=["sabotage_points"]]
-position = Vector2(440.0, 30.0)
+position = Vector2(800.0, -100.0)
 collision_layer = 0
 collision_mask = 0
 script = ExtResource("interact")
@@ -417,6 +418,7 @@ position = Vector2(0, 10)
 shape = SubResource("Beacon_body")
 
 [node name="Interaction" type="Area2D" parent="Beacon"]
+position = Vector2(0, 78)
 collision_layer = 0
 collision_mask = 0
 script = ExtResource("interact")
@@ -543,8 +545,8 @@ initial_facing_degrees = 0.0
 display_name = "HARKONNEN"
 
 [node name="Guard_Deck" parent="Enemies" instance=ExtResource("guard")]
-position = Vector2(790.0, -280.0)
-initial_facing_degrees = 180.0
+position = Vector2(560.0, -620.0)
+initial_facing_degrees = 90.0
 display_name = "DECK GUARD"
 
 [node name="Elite_Intake" parent="Enemies" instance=ExtResource("elite")]
@@ -579,7 +581,7 @@ color = Color(0.95, 0.82, 0.45, 1)
 active = true
 
 [node name="Marker_Intake" type="Node2D" parent="Markers"]
-position = Vector2(440.0, 30.0)
+position = Vector2(800.0, -100.0)
 script = ExtResource("marker")
 radius = 52.0
 label = "SPICE INTAKE"
@@ -665,6 +667,11 @@ z_index = 2
 script = ExtResource("wormthreat")
 event = NodePath("../WormEvent")
 danger_radius = 340.0
+threshold = 240.0
+decay_per_second = 4.6
+stage_thresholds = PackedFloat32Array(48, 96, 144, 192, 240)
+sign_after_event = 36.0
+cooldown_seconds = 20.0
 
 [node name="WormWarnings" type="Node" parent="." node_paths=PackedStringArray("manager", "player")]
 script = ExtResource("wormwarn")

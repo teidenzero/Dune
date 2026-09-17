@@ -111,6 +111,9 @@ func _execute_order() -> void:
 				actor.stop_moving()
 				return
 			var crouched: bool = actor.player.is_crouching
+			# Match Paul's stance, so crouching is a squad decision rather than
+			# something only Paul benefits from.
+			actor.is_crouching = crouched
 			var offset: Vector2 = actor.follow_offset * (0.65 if crouched else 1.0)
 			var desired: Vector2 = actor.player.global_position + offset
 			var distance: float = actor.global_position.distance_to(desired)
@@ -129,12 +132,18 @@ func _execute_order() -> void:
 				actor.stop_moving()
 		Order.MOVE_TO:
 			behavior = Behavior.MOVE_TO
+			# Moving to a spot is a deliberate reposition, not a stroll.
+			actor.is_crouching = false
 			actor.navigate_to(order_position, actor.data.move_speed)
 			if actor.global_position.distance_to(order_position) < 20:
 				issue_order(Order.HOLD, order_position)
 		Order.HOLD:
 			behavior = Behavior.HOLD
-			if actor.global_position.distance_to(hold_position) > 22:
+			var settled: bool = actor.global_position.distance_to(hold_position) <= 22
+			# A Fremen told to hold goes to ground. Holding is how the player
+			# makes the squad quiet.
+			actor.is_crouching = settled
+			if not settled:
 				actor.navigate_to(hold_position, actor.data.move_speed)
 			else:
 				actor.stop_moving()
@@ -143,6 +152,7 @@ func _execute_order() -> void:
 func _fight() -> void:
 	behavior = Behavior.COMBAT
 	actor.face_travel = false
+	actor.is_crouching = false
 	_visible = actor.has_line_of_sight(combat_target)
 	if _visible:
 		_last_seen = combat_target.global_position

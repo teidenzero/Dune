@@ -164,12 +164,32 @@ func _anchor_speed() -> float:
 
 
 func _update_mode(commanding: bool, subjects: Array[Node2D]) -> void:
+	var previous: Mode = mode
 	if commanding and pan_active:
 		mode = Mode.TACTICAL_FREE
 	elif (commanding or focus_hold) and not subjects.is_empty():
 		mode = Mode.FOLLOW_SELECTION
 	else:
 		mode = Mode.FOLLOW_PAUL
+	# Entering a tactical mode is a deliberate act with the mouse already where
+	# the player wants it, so adopt the real cursor now. Waiting for a motion
+	# event left edge scrolling dead until the player happened to jiggle it.
+	if mode != previous and mode != Mode.FOLLOW_PAUL and not _pointer_seen:
+		_adopt_pointer()
+
+
+## Seeds the tracked pointer from the live cursor, but only when the cursor is
+## genuinely inside the window - a stale default must still not pan the camera.
+func _adopt_pointer() -> void:
+	var viewport: Viewport = get_viewport()
+	if viewport == null:
+		return
+	var here: Vector2 = viewport.get_mouse_position()
+	var size: Vector2 = viewport.get_visible_rect().size
+	if here.x < 0.0 or here.y < 0.0 or here.x > size.x or here.y > size.y:
+		return
+	_pointer_position = here
+	_pointer_seen = true
 
 
 func _resolve_frame(subjects: Array[Node2D]) -> float:
@@ -209,8 +229,11 @@ func _resolve_shared_frame(subjects: Array[Node2D]) -> float:
 	_frame_center = bounds.get_center()
 	if framing_separation <= shared_frame_start_distance:
 		return max_tactical_zoom
-	var usable: Vector2 = get_viewport_rect().size * frame_fill
-	var needed: Vector2 = bounds.size + Vector2.ONE * frame_padding * 2.0
+	var view: Vector2 = get_viewport_rect().size
+	var usable: Vector2 = view * frame_fill
+	# Equal screen-space margin, not equal world-space margin.
+	var pad: Vector2 = Vector2(frame_padding, frame_padding * view.y / maxf(view.x, 1.0))
+	var needed: Vector2 = bounds.size + pad * 2.0
 	var fit: float = minf(usable.x / maxf(needed.x, 1.0), usable.y / maxf(needed.y, 1.0))
 	return clampf(fit, min_tactical_zoom, max_tactical_zoom)
 

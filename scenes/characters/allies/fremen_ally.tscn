@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/characters/ally_character.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/recon/recon_observer_component.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/worm/terrain_safety_component.gd" id="9"]
 [ext_resource type="Script" path="res://scripts/worm/worm_sign_emitter.gd" id="10"]
+[ext_resource type="Script" path="res://scripts/components/stealth_profile.gd" id="90_stealth"]
 [sub_resource type="CircleShape2D" id="Shape"]
 radius = 13.0
 
@@ -64,6 +65,16 @@ avoidance_enabled = false
 
 [node name="AllyAIController" type="Node" parent="."]
 script = ExtResource("4")
+
+[node name="StealthProfile" type="Node" parent="."]
+script = ExtResource("90_stealth")
+still_visibility = 0.5
+walking_visibility = 0.8
+sprint_visibility = 1.4
+crouch_visibility = 0.45
+crouch_exposure = 0.7
+crouch_noise_radius = 30.0
+walk_noise_radius = 60.0
 
 [node name="CommandLinkComponent" type="Node" parent="."]
 script = ExtResource("7")

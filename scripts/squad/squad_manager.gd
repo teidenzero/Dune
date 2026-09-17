@@ -129,9 +129,17 @@ func _refresh_selection() -> void:
 	selection_changed.emit()
 
 
+## FOLLOW is a recall, not a tactical order, so it reaches an ally who is out
+## of command range. Everything else still needs the link - but a companion sent
+## over a ridge must never be strandable with no way to get him back.
 func issue_follow() -> void:
-	var recipients: Array[AllyCharacter] = _resolve_recipients()
+	var recipients: Array[AllyCharacter] = []
+	for ally in selected_members:
+		if _available(ally):
+			recipients.append(ally)
 	for ally in recipients:
+		if not can_command(ally):
+			ally.flash_command_feedback("RECALLED")
 		ally.ai.issue_order(AllyAIController.Order.FOLLOW)
 	if not recipients.is_empty():
 		order_issued.emit(AllyAIController.Order.FOLLOW)

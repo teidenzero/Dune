@@ -31,7 +31,7 @@ const OBJ_FREMEN: StringName = &"fremen"
 
 @export_group("Escalation")
 ## Vibration the crawler throws off when it is torn open; enough to commit a worm.
-@export var sabotage_worm_spike: float = 40.0
+@export var sabotage_worm_spike: float = 25.0
 @export var alarm_radius: float = 1400.0
 @export var reinforcement_delay: float = 4.0
 @export var guard_scene: PackedScene = preload("res://scenes/characters/enemies/harkonnen_guard.tscn")

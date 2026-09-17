@@ -183,6 +183,11 @@ func _combat_fixture() -> void:
 
 func _attack_and_enemy_response() -> void:
 	await _combat_fixture()
+	# 180 px: close enough that a standing Fremen is identified on sight, and
+	# still outside the guard's 500 px view of Paul at (-1300, -1000).
+	scout.position = Vector2(-980, -700)
+	scout.ai.issue_order(Order.HOLD, scout.position)
+	await _frames(4)
 	var hold: Vector2 = scout.ai.hold_position
 	squad.select_slot(2)
 	squad.issue_context(guard.position)
@@ -196,6 +201,17 @@ func _attack_and_enemy_response() -> void:
 	_check(scout.health.current_health < 80 and not scout.health.is_dead, "enemy rifle damages surviving Fremen")
 	await _frames(200)
 	_check(scout.ai.current_order == Order.HOLD and scout.position.distance_to(hold) < 25, "attack completion restores prior HOLD position")
+	# A Fremen who is holding still and low is not identified from across the
+	# bowl; the guard comes to look instead of opening fire.
+	await _combat_fixture()
+	scout.position = Vector2(-1250, -700)
+	scout.ai.issue_order(Order.HOLD, scout.position)
+	await _frames(20)
+	guard.ai.set_physics_process(true)
+	await _frames(30)
+	_check(scout.is_crouching, "a Fremen told to hold goes to ground")
+	_check(guard.ai.state != State.COMBAT, "a crouched Fremen at 450 px is not instantly identified")
+	_check(guard.ai.state == State.SUSPICIOUS or guard.ai.state == State.INVESTIGATE, "the guard investigates the movement instead")
 	await _combat_fixture()
 	guard.weapon.disable()
 	guard.health.max_health = 1000
@@ -273,6 +289,11 @@ func _target_and_order_edges() -> void:
 	guard.weapon.disable()
 	scout.weapon.disable()
 	scout.set_physics_process(false)
+	# This scenario needs the target genuinely out of reach, so it sets its own
+	# distance rather than inheriting the fixture's identification range.
+	scout.position = Vector2(-1200, -700)
+	scout.ai.issue_order(Order.HOLD, scout.position)
+	await _frames(4)
 	guard.position = Vector2(-650, -700)
 	scout.ai.issue_order(Order.ATTACK, guard.position, guard)
 	await _frames(560)

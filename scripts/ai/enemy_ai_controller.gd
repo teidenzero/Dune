@@ -83,11 +83,35 @@ func _on_perception_state_changed(_awareness: PerceptionComponent.Awareness) -> 
 		_update_visual_awareness()
 
 
+## Two armed Fremen in the open are obviously hostile - that is why allies used
+## to skip the detection ramp entirely. But "obvious" has to depend on how they
+## are moving, or a crouched companion is identified from maximum vision range
+## and the player is given away before they have taken ten steps.
+@export_range(0.1, 1.0, 0.05) var ally_identification_fraction: float = 0.8
+## Floor on how much stance and movement can shrink that range. Without it a
+## crouched, stationary Fremen becomes invisible rather than merely hard to
+## make out, which is not the trade the stealth systems are supposed to offer.
+@export_range(0.1, 1.0, 0.05) var ally_identification_floor: float = 0.35
+
+
+func _ally_is_obvious(candidate: Node2D) -> bool:
+	if not is_instance_valid(candidate) or not candidate.is_in_group("allies"):
+		return false
+	var conspicuousness: float = 1.0
+	var profile: StealthProfile = candidate.get_node_or_null("StealthProfile") as StealthProfile
+	if profile != null:
+		conspicuousness = clampf(
+			profile.stance_visibility_modifier * profile.movement_visibility_modifier,
+			ally_identification_floor, 1.0)
+	var reach: float = actor.perception.vision_distance * ally_identification_fraction * conspicuousness
+	return actor.global_position.distance_to(candidate.global_position) <= reach
+
+
 func _update_visual_awareness() -> void:
 	var perception: PerceptionComponent = actor.perception
 	if not perception.can_see_target and perception.detection_value <= perception.suspicion_release_threshold:
 		_visual_episode_handled = false
-	var clear_hostile: bool = is_instance_valid(perception.target) and perception.target.is_in_group("allies")
+	var clear_hostile: bool = _ally_is_obvious(perception.target)
 	if perception.can_see_target and (clear_hostile or (state == State.COMBAT and target == perception.target) or perception.detection_value >= perception.detection_max):
 		target = actor.perception.target
 		last_known_target_position = actor.perception.observed_position
@@ -98,6 +122,14 @@ func _update_visual_awareness() -> void:
 		suspicious_position = perception.observed_position
 		disturbance_priority = 5
 		current_disturbance = "VISUAL"
+		if not _visual_episode_handled:
+			_visual_episode_handled = true
+			change_state(State.SUSPICIOUS)
+	elif perception.can_see_target and is_instance_valid(perception.target) and perception.target.is_in_group("allies") and state != State.COMBAT:
+		# Movement out there, too far off to name. Worth walking over to.
+		suspicious_position = perception.observed_position
+		disturbance_priority = 4
+		current_disturbance = "MOVEMENT"
 		if not _visual_episode_handled:
 			_visual_episode_handled = true
 			change_state(State.SUSPICIOUS)

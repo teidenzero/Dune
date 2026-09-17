@@ -255,12 +255,21 @@ func _command_gating() -> void:
 	await _frames(60)
 	_check(scout.command_feedback_active(), "ally feedback stays readable for a moment")
 	await _capture("m51_link_lost")
-	# Out of range: HOLD is kept and FOLLOW cannot recall the ally.
+	# Out of range, a recall still reaches. Milestone 5.1 made FOLLOW obey the
+	# link like every other order; a Milestone 9 playthrough then lost the Scout
+	# permanently 970 px out with no way to get him back. Tactical orders still
+	# need the link - "come back" is the one instruction that always arrives.
 	scout.ai.issue_order(Order.HOLD, scout.global_position)
-	var hold: Vector2 = scout.ai.hold_position
 	squad.issue_follow()
 	await _frames(6)
-	_check(scout.ai.current_order == Order.HOLD and scout.ai.hold_position == hold, "FOLLOW cannot recall an ally that is holding out of range")
+	_check(scout.ai.current_order == Order.FOLLOW, "FOLLOW recalls an ally that is holding out of range")
+	_check(scout.command_feedback_active(), "and the recalled ally says so")
+	_check(not squad.can_command(scout), "while the ally is still outside the command link")
+	squad.issue_context(Vector2(-900, 500))
+	await _frames(6)
+	_check(scout.ai.current_order == Order.FOLLOW, "a tactical order to the same ally is still refused")
+	scout.ai.issue_order(Order.HOLD, scout.global_position)
+	var hold: Vector2 = scout.ai.hold_position
 	# Out of range: a commanded ATTACK is neither cancelled nor redirected.
 	scout.ai.issue_order(Order.ATTACK, guard.global_position, guard)
 	_check(scout.ai.current_order == Order.ATTACK and scout.ai.order_target == guard, "commanded attack is stored")

@@ -5,6 +5,8 @@ const LINK_COLORS: Dictionary = {
 	CommandLinkComponent.State.WEAK_LINK: Color(1, 0.86, 0.45),
 	CommandLinkComponent.State.OUT_OF_RANGE: Color(1, 0.55, 0.45),
 }
+## Out of contact because the player put him there, not because it went wrong.
+const POSTED_COLOR: Color = Color(0.78, 0.82, 0.86)
 
 var manager: SquadManager
 
@@ -34,7 +36,13 @@ func _process(_delta: float) -> void:
 				AllyAIController.Order.keys()[ally.ai.current_order],
 				ally.command_link.short_label(),
 			]
-			row.modulate = LINK_COLORS.get(state, Color.WHITE) if (ally.selected or state != CommandLinkComponent.State.CONNECTED) else Color.WHITE
+			# An ally the player deliberately left holding is not a fault, so an
+			# out-of-range HOLD reads as a posted sentry rather than a red alert.
+			var posted: bool = ally.ai.current_order == AllyAIController.Order.HOLD
+			var tint: Color = LINK_COLORS.get(state, Color.WHITE)
+			if posted and state == CommandLinkComponent.State.OUT_OF_RANGE:
+				tint = POSTED_COLOR
+			row.modulate = tint if (ally.selected or state != CommandLinkComponent.State.CONNECTED) else Color.WHITE
 	var status: Label = $Rows/Status
 	status.visible = manager.rejection_active()
 	status.text = manager.rejection_message
