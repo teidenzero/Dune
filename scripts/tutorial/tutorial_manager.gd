@@ -35,6 +35,8 @@ var counters: Dictionary = {}
 var _lookup: Dictionary = {}
 var _completion_hold: float = 0.0
 var _restart_hold: float = 0.0
+## Index of the latest retry_here step in the current section, or -1.
+var _retry_step: int = -1
 var _section_start: Dictionary = {}
 
 
@@ -127,13 +129,18 @@ func _bind_signals() -> void:
 		threat.worm_arrived.connect(func(_p: Vector2, _r: float) -> void: note_event(&"worm_arrived"))
 		threat.worm_event_finished.connect(func() -> void: note_event(&"worm_finished"))
 	if is_instance_valid(squad):
-		squad.command_mode_changed.connect(func(active: bool) -> void: note_event(&"command_mode_on" if active else &"command_mode_off"))
+		squad.pause_changed.connect(_on_pause_changed)
 		squad.order_issued.connect(func(_order: int) -> void: note_event(&"order_issued"))
 		squad.command_rejected.connect(func(_allies: Array) -> void: note_event(&"command_rejected"))
 	for node: Node in get_tree().get_nodes_in_group("tutorial_triggers"):
 		var trigger: TutorialTriggerArea = node as TutorialTriggerArea
 		if trigger != null:
 			trigger.player_entered.connect(func(id: StringName) -> void: note_event(StringName("enter_" + String(id))))
+	# A stray shot must never cost the player a lesson: training targets in
+	# the tutorial get back up.
+	for node: Node in get_tree().get_nodes_in_group("training_targets"):
+		if "respawn_seconds" in node:
+			node.respawn_seconds = 2.0
 	for node: Node in get_tree().get_nodes_in_group("enemies") + get_tree().get_nodes_in_group("training_targets"):
 		var shield: ShieldComponent = ShieldComponent.find_on(node)
 		if shield != null:
@@ -199,6 +206,10 @@ func _enter_step(next: int, teleport: bool = false) -> void:
 	hint_shown = false
 	_completion_hold = 0.0
 	# Paul moves first: the squad forms up on where he ends up, not where he was.
+	if step.section != previous_section:
+		_retry_step = -1
+	if step.retry_here:
+		_retry_step = index
 	if teleport:
 		_place_player_at_checkpoint(step.section)
 	_apply_section(step.section, teleport or step.section != previous_section)
@@ -278,8 +289,8 @@ func _apply_section(section: StringName, reposition: bool) -> void:
 		player.melee.set_enabled(reached >= sections.find("melee"))
 	if is_instance_valid(squad):
 		squad.commands_enabled = reached >= sections.find("squad")
-		if not squad.commands_enabled and squad.command_mode:
-			squad.set_command_mode(false)
+		if not squad.commands_enabled and not squad.selected_members.is_empty():
+			squad.select_slot(1)
 	if reposition:
 		_prepare_section(section)
 
@@ -325,6 +336,32 @@ func set_actor_armed(node_name: StringName, armed: bool) -> void:
 		foe.perception.stop()
 
 
+## Parks every living Fremen where they stand, so a lesson about Paul is not
+## given away by companions wandering after him.
+func hold_allies() -> void:
+	if not is_instance_valid(squad):
+		return
+	for member in squad.members:
+		if is_instance_valid(member) and not member.health.is_dead:
+			member.ai.issue_order(AllyAIController.Order.HOLD, member.global_position)
+
+
+## Sends the living Fremen to the given points with ordinary MOVE_TO orders;
+## each holds there on arrival.
+func station_allies(points: Array) -> void:
+	if not is_instance_valid(squad):
+		return
+	var slot: int = 0
+	for member in squad.members:
+		if not is_instance_valid(member) or member.health.is_dead or slot >= points.size():
+			continue
+		var point: Vector2 = points[slot]
+		if member.navigation_ready():
+			point = NavigationServer2D.map_get_closest_point(member.agent.get_navigation_map(), point)
+		member.ai.issue_order(AllyAIController.Order.MOVE_TO, point)
+		slot += 1
+
+
 ## Forms the squad up on Paul at the start of a squad exercise, through the
 ## ordinary FOLLOW order rather than a tutorial-only movement path.
 func regroup_allies() -> void:
@@ -345,6 +382,14 @@ func regroup_allies() -> void:
 		index_offset += 1
 
 
+func _on_pause_changed(active: bool) -> void:
+	note_event(&"paused" if active else &"unpaused")
+	# This manager is paused along with the world, so a step cannot poll the
+	# pause itself; pausing inside a vision is recorded as it happens.
+	if active and is_instance_valid(player) and player.prescience != null and player.prescience.active:
+		note_event(&"paused_in_vision")
+
+
 func _on_stealth_detection(state: PerceptionComponent.Awareness) -> void:
 	if _restart_hold > 0.0 or not running:
 		return
@@ -357,8 +402,7 @@ func _on_stealth_detection(state: PerceptionComponent.Awareness) -> void:
 func _place_player_at_checkpoint(section: StringName) -> void:
 	var spawn: Node2D = actor(StringName("Checkpoint_" + String(section)))
 	if spawn != null and is_instance_valid(player):
-		player.global_position = spawn.global_position
-		player.velocity = Vector2.ZERO
+		player.teleport_to(spawn.global_position)
 
 
 func _activate_markers(step: TutorialStep) -> void:
@@ -406,6 +450,8 @@ func _on_player_died() -> void:
 func restart_section(target: StringName = &"") -> void:
 	var section: StringName = target if target != &"" else current_section()
 	var start: int = int(_section_start.get(section, 0))
+	if target == &"" and _retry_step >= 0 and steps[_retry_step].section == section:
+		start = _retry_step
 	_gm().tutorial_checkpoint = steps[start].id if start < steps.size() else &""
 	get_tree().reload_current_scene()
 

@@ -28,7 +28,7 @@ func _draw() -> void:
 	if actor.selected:
 		color = Color(0.75, 1, 0.95)
 	# Shape, not only colour, distinguishes a lost command link.
-	_draw_link_ring(23, color, 3 if actor.command_highlight else 2, state)
+	_draw_link_ring(23, color, 3 if actor.selected else 2, state)
 	if actor.selected:
 		_draw_link_ring(28, color, 1, state)
 		draw_line(Vector2(-7, 33), Vector2(7, 33), color, 3)

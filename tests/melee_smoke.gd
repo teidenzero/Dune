@@ -1,20 +1,26 @@
 extends SceneTree
 ## Milestone 6: crysknife melee and Holtzman personal shields.
 ## Runs against the real mission, player scene, hitbox physics, and input map.
+## Swing timing is driven through melee_press()/melee_release() (the scripted
+## E hold); the player-facing path - E / F arm a target pick, left-click a
+## hostile, Paul walks in and strikes - is covered by _crysknife_targeting.
 
 const State = MeleeController.State
 const Link = CommandLinkComponent.State
+const Targeting = SquadManager.Targeting
 const FAST: MeleeAttackData = preload("res://resources/weapons/crysknife_fast.tres")
 const SLOW: MeleeAttackData = preload("res://resources/weapons/crysknife_slow.tres")
 const PROJECTILE: PackedScene = preload("res://scenes/combat/projectile.tscn")
 
 class AimedPlayer extends PlayerController:
-	# Synthetic mouse events do not move the OS cursor, so melee direction is
-	# driven by an explicit world point. Every other player path is production
-	# code; foundation_smoke covers the real mouse-aim path.
+	# Scripted swings aim at an explicit world point. With `scripted_aim` off,
+	# Paul's own orders set his facing exactly as in production.
 	var aim_point: Vector2 = Vector2.RIGHT
+	var scripted_aim: bool = true
 
 	func _update_aim() -> void:
+		if not scripted_aim:
+			return
 		aim_direction = global_position.direction_to(aim_point)
 		aim_pivot.rotation = aim_direction.angle()
 
@@ -41,8 +47,9 @@ func _run() -> void:
 	await _melee_versus_shield()
 	await _aim_and_faction_safety()
 	await _elite_death_and_ally_fire()
-	await _command_mode_and_hud()
-	_check(completed == 7, "all melee scenarios completed")
+	await _crysknife_targeting()
+	await _hud_and_diagnostics()
+	_check(completed == 8, "all melee scenarios completed")
 	_check(Engine.time_scale == 1.0, "suite leaves normal game speed")
 	print("MELEE SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
@@ -99,11 +106,11 @@ func _stage(subject: Node2D, offset: Vector2) -> void:
 	await _frames(2)
 
 
-## Presses the melee key for `hold` seconds of physics time, then releases.
+## Holds the crysknife for `hold` seconds of physics time, then releases.
 func _swing(hold: float) -> void:
-	_key(KEY_E, true)
+	player.melee_press()
 	await _frames(maxi(int(hold * 60.0), 1))
-	_key(KEY_E, false)
+	player.melee_release()
 	await _frames(2)
 
 
@@ -124,23 +131,23 @@ func _attack_shapes_and_timing() -> void:
 	_check(SLOW.damage > FAST.damage and SLOW.windup_time > FAST.windup_time * 4.0, "the slow attack trades wind-up for damage")
 	_check(not melee.hitbox.monitoring, "the hitbox is inactive while idle")
 	# A tap resolves as the fast attack.
-	_key(KEY_E, true)
+	player.melee_press()
 	await _frames(3)
 	_check(melee.state == State.CHARGING and not melee.slow_ready, "pressing melee begins a charge")
 	_check(melee.hitbox.monitoring, "the hitbox arms during the charge")
-	_key(KEY_E, false)
+	player.melee_release()
 	await _frames(2)
 	_check(melee.current_attack == FAST, "a short tap swings the fast attack")
 	await _frames(40)
 	_check(melee.state == State.IDLE, "the fast attack recovers quickly")
 	# Holding past the threshold arms the slow strike instead.
-	_key(KEY_E, true)
+	player.melee_press()
 	await _frames(12)
 	_check(melee.state == State.CHARGING and not melee.slow_ready, "below the threshold the slow strike is not ready")
 	await _frames(20)
 	_check(melee.slow_ready and melee.charge_ratio() == 1.0, "holding past the threshold arms the penetrating strike")
 	_check(melee.get_move_speed_multiplier() <= 0.5, "a charged slow strike substantially restricts movement")
-	_key(KEY_E, false)
+	player.melee_release()
 	await _frames(2)
 	_check(melee.current_attack == SLOW and melee.state == State.WINDUP, "releasing a charged hold swings the slow attack")
 	await _frames(30)
@@ -248,9 +255,9 @@ func _melee_versus_shield() -> void:
 	_check(results.has("BLOCKED MELEE"), "the shield reports the fast blade as blocked")
 	_check(melee.last_result == "BLOCKED", "the player's melee controller reports TOO FAST feedback")
 	# Scenario F: the slow blade goes through.
-	_key(KEY_E, true)
+	player.melee_press()
 	await _frames(30)
-	_key(KEY_E, false)
+	player.melee_release()
 	await _frames(58)
 	await _capture("m6_shield_penetrated")
 	await _settle()
@@ -267,23 +274,27 @@ func _melee_versus_shield() -> void:
 	await _settle()
 	_check(elite.health.current_health == raised - FAST.damage, "raising the threshold lets the fast blade through")
 	elite.shield.velocity_threshold = 150.0
-	# Scenario G: the slow strike costs mobility while it winds up.
+	# Scenario G: the slow strike costs mobility while it is held. A new order
+	# cancels a pending charge, so Paul is already walking when he draws it.
 	await _settle()
-	_key(KEY_E, true)
+	var start: Vector2 = player.global_position
+	player.move_to(start + Vector2(0, -400))
+	player.melee_press()
 	await _frames(30)
-	_check(melee.slow_ready, "the strike charges beside a hostile")
+	_check(melee.slow_ready and player.order == PlayerController.Order.MOVE, "the strike charges beside a hostile while Paul walks")
 	var origin: Vector2 = player.global_position
-	Input.action_press("move_up")
 	await _frames(30)
-	Input.action_release("move_up")
 	var charged_travel: float = origin.distance_to(player.global_position)
-	_key(KEY_E, false)
+	player.melee_release()
+	player.stop()
 	await _settle()
 	await _frames(20)
-	origin = player.global_position
-	Input.action_press("move_up")
+	# Open ground to the west, well clear of the range.
+	player.move_to(Vector2(start.x - 400.0, player.global_position.y))
 	await _frames(30)
-	Input.action_release("move_up")
+	origin = player.global_position
+	await _frames(30)
+	player.stop()
 	var free_travel: float = origin.distance_to(player.global_position)
 	_check(charged_travel < free_travel * 0.6, "charging the slow strike substantially restricts movement")
 	completed += 1
@@ -364,50 +375,186 @@ func _elite_death_and_ally_fire() -> void:
 	completed += 1
 
 
-func _command_mode_and_hud() -> void:
+func _crysknife_targeting() -> void:
+	await _load(false)
+	# Paul's own orders set his facing in this scenario, as in production.
+	player.scripted_aim = false
+	player.retaliate = false
+	player.global_position = Vector2(-700, 700)
+	await _stage(guard, Vector2(150, 0))
+	guard.health.max_health = 300.0
+	guard.health.reset_health()
+	var camera: TacticalCamera = player.get_node("TacticalCamera")
+	camera.snap_to(player.global_position + Vector2(75, 0))
+	await _frames(4)
+	var hud: PlayerHud = mission.get_node("UI/Screen/HUD")
+	var started: Array[MeleeAttackData] = []
+	var finished: Array[MeleeAttackData] = []
+	melee.attack_started.connect(func(data: MeleeAttackData) -> void: started.append(data))
+	melee.attack_finished.connect(func(data: MeleeAttackData, _hits: int) -> void: finished.append(data))
+	_check(squad.paul_selected and squad.targeting == Targeting.NONE, "Paul starts selected with no strike armed")
+	# Scenario K: with Paul selected, a quick left-click on a hostile is a
+	# quick strike. No key needs pressing first.
+	var anchor: Vector2 = camera.anchor
+	var before: float = guard.health.current_health
+	await _left_click(guard.global_position)
+	_check(player.order == PlayerController.Order.MELEE and player.order_target == guard, "a quick left-click on a hostile issues a melee strike order")
+	_check(not squad.blade_charging and squad.targeting == Targeting.NONE, "releasing the button ends the charge")
+	await _frames(6)
+	_check(player.velocity.x > 0.0 and melee.state == State.IDLE, "Paul walks toward a target out of reach")
+	await _frames(2)
+	_check(hud.melee_label.text == "CLOSING IN", "the HUD reports Paul closing in")
+	await _await_strike()
+	_check(started == [FAST] and finished == [FAST], "a quick click delivers exactly one quick strike")
+	_check(guard.health.current_health == before - FAST.damage, "the quick strike damages the guard")
+	_check(player.global_position.distance_to(guard.global_position) <= melee.hitbox_base_range, "Paul struck from inside his reach")
+	_check(player.order == PlayerController.Order.IDLE, "the melee order ends after the stroke")
+	_check(camera.anchor.distance_to(anchor) < 1.0, "the free camera does not chase Paul into melee")
+	# Holding the button charges: the HUD ring fills and the prompt changes.
+	_mouse(MOUSE_BUTTON_LEFT, guard.global_position, true)
+	await _frames(2)
+	_check(squad.blade_charging and player.order == PlayerController.Order.IDLE, "pressing on a hostile starts a charge, not an order")
+	_check(hud.notice_label.text.contains("QUICK STRIKE"), "while short of the threshold the HUD offers the quick strike")
+	await _real_wait(squad.slow_hold_seconds() + 0.1)
+	await _frames(2)
+	_check(squad.blade_charge_ratio() >= 1.0 and hud.notice_label.text.contains("SLOW STRIKE READY"), "holding past the threshold readies the slow strike")
+	# Right-click while holding abandons the charge; nothing is ordered.
+	var standing: Vector2 = player.global_position
+	await _right_click(player.global_position + Vector2(0, -200))
+	_mouse(MOUSE_BUTTON_LEFT, guard.global_position, false)
+	await _frames(10)
+	_check(not squad.blade_charging and player.order == PlayerController.Order.IDLE and player.global_position.distance_to(standing) < 2.0, "right-click cancels a charge without a move order")
+	# E arms the blade; a click on open ground keeps it armed and explains.
+	await _tap(KEY_E)
+	_check(squad.targeting == Targeting.STRIKE, "E arms the crysknife")
+	_check(melee.state == State.IDLE and player.order == PlayerController.Order.IDLE, "arming does not swing or move Paul")
+	await _frames(2)
+	_check(hud.notice_label.visible and hud.notice_label.text.contains("CRYSKNIFE"), "the HUD prompts for a target")
+	await _left_click(player.global_position + Vector2(0, -220))
+	_check(squad.targeting == Targeting.STRIKE and player.order == PlayerController.Order.IDLE, "clicking open ground does not spend the armed blade")
+	_check(squad.notice.contains("LEFT-CLICK A TARGET"), "a missed pick tells the player what to click")
+	await _tap(KEY_E)
+	_check(squad.targeting == Targeting.NONE, "pressing E again disarms the blade")
+	await _tap(KEY_E)
+	await _tap(KEY_ESCAPE)
+	_check(squad.targeting == Targeting.NONE, "Esc cancels an armed blade")
+	# The blade belongs to Paul.
+	squad.select_slot(1)
+	await _tap(KEY_E)
+	squad.select_slot(2)
+	_check(squad.targeting == Targeting.NONE, "selecting away from Paul drops an armed blade")
+	await _tap(KEY_E)
+	_check(squad.targeting == Targeting.NONE and squad.notice.contains("SELECT PAUL"), "arming is refused when Paul is not selected")
+	await _left_click(guard.global_position)
+	_check(player.order == PlayerController.Order.IDLE and not squad.blade_charging, "without Paul selected a click on a hostile is no strike")
+	squad.select_slot(1)
+	melee.set_enabled(false)
+	await _tap(KEY_E)
+	_check(squad.targeting == Targeting.NONE and squad.notice.contains("NOT YOURS YET"), "arming is refused while the blade is withheld")
+	await _left_click(guard.global_position)
+	_check(player.order == PlayerController.Order.IDLE and squad.notice.contains("NOT YOURS YET"), "clicking a hostile with the blade withheld explains itself")
+	player.melee_strike(guard, false)
+	_check(player.order == PlayerController.Order.IDLE, "a withheld blade refuses a direct strike order too")
+	melee.set_enabled(true)
+	# Orders still work while paused; the strike happens on resume.
+	started.clear()
+	finished.clear()
+	await _stage(guard, Vector2(-150, 0))
+	camera.snap_to(player.global_position)
+	await _frames(4)
+	squad.set_paused(true)
+	await _frames(2)
+	await _left_click(guard.global_position)
+	var frozen: Vector2 = player.global_position
+	await _frames(20)
+	_check(player.order == PlayerController.Order.MELEE and player.global_position == frozen, "a strike ordered while paused waits for the world")
+	squad.set_paused(false)
+	var paused_before: float = guard.health.current_health
+	await _await_strike()
+	_check(finished == [FAST] and guard.health.current_health == paused_before - FAST.damage, "the paused order lands once play resumes")
+	# Shields: a quick click is too fast for the Elite, a held one goes through.
+	await _load(false)
+	player.scripted_aim = false
+	player.retaliate = false
+	player.global_position = Vector2(-700, 700)
+	await _stage(elite, Vector2(150, 0))
+	camera = player.get_node("TacticalCamera")
+	camera.snap_to(player.global_position + Vector2(75, 0))
+	await _frames(4)
+	hud = mission.get_node("UI/Screen/HUD")
+	var results: Array[String] = []
+	elite.shield.shield_blocked.connect(func(hit: HitContext) -> void: results.append("BLOCKED " + hit.type_name()))
+	elite.shield.shield_penetrated.connect(func(hit: HitContext) -> void: results.append("PENETRATED " + hit.type_name()))
+	var shielded: Array[MeleeAttackData] = []
+	player.melee.attack_started.connect(func(data: MeleeAttackData) -> void: shielded.append(data))
+	var elite_before: float = elite.health.current_health
+	await _left_click(elite.global_position)
+	_check(player.order == PlayerController.Order.MELEE and player.order_target == elite, "a quick strike can be ordered on the Elite")
+	await _await_strike()
+	_check(shielded == [FAST] and results == ["BLOCKED MELEE"], "the quick strike reaches the Elite and is blocked")
+	_check(elite.health.current_health == elite_before and melee.last_result == "BLOCKED", "the shield stops the quick strike")
+	await _frames(2)
+	_check(hud.melee_label.text.contains("TOO FAST - BLOCKED"), "the HUD reports the blocked strike")
+	# Step back so the slow strike has to walk in as well.
+	player.teleport_to(elite.global_position + Vector2(-150, 0))
+	camera.snap_to(player.global_position + Vector2(75, 0))
+	await _frames(4)
+	await _hold_click(elite.global_position, squad.slow_hold_seconds() + 0.1)
+	_check(player.order == PlayerController.Order.MELEE, "a held left-click issues the slow strike order")
+	var saw_charge: bool = false
+	for index in range(400):
+		await _frames(1)
+		if melee.state == State.CHARGING and hud.melee_label.text.begins_with("Slow Attack"):
+			saw_charge = true
+		if player.order == PlayerController.Order.IDLE and melee.state == State.IDLE:
+			break
+	_check(saw_charge, "Paul charges the slow strike in reach, and the HUD shows it")
+	_check(shielded == [FAST, SLOW], "a held click delivers exactly one slow strike")
+	_check(results.has("PENETRATED MELEE"), "the slow strike penetrates the shield")
+	_check(elite.health.current_health == elite_before - SLOW.damage, "the slow strike damages the Elite")
+	_check(elite.shield.enabled, "the shield stays up after penetration")
+	completed += 1
+
+
+## Waits for Paul's melee order to finish its stroke.
+func _await_strike() -> void:
+	for index in range(400):
+		await _frames(1)
+		if player.order == PlayerController.Order.IDLE and melee.state == State.IDLE:
+			return
+
+
+func _hud_and_diagnostics() -> void:
 	await _load(false)
 	player.global_position = Vector2(-700, 700)
 	await _stage(guard, Vector2(46, 0))
-	# Scenario K: command mode owns the controls and cancels a pending charge.
-	_key(KEY_E, true)
-	await _frames(30)
-	_check(melee.slow_ready, "a slow strike is charged before command mode")
-	squad.set_command_mode(true)
-	await _frames(3)
-	_check(melee.state == State.IDLE and not melee.slow_ready, "entering command mode cancels the charge")
-	var untouched: float = guard.health.current_health
-	_key(KEY_E, false)
-	await _frames(10)
-	_key(KEY_E, true)
-	await _frames(10)
-	_key(KEY_E, false)
-	await _frames(40)
-	_check(melee.state == State.IDLE and guard.health.current_health == untouched, "melee input is ignored while issuing orders")
-	_check(squad.command_mode and is_equal_approx(Engine.time_scale, 0.4), "command mode is unaffected by melee input")
-	squad.set_command_mode(false)
-	await _frames(5)
-	_check(Engine.time_scale == 1.0 and not player.squad_control_locked, "leaving command mode restores normal control")
-	await _swing(0.05)
-	await _settle()
-	_check(guard.health.current_health < untouched, "melee works again once command mode ends")
-	# Milestone 5.1 systems are untouched by melee.
-	var camera: TacticalCamera = player.get_node("TacticalCamera")
-	_check(camera.mode == TacticalCamera.Mode.FOLLOW_PAUL, "the tactical camera still returns to Paul")
+	# Milestone 5.1 command range is untouched by melee.
 	_check(is_equal_approx(squad.get_effective_command_range(), 700.0), "command range value is unchanged")
 	_check(squad.link_state(warrior) == Link.OUT_OF_RANGE, "the parked Warrior still reads as out of range")
 	warrior.global_position = player.global_position + Vector2(80, 0)
 	await _frames(4)
 	_check(squad.link_state(warrior) == Link.CONNECTED and squad.can_command(warrior), "command range still functions")
-	# HUD and debug surfaces.
-	root.get_node("GameManager").debug_visible = true
-	_key(KEY_E, true)
+	# A new order abandons a charging stroke.
+	player.melee_press()
 	await _frames(30)
-	var hud: Label = mission.get_node("UI/Screen/CombatHUD/Margin/Rows/Melee")
-	_check(hud.visible and hud.text.contains("PENETRATING"), "the HUD announces a ready penetrating strike")
+	_check(melee.slow_ready, "a slow strike is charged")
+	player.move_to(player.global_position + Vector2(0, -100))
+	await _frames(2)
+	_check(melee.state == State.IDLE and not melee.slow_ready, "a new order cancels the charge")
+	player.melee_release()
+	player.stop()
+	await _frames(20)
+	# HUD and debug surfaces.
+	await _stage(guard, Vector2(46, 0))
+	root.get_node("GameManager").debug_visible = true
+	var hud: PlayerHud = mission.get_node("UI/Screen/HUD")
+	player.melee_press()
+	await _frames(30)
+	_check(hud.melee_label.visible and hud.melee_label.text.contains("PENETRATING"), "the HUD announces a ready penetrating strike")
 	await _capture("m6_melee_charge")
-	_key(KEY_E, false)
+	player.melee_release()
 	await _frames(6)
-	_check(mission.get_node("UI/Screen/CombatHUD/Margin/Rows/Melee").text.contains("Crysknife"), "the HUD names the committed attack")
+	_check(hud.melee_label.text.contains("Crysknife"), "the HUD names the committed attack")
 	await _frames(120)
 	var metrics: Dictionary = mission.get_node("UI").metric_labels
 	for row in ["Melee state", "Melee attack", "Slow charge", "Melee velocity", "Last melee result"]:
@@ -444,14 +591,65 @@ func _aim_at(point: Vector2) -> void:
 func _key(code: Key, pressed: bool) -> void:
 	var event: InputEventKey = InputEventKey.new()
 	event.physical_keycode = code
+	event.keycode = code
 	event.pressed = pressed
 	Input.parse_input_event(event)
+
+
+func _tap(code: Key) -> void:
+	_key(code, true)
+	await _frames(1)
+	_key(code, false)
+	await _frames(1)
+
+
+## Window coordinates for a world point (the 1920 x 1080 canvas is stretched).
+func _screen(world: Vector2) -> Vector2:
+	var viewport: Viewport = mission.get_viewport()
+	return viewport.get_screen_transform() * (viewport.get_canvas_transform() * world)
+
+
+func _mouse(button: MouseButton, world: Vector2, pressed: bool) -> void:
+	var event: InputEventMouseButton = InputEventMouseButton.new()
+	event.button_index = button
+	event.pressed = pressed
+	event.position = _screen(world)
+	event.global_position = event.position
+	Input.parse_input_event(event)
+
+
+func _left_click(world: Vector2) -> void:
+	_mouse(MOUSE_BUTTON_LEFT, world, true)
+	_mouse(MOUSE_BUTTON_LEFT, world, false)
+	await _frames(1)
+
+
+func _right_click(world: Vector2) -> void:
+	_mouse(MOUSE_BUTTON_RIGHT, world, true)
+	_mouse(MOUSE_BUTTON_RIGHT, world, false)
+	await _frames(1)
 
 
 func _capture(label: String) -> void:
 	if "--capture" in OS.get_cmdline_user_args():
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://.validation/" + label + ".png")
+
+
+## Wall-clock wait: the blade charge is timed in real milliseconds, and a
+## fixed-fps headless run spins frames far faster than real time.
+func _real_wait(seconds: float) -> void:
+	var until: int = Time.get_ticks_msec() + int(seconds * 1000.0)
+	while Time.get_ticks_msec() < until:
+		await process_frame
+
+
+func _hold_click(world: Vector2, seconds: float) -> void:
+	_mouse(MOUSE_BUTTON_LEFT, world, true)
+	await _frames(1)
+	await _real_wait(seconds)
+	_mouse(MOUSE_BUTTON_LEFT, world, false)
+	await _frames(1)
 
 
 func _frames(count: int) -> void:

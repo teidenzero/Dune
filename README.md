@@ -32,40 +32,46 @@ Running the project opens a small launcher. Press the number or click:
 
 ## Controls
 
-| Key | Action |
+It plays like a real-time strategy game: you never steer anyone directly.
+Select people, then right-click to tell them what to do. Every key you need
+is printed on the action bar at the bottom of the screen.
+
+| Input | Action |
 |---|---|
-| `WASD` | Move |
-| `Shift` | Sprint |
-| `Ctrl` | Crouch |
-| Mouse | Aim |
-| `LMB` | Fire |
+| **Left-click** / drag | Select a unit / box-select several |
+| **Right-click** ground | Move there |
+| **Right-click** enemy | Attack it (the unit closes to range and keeps firing) |
+| **Right-click** machine or beacon | Paul walks over and uses it |
+| **Double right-click** | Run there (fast, and loud) |
+| `Shift` + right-click | Queue a waypoint |
+| `1` `2` `3` `4` | Select Paul / Scout / Warrior / everyone. Press twice to jump the camera there |
+| `Space` | Pause. You can still select and give orders while paused |
+| `C` | Sneak / stand the selected units |
+| **Left-click** an enemy (Paul selected) | Crysknife: a quick click is a quick strike, **hold** until the ring fills for a slow strike that gets through personal shields |
+| `E` | Arm the crysknife for the next left-click (same click / hold rule) |
+| `Q` | Prescience: a brief slow-motion look at what enemies are about to do |
+| `Z` / `X` | Paul's weapon slots |
 | `R` | Reload |
-| `E` | Knife — **tap** for a fast strike, **hold and release** for a slow one |
-| `Q` | Prescience — brief slow-motion look at what enemies are about to do |
-| `F` | Interact / hold to use |
-| `Tab` | Command mode (slows time while you give squad orders) |
-| `1` `2` `3` `4` | Select Paul / Scout / Warrior / both Fremen |
-| `RMB` | Order the selected Fremen (move, or attack what you click) |
-| `G` / `H` | Follow / Hold |
-| `MMB` | Watch the selected ally |
-| `Enter` | Restart after death |
-| Mouse wheel | Zoom out to plan / in for detail |
+| `H` / `G` | Hold / Follow (Fremen) |
+| `WASD`, arrows, screen edge | Move the camera |
+| Mouse wheel | Zoom |
+| `F11` | Fullscreen |
+| `Enter` | Restart after Paul goes down |
 | `F1` | Debug overlay |
 
-The camera opens at a planning distance — wide enough to see a whole enemy
-vision cone. Roll the wheel out to take in the site before you commit, and in
-when you need to work at close range.
+The squad cards in the bottom-left corner are clickable too: click to select,
+Shift-click to add, double-click to jump the camera to that unit.
 
 ## Three things worth knowing
 
 **Shields.** Harkonnen elites wear Holtzman shields. Bullets and fast blades
-bounce off them. Only a *slow* blade gets through — hold `E`, then release.
+bounce off them. Only a *slow* blade gets through: hold left-click on the target until the ring fills.
 Shooting one forever will never work; that is deliberate.
 
 **Sand and rock.** Movement on open sand makes vibration, and vibration brings
 a sandworm. Rock is silent and rock is safe. Safe rock is drawn as grey stone;
-sand is the tan ground. Sprinting across sand is loud, walking less so,
-crouching almost nothing. Gunfire is very loud.
+sand is the tan ground. Running across sand is loud, walking less so,
+sneaking almost nothing. Gunfire is very loud.
 
 **Being seen is not instant.** Every enemy's field of view is drawn on the
 ground, and it stops where walls and rocks stop it — if the cone does not reach

@@ -90,6 +90,12 @@ position_smoothing_enabled = true
 position_smoothing_speed = 7.0
 script = ExtResource("2_camera")
 
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="."]
+path_desired_distance = 8.0
+target_desired_distance = 10.0
+radius = 14.0
+avoidance_enabled = false
+
 [node name="WeaponController" type="Node" parent="." node_paths=PackedStringArray("muzzle", "owner_actor")]
 script = ExtResource("3_weapon")
 weapon_data = ExtResource("4_pistol")

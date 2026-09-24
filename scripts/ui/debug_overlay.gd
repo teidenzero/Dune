@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Read-only metrics. Add rows via set_metric() as real systems become available.
+## Hosts the player HUD and the F1 metrics panel. Add rows via set_metric().
 
 @export var player: PlayerController
 @export var squad: SquadManager
@@ -9,16 +9,14 @@ var metric_labels: Dictionary = {}
 
 @onready var panel: PanelContainer = $Screen/DebugPanel
 @onready var metrics: GridContainer = $Screen/DebugPanel/Margin/Scroll/Metrics
+@onready var hud: PlayerHud = $Screen/HUD
 
 
 func _ready() -> void:
 	GameManager.debug_visibility_changed.connect(_on_debug_visibility_changed)
 	_on_debug_visibility_changed(GameManager.debug_visible)
-	$Screen/SquadHUD.manager = squad
 	if is_instance_valid(player):
-		$Screen/CombatHUD.bind_weapon(player.weapon_controller)
-		$Screen/CombatHUD.bind_health(player.health)
-		$Screen/CombatHUD.player = player
+		hud.setup(player, squad)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -28,21 +26,24 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
-	_update_command_cursor()
 	if not panel.visible:
 		return
 	if is_instance_valid(squad):
-		set_metric("Command mode", str(squad.command_mode))
+		set_metric("Paused", str(squad.paused))
+		set_metric("Targeting", SquadManager.Targeting.keys()[squad.targeting])
 		var names: PackedStringArray = []
+		if squad.paul_selected:
+			names.append("Paul")
 		for ally in squad.selected_members:
 			if is_instance_valid(ally):
 				names.append("Scout" if ally.selection_slot == 2 else "Warrior")
-		set_metric("Selected units", ", ".join(names) if not names.is_empty() else "Paul")
+		set_metric("Selected units", ", ".join(names) if not names.is_empty() else "none")
 	set_metric("FPS", str(Engine.get_frames_per_second()))
 	if is_instance_valid(player):
 		set_metric("World position", "%.1f, %.1f" % [player.global_position.x, player.global_position.y])
 		set_metric("Speed", "%.1f px/s" % player.get_real_velocity().length())
 		set_metric("Sprinting", "YES" if player.is_sprinting else "NO")
+		set_metric("Paul order", player.order_name())
 		var profile: StealthProfile = player.stealth_profile
 		set_metric("Stance", profile.stance)
 		set_metric("Movement", profile.movement_mode)
@@ -150,10 +151,8 @@ func _update_camera_metrics() -> void:
 	if camera == null:
 		return
 	set_metric("Camera mode", camera.mode_name())
-	set_metric("Camera target", camera.get_target_description())
 	set_metric("Camera zoom", "%.2f" % camera.zoom.x)
-	set_metric("Tactical pan active", "YES" if camera.pan_active else "NO")
-	set_metric("Shared framing distance", "%.0f px" % camera.framing_separation)
+	set_metric("Camera panning", "YES" if camera.pan_active else "NO")
 
 
 func _update_link_metrics() -> void:
@@ -188,26 +187,6 @@ func _update_recon_metrics() -> void:
 	set_metric("Last unseen contact", freshest)
 
 
-func _update_command_cursor() -> void:
-	var cursor: Label = $Screen/CommandCursor
-	cursor.visible = is_instance_valid(squad) and squad.command_mode
-	if not cursor.visible:
-		return
-	var mouse: Vector2 = get_viewport().get_mouse_position()
-	var point: Vector2 = squad.get_canvas_transform().affine_inverse() * mouse
-	cursor.position = (mouse + Vector2(16, 16)).clamp(Vector2.ZERO, get_viewport().get_visible_rect().size - Vector2(220, 30))
-	if squad.rejection_active():
-		cursor.text = "OUT OF COMMAND RANGE"
-		cursor.modulate = Color(1, 0.55, 0.45)
-		return
-	cursor.modulate = Color.WHITE
-	cursor.text = "RMB MOVE"
-	if squad.actor_at(point, "enemies") != null:
-		cursor.text = "RMB ATTACK"
-	elif squad.actor_at(point, "allies") != null:
-		cursor.text = "LMB SELECT"
-
-
 func _camera() -> TacticalCamera:
 	if not is_instance_valid(player):
 		return null
@@ -218,11 +197,11 @@ func set_metric(title: String, value: String) -> void:
 	if not metric_labels.has(title):
 		var title_label: Label = Label.new()
 		title_label.text = title
-		title_label.add_theme_font_size_override("font_size", 13)
+		title_label.add_theme_font_size_override("font_size", 16)
 		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		metrics.add_child(title_label)
 		var value_label: Label = Label.new()
-		value_label.add_theme_font_size_override("font_size", 13)
+		value_label.add_theme_font_size_override("font_size", 16)
 		value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE

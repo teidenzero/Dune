@@ -89,21 +89,17 @@ func _load() -> void:
 
 
 func _place(point: Vector2) -> void:
-	player.global_position = point
-	player.velocity = Vector2.ZERO
+	player.teleport_to(point)
 	player.aim_point = point + Vector2.RIGHT * 100.0
 	worm.reset_threat()
 
 
-## Walks Paul with real movement input for a number of frames.
-func _travel(action: String, frames: int, sprint: bool = false) -> void:
-	if sprint:
-		Input.action_press("sprint")
-	Input.action_press(action)
+## Orders Paul to walk (or run) in a direction for a number of frames, then
+## halts him - the RTS equivalent of holding a movement key.
+func _travel(direction: Vector2, frames: int, run: bool = false) -> void:
+	player.move_to(player.global_position + direction * 1200.0, run)
 	await _frames(frames)
-	Input.action_release(action)
-	if sprint:
-		Input.action_release("sprint")
+	player.stop()
 	await _frames(2)
 
 
@@ -125,19 +121,19 @@ func _terrain_and_walking() -> void:
 	_place(ROCK)
 	await _frames(30)
 	_check(terrain.is_safe() and terrain.terrain == TerrainZone.Kind.SAFE_ROCK, "the rock island reads as safe ground")
-	await _travel("move_up", 60)
+	await _travel(Vector2.UP, 60)
 	_check(worm.worm_sign == 0.0, "walking on safe rock generates no worm sign")
 	# Ground nobody classified is inert too, so the Arrakeen courtyard is quiet.
 	_place(OUTSIDE)
 	await _frames(30)
 	_check(_terrain_of(player).terrain == TerrainZone.Kind.OTHER, "unclassified ground reads as OTHER")
-	await _travel("move_right", 60)
+	await _travel(Vector2.RIGHT, 60)
 	_check(worm.worm_sign == 0.0, "walking off the desert generates no worm sign")
 	# Open sand does register.
 	_place(SAND)
 	await _frames(30)
 	_check(_terrain_of(player).carries_sign(), "the desert range reads as open sand")
-	await _travel("move_right", 90)
+	await _travel(Vector2.RIGHT, 90)
 	var walked: float = worm.worm_sign
 	_check(walked > 0.0, "walking on open sand raises worm sign")
 	# And it decays once the rhythm stops.
@@ -154,25 +150,27 @@ func _movement_intensity() -> void:
 	await _load()
 	_place(SAND)
 	await _frames(30)
-	await _travel("move_right", 120)
+	await _travel(Vector2.RIGHT, 120)
 	var walked: float = worm.worm_sign
 	_place(SAND)
 	await _frames(30)
-	await _travel("move_right", 120, true)
+	await _travel(Vector2.RIGHT, 120, true)
 	var sprinted: float = worm.worm_sign
 	_check(sprinted > walked * 1.5, "sprinting the same ground raises far more sign than walking")
-	# Crouching is the quietest of the three.
+	# Crouching is the quietest of the three. C with Paul selected crouches him.
 	_place(SAND)
 	await _frames(10)
-	_key(KEY_CTRL)
+	_check(mission.get_node("SquadManager").paul_selected, "Paul is selected at scene start")
+	_key(KEY_C)
 	await _frames(4)
-	_check(player.is_crouching, "Paul is crouched")
+	_check(player.is_crouching, "C crouches the selected Paul")
 	var emitter: WormSignEmitter = player.get_node("WormSignEmitter")
-	await _travel("move_right", 120)
+	await _travel(Vector2.RIGHT, 120)
 	var crouched: float = worm.worm_sign
 	var crouch_pulse: float = emitter.last_pulse
-	_key(KEY_CTRL)
+	_key(KEY_C)
 	await _frames(4)
+	_check(not player.is_crouching, "C again stands Paul back up")
 	_check(crouched < walked, "crouch-walking builds far less than walking")
 	_check(crouch_pulse > 0.0 and crouch_pulse < emitter.walk_sign, "crouch-walking still registers, but under the decay floor")
 	completed += 1
@@ -192,9 +190,7 @@ func _gunfire() -> void:
 			if type == DisturbanceBus.Type.GUNSHOT:
 				heard[0] += 1)
 	var before: float = worm.worm_sign
-	Input.action_press("fire_primary")
-	await _frames(4)
-	Input.action_release("fire_primary")
+	_check(player.fire_weapon(), "Paul fires a shot")
 	await _frames(4)
 	var spike: float = worm.worm_sign - before
 	_check(spike >= player.weapon_controller.weapon_data.worm_sign_shot - 0.1, "a shot spikes worm sign by its configured amount")
@@ -205,10 +201,8 @@ func _gunfire() -> void:
 	for index in range(14):
 		if player.weapon_controller.current_ammo == 0:
 			player.weapon_controller.current_ammo = player.weapon_controller.weapon_data.magazine_size
-		Input.action_press("fire_primary")
-		await _frames(3)
-		Input.action_release("fire_primary")
-		await _frames(21)
+		player.fire_weapon()
+		await _frames(24)
 	_check(worm.stage >= Stage.INTERESTED, "a sustained firefight on open sand escalates the threat")
 	completed += 1
 
@@ -219,11 +213,21 @@ func _gunfire() -> void:
 
 func _machinery_and_target() -> void:
 	await _load()
-	_place(ROCK)
+	_place(SAND)
 	await _frames(30)
 	_check(not machine.running, "the rig starts idle")
-	machine.set_running(true)
-	_check(machine.running and machine.emitter.continuous_active, "the rig can be started")
+	# Paul's INTERACT order walks him to the rig and starts it.
+	player.interact_with(machine)
+	_check(player.order == PlayerController.Order.INTERACT, "ordering Paul to the rig is an INTERACT order")
+	for index in range(300):
+		if machine.running:
+			break
+		await _frames(1)
+	_check(machine.running and machine.emitter.continuous_active, "Paul's interact order starts the rig")
+	await _frames(2)
+	_check(player.order == PlayerController.Order.IDLE, "toggling the rig ends the order")
+	_place(ROCK)
+	await _frames(30)
 	var start: float = worm.worm_sign
 	await _frames(180)
 	_check(worm.worm_sign > start + 3.0, "a running rig raises worm sign while nobody moves")
@@ -377,7 +381,12 @@ func _allies_and_reset() -> void:
 	camera.add_shake(0.8)
 	await _frames(2)
 	_check(camera.shake_amount() > 0.0, "the camera can be shaken")
-	_check(camera.mode == TacticalCamera.Mode.FOLLOW_PAUL, "shake does not disturb the camera mode")
+	_check(camera.mode_name() == "FREE", "shake does not disturb the free camera")
+	var anchor: Vector2 = camera.anchor
+	player.global_position = OUTSIDE + Vector2(0, -300)
+	await _frames(4)
+	_check(camera.anchor.distance_to(anchor) < 1.0, "the free camera stays put while shaking; it does not follow Paul")
+	_place(OUTSIDE)
 	await _frames(120)
 	_check(camera.shake_amount() <= 0.01, "shake decays on its own")
 	# A reset leaves nothing behind.
@@ -395,8 +404,9 @@ func _allies_and_reset() -> void:
 	var metrics: Dictionary = mission.get_node("UI").metric_labels
 	for row in ["Worm sign", "Worm threat stage", "Worm event state", "Worm strongest source", "Worm target", "Worm cooldown", "Player terrain", "Player on safe ground"]:
 		_check(metrics.has(row), "F1 debug overlay shows '%s'" % row)
-	var hud: Label = mission.get_node("UI/Screen/CombatHUD/Margin/Rows/Worm")
-	_check(hud.visible and hud.text.contains("WORM"), "the HUD reports the threat once it is real")
+	var player_hud: PlayerHud = mission.get_node("UI/Screen/HUD")
+	var hud: Label = player_hud.worm_label
+	_check(hud.is_visible_in_tree() and hud.text.contains("WORM"), "the HUD reports the threat once it is real")
 	await _capture("m8_worm_threat")
 	worm.force_arrival()
 	await _frames(20)
@@ -404,7 +414,7 @@ func _allies_and_reset() -> void:
 	worm.reset_threat()
 	root.get_node("GameManager").debug_visible = false
 	await _frames(4)
-	_check(not hud.visible, "the HUD hides itself again once the desert is calm")
+	_check(not hud.is_visible_in_tree(), "the HUD hides itself again once the desert is calm")
 	completed += 1
 
 

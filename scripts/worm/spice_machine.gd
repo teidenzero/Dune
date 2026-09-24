@@ -1,6 +1,6 @@
 class_name SpiceMachine
 extends StaticBody2D
-## A standing vibration source. F toggles it while Paul is close, which is what
+## A standing vibration source. Right-clicking it sends Paul to toggle it, which is what
 ## makes threat escalation observable without anyone moving.
 
 signal machine_toggled(running: bool)
@@ -35,17 +35,6 @@ func player_in_range() -> bool:
 	return is_instance_valid(player) and player.global_position.distance_to(global_position) <= interact_radius
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not InputMap.has_action("interact") or event.is_echo() or not event.is_action_pressed("interact"):
-		return
-	if not player_in_range():
-		return
-	toggle()
-	var viewport: Viewport = get_viewport()
-	if viewport != null:
-		viewport.set_input_as_handled()
-
-
 func _process(delta: float) -> void:
 	if running:
 		_pulse = fmod(_pulse + delta * 6.0, TAU)
@@ -61,7 +50,7 @@ func _draw() -> void:
 			draw_arc(Vector2.ZERO, (70.0 + index * 34.0) * swell, 0, TAU, 32, Color(0.95, 0.72, 0.35, 0.28 - index * 0.07), 3.0, true)
 	var label: String = "%s: %s" % [machine_name, "RUNNING" if running else "IDLE"]
 	if player_in_range():
-		label += "   [F]"
+		label += "   RIGHT-CLICK"
 	var width: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 	draw_string_outline(font, Vector2(-width * 0.5, -78), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, 4, Color(0.08, 0.07, 0.05))
 	draw_string(font, Vector2(-width * 0.5, -78), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1.0, 0.82, 0.5) if running else Color(0.78, 0.76, 0.7))

@@ -1,15 +1,10 @@
 extends SceneTree
-## Plays the Harvester Raid the way a player does - real movement input, real
-## holds, no teleporting - and reports what actually happens and how long it
-## takes. This is for observation, not assertion: it is how M9_PLAYTEST.md gets
-## written from facts instead of from guesses.
-
-class AimedPlayer extends PlayerController:
-	var aim_point: Vector2 = Vector2.RIGHT
-
-	func _update_aim() -> void:
-		aim_direction = global_position.direction_to(aim_point)
-		aim_pivot.rotation = aim_direction.angle()
+## Plays the Harvester Raid the way a player does - real orders (move, run,
+## sneak, attack, use), no teleporting - and reports what actually happens and
+## how long it takes. This is for observation, not assertion: it is how
+## M9_PLAYTEST.md gets written from facts instead of from guesses.
+##
+## Run: godot --headless --fixed-fps 60 --path . --script res://tests/playthrough.gd -- mode=<stealth|combat|squad|careful> [trace]
 
 var scene: Node2D
 var mission: MissionManager
@@ -66,7 +61,6 @@ func _run() -> void:
 func _load() -> void:
 	root.get_node("GameManager").mission_checkpoint = &""
 	scene = load("res://scenes/missions/harvester_raid/harvester_raid.tscn").instantiate()
-	scene.get_node("Player").set_script(AimedPlayer)
 	root.add_child(scene)
 	current_scene = scene
 	mission = scene.get_node("Mission")
@@ -89,27 +83,25 @@ func _load() -> void:
 	mission.phase_changed.connect(func(p: StringName, _q: StringName) -> void: _note("PHASE: %s" % p))
 	raid.mission_event.connect(func(e: StringName) -> void: _note("EVENT: %s" % e))
 	await _wait(1.0)
+	squad.select_slot(1)
 	_note("loaded; %d enemies, Paul at %s" % [get_nodes_in_group("enemies").size(), str(player.global_position.round())])
 
 
-## Real movement input toward a point, reporting if Paul cannot make progress.
 func _alive() -> bool:
 	return mission.running() and not player.health.is_dead
 
 
+## A right-click order (double right-click to run, C first to sneak), reporting
+## if Paul cannot make progress along his path.
 func _walk_to(target: Vector2, limit: float = 40.0, sprint: bool = false, crouch: bool = false) -> bool:
 	if not _alive():
 		return false
 	var spent: float = 0.0
 	var last: Vector2 = player.global_position
 	var still: float = 0.0
-	if crouch:
-		_tap_key(KEY_CTRL)
-	if sprint:
-		Input.action_press("sprint")
-	while player.global_position.distance_to(target) > 40.0 and spent < limit and _alive():
-		var delta: Vector2 = target - player.global_position
-		_press_toward(delta)
+	player.set_crouching(crouch)
+	player.move_to(target, sprint and not crouch)
+	while player.order == PlayerController.Order.MOVE and spent < limit and _alive():
 		await _wait(0.1)
 		spent += 0.1
 		if player.global_position.distance_to(last) < 3.0:
@@ -118,18 +110,15 @@ func _walk_to(target: Vector2, limit: float = 40.0, sprint: bool = false, crouch
 				stuck_events += 1
 				_note("STUCK near %s heading for %s" % [str(player.global_position.round()), str(target.round())])
 				still = 0.0
-				# Nudge sideways, the way a player would.
-				_release_all()
-				_press_toward(delta.orthogonal())
-				await _wait(0.6)
+				# Re-issue the order, the way a player would click again.
+				player.move_to(target, sprint and not crouch)
 		else:
 			still = 0.0
 		last = player.global_position
-	_release_all()
-	if sprint:
-		Input.action_release("sprint")
+	if player.order == PlayerController.Order.MOVE:
+		player.stop()
 	if crouch:
-		_tap_key(KEY_CTRL)
+		player.set_crouching(false)
 	await _wait(0.1)
 	var arrived: bool = player.global_position.distance_to(target) <= 40.0
 	if not arrived:
@@ -137,61 +126,38 @@ func _walk_to(target: Vector2, limit: float = 40.0, sprint: bool = false, crouch
 	return arrived
 
 
-func _press_toward(delta: Vector2) -> void:
-	_release_all()
-	if delta.x > 20.0:
-		Input.action_press("move_right")
-	elif delta.x < -20.0:
-		Input.action_press("move_left")
-	if delta.y > 20.0:
-		Input.action_press("move_down")
-	elif delta.y < -20.0:
-		Input.action_press("move_up")
-
-
-func _release_all() -> void:
-	for action in ["move_up", "move_down", "move_left", "move_right"]:
-		Input.action_release(action)
-
-
-func _tap_key(code: Key) -> void:
-	var down := InputEventKey.new()
-	down.physical_keycode = code
-	down.pressed = true
-	Input.parse_input_event(down)
-	var up := InputEventKey.new()
-	up.physical_keycode = code
-	up.pressed = false
-	Input.parse_input_event(up)
-
-
-## Holds F where a player would stand, and reports how long it really took.
+## Right-clicks a point to use it and reports how long it really took, from the
+## order to completion, including the walk into range.
 func _hold_point(point: InteractionPoint, label: String, limit: float = 10.0) -> bool:
 	if not _alive() or point == null:
 		return false
 	var gap: float = player.global_position.distance_to(point.global_position)
 	if not point.player_in_range():
-		_note("%s: NOT IN RANGE at %.0f px (radius %.0f) - walking closer" % [label, gap, point.interact_radius])
-		await _walk_to(point.global_position, 12.0)
-		gap = player.global_position.distance_to(point.global_position)
+		_note("%s: ordered from %.0f px (radius %.0f) - Paul walks in" % [label, gap, point.interact_radius])
 	var began: float = clock
-	Input.action_press("interact")
-	var spent: float = 0.0
-	var interrupted: int = 0
+	# Lambdas capture locals by value; a one-slot array is shared.
+	var interrupted: Array[int] = [0]
 	var watch: Callable = func(reason: String) -> void:
-		interrupted += 1
+		interrupted[0] += 1
 		_note("%s hold interrupted: %s" % [label, reason])
 	point.interaction_cancelled.connect(watch)
+	player.interact_with(point)
+	var spent: float = 0.0
 	while spent < limit and not point.used and _alive():
 		await _wait(0.1)
 		spent += 0.1
-	Input.action_release("interact")
+		if player.order != PlayerController.Order.INTERACT and not point.used and _alive():
+			# Retaliation or a stray order pulled him off; click it again.
+			player.interact_with(point)
 	point.interaction_cancelled.disconnect(watch)
+	gap = player.global_position.distance_to(point.global_position)
+	if player.order == PlayerController.Order.INTERACT:
+		player.stop()
 	await _wait(0.2)
 	if point.used:
-		_note("%s DONE in %.1fs (stood %.0f px away, %d interruptions)" % [label, clock - began, gap, interrupted])
+		_note("%s DONE in %.1fs (stood %.0f px away, %d interruptions)" % [label, clock - began, gap, interrupted[0]])
 	else:
-		_note("%s FAILED after %.1fs (stood %.0f px away, %d interruptions)" % [label, clock - began, gap, interrupted])
+		_note("%s FAILED after %.1fs (stood %.0f px away, %d interruptions)" % [label, clock - began, gap, interrupted[0]])
 	return point.used
 
 
@@ -244,19 +210,14 @@ func _fight_back(limit: float = 12.0) -> void:
 				foe = e
 				break
 		if foe == null:
-			return
-		player.aim_point = foe.global_position
-		Input.action_press("fire_primary")
-		await _wait(0.08)
-		Input.action_release("fire_primary")
-		await _wait(0.30)
-		spent += 0.38
-		if player.weapon_controller.current_ammo == 0:
-			Input.action_press("reload")
-			await _wait(0.1)
-			Input.action_release("reload")
-			await _wait(1.4)
-			spent += 1.5
+			break
+		# Right-click the shooter: Paul closes to range, fires, and reloads.
+		if player.order_target != foe:
+			player.attack(foe)
+		await _wait(0.3)
+		spent += 0.3
+	if player.order == PlayerController.Order.ATTACK:
+		player.stop()
 	if spent > 0.0:
 		_note("returned fire for %.1fs, Paul HP %.0f" % [spent, player.health.current_health])
 
@@ -301,18 +262,20 @@ func _combat_run() -> void:
 	_note("--- loud approach ---")
 	await _walk_to(Vector2(0, 900), 30.0, true)
 	await _walk_to(Vector2(-400, 300), 30.0, true)
-	# Shoot to draw attention, as a loud player would.
-	var shots: int = 0
-	while shots < 6:
+	# Shoot to draw attention, as a loud player would: right-click the nearest.
+	var shots: Array[int] = [0]
+	var fired: Callable = func() -> void: shots[0] += 1
+	player.weapon_controller.weapon_fired.connect(fired)
+	var spent: float = 0.0
+	while shots[0] < 6 and spent < 8.0 and _alive():
 		var foe: EnemyCharacter = _nearest_enemy()
-		if foe != null:
-			player.aim_point = foe.global_position
-		Input.action_press("fire_primary")
+		if foe != null and player.order_target != foe:
+			player.attack(foe)
 		await _wait(0.1)
-		Input.action_release("fire_primary")
-		await _wait(0.4)
-		shots += 1
-	_note("fired 6 shots; worm sign %.1f" % worm.worm_sign)
+		spent += 0.1
+	player.weapon_controller.weapon_fired.disconnect(fired)
+	player.stop()
+	_note("fired %d shots; worm sign %.1f" % [shots[0], worm.worm_sign])
 	await _wait(6.0)
 	_note("after firefight: %d enemies alive, Paul HP %.0f" % [_alive_enemies(), player.health.current_health])
 	await _hold_point(_point(&"sabotage_engine"), "sabotage A", 10.0)

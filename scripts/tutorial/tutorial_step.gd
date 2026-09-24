@@ -23,6 +23,9 @@ var on_complete: Callable = Callable()
 ## Short teaching line shown for a moment after the step is satisfied.
 var note: String = ""
 var delay_after: float = 0.9
+## A failure later in this section restarts here instead of at its first step,
+## so a long lesson is not replayed from the top for one late mistake.
+var retry_here: bool = false
 var state: State = State.INACTIVE
 
 
@@ -37,6 +40,7 @@ static func create(data: Dictionary) -> TutorialStep:
 	step.speaker = data.get("speaker", "")
 	step.note = data.get("note", "")
 	step.delay_after = data.get("delay_after", 0.9)
+	step.retry_here = data.get("retry_here", false)
 	step.completion = data.get("completion", Callable())
 	step.on_start = data.get("on_start", Callable())
 	step.on_complete = data.get("on_complete", Callable())

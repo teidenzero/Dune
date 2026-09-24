@@ -16,3 +16,11 @@ var debug_visible: bool = false:
 			return
 		debug_visible = value
 		debug_visibility_changed.emit(debug_visible)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggle_fullscreen") and not event.is_echo():
+		var window: Window = get_window()
+		var fullscreen: bool = window.mode == Window.MODE_FULLSCREEN or window.mode == Window.MODE_EXCLUSIVE_FULLSCREEN
+		window.mode = Window.MODE_WINDOWED if fullscreen else Window.MODE_FULLSCREEN
+		get_viewport().set_input_as_handled()

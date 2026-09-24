@@ -344,8 +344,7 @@ func _move_player(marker_name: StringName) -> void:
 	var marker: Node2D = get_parent().find_child(String(marker_name), true, false) as Node2D
 	if marker == null or not is_instance_valid(player):
 		return
-	player.global_position = marker.global_position
-	player.velocity = Vector2.ZERO
+	player.teleport_to(marker.global_position)
 	player.health.reset_health()
 	var offset: int = 0
 	for ally: AllyCharacter in get_tree().get_nodes_in_group("allies"):

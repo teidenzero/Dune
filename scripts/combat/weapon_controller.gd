@@ -6,6 +6,7 @@ signal ammo_changed(current_ammo: int, magazine_size: int)
 signal reload_started
 signal reload_finished
 signal dry_fired
+signal weapon_changed(data: WeaponData)
 
 @export var weapon_data: WeaponData
 @export var muzzle: Marker2D
@@ -17,6 +18,8 @@ var is_reloading: bool = false
 var cooldown_remaining: float = 0.0
 var reload_remaining: float = 0.0
 var enabled: bool = true
+## Rounds left in weapons that are not in hand, so switching never refills a gun.
+var _stored_ammo: Dictionary = {}
 var can_fire: bool:
 	get:
 		return enabled and weapon_data != null and current_ammo > 0 and not is_reloading and cooldown_remaining <= 0.0
@@ -82,6 +85,28 @@ func start_reload() -> bool:
 	reload_remaining = maxf(weapon_data.reload_time, 0.01)
 	reload_started.emit()
 	return true
+
+
+## Swap the weapon in hand. An interrupted reload is lost; the magazine each
+## weapon had is remembered.
+func equip(data: WeaponData) -> bool:
+	if data == null or data == weapon_data:
+		return false
+	if weapon_data != null:
+		_stored_ammo[weapon_data] = current_ammo
+	weapon_data = data
+	is_reloading = false
+	reload_remaining = 0.0
+	current_ammo = int(_stored_ammo.get(data, data.magazine_size))
+	weapon_changed.emit(data)
+	ammo_changed.emit(current_ammo, data.magazine_size)
+	return true
+
+
+func reload_ratio() -> float:
+	if not is_reloading or weapon_data == null:
+		return 0.0
+	return clampf(1.0 - reload_remaining / maxf(weapon_data.reload_time, 0.01), 0.0, 1.0)
 
 
 func disable() -> void:

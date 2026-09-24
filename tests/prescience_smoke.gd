@@ -1,11 +1,13 @@
 extends SceneTree
 ## Milestone 7: prescience against the real arena, AI, recon, and time authority.
+## Command mode is gone; prescience is the only system that bends the clock,
+## and its interplay with the RTS pause (Space) is covered in _pause_interplay.
 
 const State = EnemyAIController.State
 const Order = AllyAIController.Order
 
 class AimedPlayer extends PlayerController:
-	# Synthetic mouse events do not move the OS cursor.
+	# Paul's facing is scripted so he can watch a subject without an order.
 	var aim_point: Vector2 = Vector2.RIGHT
 
 	func _update_aim() -> void:
@@ -35,7 +37,7 @@ func _run() -> void:
 	await _combat_and_fire()
 	await _visibility_rules()
 	await _ally_projection()
-	await _time_authority()
+	await _pause_interplay()
 	await _reset_safety()
 	_check(completed == 8, "all prescience scenarios completed")
 	_check(Engine.time_scale == 1.0, "suite leaves normal game speed")
@@ -118,6 +120,7 @@ func _ready_again() -> void:
 func _key(code: Key, pressed: bool) -> void:
 	var event: InputEventKey = InputEventKey.new()
 	event.physical_keycode = code
+	event.keycode = code
 	event.pressed = pressed
 	Input.parse_input_event(event)
 
@@ -291,18 +294,19 @@ func _combat_and_fire() -> void:
 	_check(prescience.danger, "a firing line through Paul raises the incoming-fire warning")
 	# Combat gating: prescience is observation, not bullet time.
 	var ammo: int = player.weapon_controller.current_ammo
-	Input.action_press("fire_primary")
+	_check(not player.fire_weapon(), "the fire request is refused while reading the future")
 	await _frames(8)
-	Input.action_release("fire_primary")
 	_check(player.weapon_controller.current_ammo == ammo, "Paul cannot fire while reading the future")
-	await _tap(KEY_E)
+	player.melee_press()
+	await _frames(2)
+	player.melee_release()
+	await _frames(2)
 	_check(player.melee.state == MeleeController.State.IDLE, "Paul cannot use the crysknife either")
-	Input.action_press("sprint")
-	Input.action_press("move_up")
+	player.move_to(player.global_position + Vector2(-200, 0), true)
 	await _frames(10)
-	_check(not player.is_sprinting, "sprint is disabled during prescience")
-	Input.action_release("move_up")
-	Input.action_release("sprint")
+	_check(not player.running and not player.is_sprinting, "a run order walks during prescience")
+	_check(player.current_speed > 0.0 and player.current_speed <= player.walk_speed * prescience.move_speed_multiplier + 1.0, "Paul moves at the reduced prescience pace")
+	player.stop()
 	prescience.deactivate()
 	await _frames(4)
 	_check(player.weapon_controller.enabled and player.melee.enabled, "combat returns when prescience ends")
@@ -372,35 +376,63 @@ func _ally_projection() -> void:
 
 
 # --------------------------------------------------------------------------
-# Scenario 7 - one owner of the clock
+# Scenario 7 - one owner of the clock, and the RTS pause
 # --------------------------------------------------------------------------
 
-func _time_authority() -> void:
+func _pause_interplay() -> void:
 	await _load()
 	await _watch_from(Vector2(-1420, -600), patroller)
-	# Gameplay Test F: command mode blocks prescience.
-	_check(squad.set_command_mode(true), "command mode takes the clock")
-	_check(TimeScaleManager.is_held_by(TimeScaleManager.Source.COMMAND_MODE), "the time authority records the holder")
-	_check(not prescience.activate(), "prescience is refused while command mode holds the clock")
-	_check(prescience.last_denied_reason.contains("COMMAND MODE"), "the refusal names command mode")
-	_check(is_equal_approx(Engine.time_scale, squad.command_time_scale), "the refused activation did not disturb command mode")
+	# Gameplay Test F: another holder of the clock blocks prescience. Command
+	# mode no longer exists, but the time authority still enforces one owner.
+	_check(TimeScaleManager.request(TimeScaleManager.Source.COMMAND_MODE, 0.4), "another source can take the free clock")
+	_check(not prescience.activate(), "prescience is refused while another source holds the clock")
+	_check(prescience.last_denied_reason == "TIME IS ALREADY BENT", "the refusal explains itself")
+	_check(is_equal_approx(Engine.time_scale, 0.4), "the refused activation did not disturb the holder")
 	_check(energy.current_energy == energy.max_energy, "a refused activation costs nothing")
-	squad.set_command_mode(false)
+	TimeScaleManager.release(TimeScaleManager.Source.COMMAND_MODE)
 	await _ready_again()
-	_check(Engine.time_scale == 1.0, "leaving command mode restores normal speed")
-	_check(prescience.activate(), "prescience works once command mode is released")
-	# And the reverse: command mode is refused while prescience holds the clock.
-	var blocked: Array[String] = []
-	squad.command_blocked.connect(func(holder: String) -> void: blocked.append(holder))
-	_check(not squad.set_command_mode(true), "command mode is refused while prescience holds the clock")
-	_check(not squad.command_mode, "command mode did not partially engage")
-	_check(blocked.size() == 1 and blocked[0] == "PRESCIENCE", "the block reports which system holds the clock")
+	_check(Engine.time_scale == 1.0, "the released clock is back to normal speed")
+	_check(prescience.activate(), "prescience works once the clock is free")
+	_check(TimeScaleManager.is_held_by(TimeScaleManager.Source.PRESCIENCE), "the time authority records prescience as the holder")
+	_check(not TimeScaleManager.request(TimeScaleManager.Source.COMMAND_MODE, 0.4), "no other source can take the clock from prescience")
 	_check(is_equal_approx(Engine.time_scale, prescience.world_time_scale), "prescience kept its own time scale")
+	# Space pauses the whole world mid-vision; the vision itself is paused too.
+	await _frames(10)
+	var energy_held: float = energy.current_energy
+	await _tap(KEY_SPACE)
+	_check(squad.paused and paused, "Space pauses the game during prescience")
+	var remaining_at_pause: float = prescience.remaining
+	# More frames than the whole vision lasts (--fixed-fps 60 makes frames the clock).
+	await _frames(int(prescience.duration * 60.0) + 60)
+	_check(prescience.active, "prescience outlasts a pause longer than its own duration")
+	_check(prescience.remaining == remaining_at_pause, "the real-time countdown is frozen while paused")
+	_check(is_equal_approx(Engine.time_scale, prescience.world_time_scale) and TimeScaleManager.is_held_by(TimeScaleManager.Source.PRESCIENCE), "pausing leaves prescience holding the clock")
+	_check(energy.current_energy == energy_held and not energy.regenerating, "the reserve neither drains nor refills while paused")
+	_check(not prescience.projections.is_empty(), "the projections stay on screen while paused")
+	# Q is Paul's own input, and Paul is paused: it does nothing until resume.
+	await _tap(KEY_Q)
+	_check(prescience.active, "Q cannot end prescience while the game is paused")
+	await _tap(KEY_SPACE)
+	_check(not squad.paused and not paused, "Space resumes the game")
+	await _frames(10)
+	_check(prescience.active and prescience.remaining < remaining_at_pause, "the countdown resumes where it stopped")
+	for index in range(900):
+		if not prescience.active:
+			break
+		await _frames(1)
+	_check(not prescience.active and Engine.time_scale == 1.0, "prescience still expires on its own after the pause")
+	_check(TimeScaleManager.holder() == TimeScaleManager.Source.NONE, "expiry frees the clock")
+	# A pause while prescience is idle does not start it, and Q waits for resume.
+	await _ready_again()
+	await _tap(KEY_SPACE)
+	await _tap(KEY_Q)
+	_check(not prescience.active and Engine.time_scale == 1.0, "Q does not open a vision while paused")
+	await _tap(KEY_SPACE)
+	await _tap(KEY_Q)
+	_check(prescience.active, "Q works again once play resumes")
 	prescience.deactivate()
 	await _frames(4)
 	_check(Engine.time_scale == 1.0 and TimeScaleManager.holder() == TimeScaleManager.Source.NONE, "releasing prescience frees the clock")
-	_check(squad.set_command_mode(true), "command mode works again afterwards")
-	squad.set_command_mode(false)
 	completed += 1
 
 

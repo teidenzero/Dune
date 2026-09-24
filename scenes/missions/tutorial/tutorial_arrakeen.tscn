@@ -624,10 +624,10 @@ label = "SAFE ROCK"
 color = Color(0.95, 0.82, 0.45, 1)
 
 [node name="Marker_PrescienceWatch" type="Node2D" parent="Markers"]
-position = Vector2(6060.0, 280.0)
+position = Vector2(5980.0, 220.0)
 script = ExtResource("marker")
 radius = 42.0
-label = "OBSERVATION POST"
+label = "WATCH POST"
 color = Color(0.95, 0.82, 0.45, 1)
 
 [node name="Marker_PrescienceExit" type="Node2D" parent="Markers"]
@@ -729,7 +729,7 @@ id = &"far_rock"
 shape = SubResource("Shape_far_rock")
 
 [node name="Trigger_PrescienceWatch" type="Area2D" parent="Triggers"]
-position = Vector2(6060.0, 280.0)
+position = Vector2(5980.0, 220.0)
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("trigger")
@@ -748,7 +748,7 @@ id = &"presc_exit"
 [node name="Shape" type="CollisionShape2D" parent="Triggers/Trigger_PrescienceExit"]
 shape = SubResource("Shape_presc_exit")
 
-[node name="Sections" type="Node2D" parent="."]
+[node name="Sections" type="Node2D" parent="." groups=["navigation_geometry"]]
 
 [node name="Movement" type="Node2D" parent="Sections"]
 
@@ -1464,9 +1464,6 @@ recon = NodePath("../ReconManager")
 [node name="Title" parent="UI/Screen" index="0"]
 text = "ARRAKEEN TRAINING
 Atreides residency - practice yards"
-
-[node name="Controls" parent="UI/Screen" index="1"]
-text = "WASD Move   CTRL Crouch   SHIFT Sprint   LMB Fire   E Knife   Q Prescience   F Interact   R Reload   TAB Squad   F1 Debug"
 
 [node name="TutorialPrompt" parent="." node_paths=PackedStringArray("manager") instance=ExtResource("prompt")]
 manager = NodePath("../TutorialManager")

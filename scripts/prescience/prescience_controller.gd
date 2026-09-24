@@ -70,10 +70,8 @@ func can_activate() -> String:
 		return "ALREADY ACTIVE"
 	if lockout > 0.0:
 		return "PRESCIENCE RECOVERING"
-	if is_instance_valid(_squad) and _squad.command_mode:
-		return "EXIT COMMAND MODE TO USE PRESCIENCE"
 	if not TimeScaleManager.is_available(TimeScaleManager.Source.PRESCIENCE):
-		return "EXIT COMMAND MODE TO USE PRESCIENCE"
+		return "TIME IS ALREADY BENT"
 	if energy == null or not energy.can_spend():
 		return "NOT ENOUGH PRESCIENCE"
 	return ""
@@ -85,7 +83,7 @@ func activate() -> bool:
 		_deny(reason)
 		return false
 	if not TimeScaleManager.request(TimeScaleManager.Source.PRESCIENCE, world_time_scale):
-		_deny("EXIT COMMAND MODE TO USE PRESCIENCE")
+		_deny("TIME IS ALREADY BENT")
 		return false
 	energy.spend()
 	energy.regenerating = false

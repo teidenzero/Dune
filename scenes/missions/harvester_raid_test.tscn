@@ -1,9 +1,11 @@
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://scripts/environment/desert_ground.gd" id="1_ground"]
 [ext_resource type="PackedScene" path="res://scenes/environment/rock_formation.tscn" id="2_rock"]
 [ext_resource type="PackedScene" path="res://scenes/environment/harvester_placeholder.tscn" id="3_harvester"]
 [ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="4_player"]
+[ext_resource type="Resource" path="res://resources/weapons/maula_pistol.tres" id="90_pistol"]
+[ext_resource type="Resource" path="res://resources/weapons/fremen_rifle.tres" id="91_rifle"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="5_ui"]
 [ext_resource type="PackedScene" path="res://scenes/characters/test_dummy.tscn" id="6_dummy"]
 [ext_resource type="Script" path="res://scripts/environment/arena_navigation.gd" id="7_navigation"]
@@ -204,6 +206,7 @@ shape = SubResource("Rectangle_silo")
 
 [node name="Player" parent="." instance=ExtResource("4_player")]
 position = Vector2(-600, 280)
+loadout = Array[Resource]([ExtResource("90_pistol"), ExtResource("91_rifle")])
 
 [node name="TacticalCamera" parent="Player" index="6"]
 limit_left = -1600

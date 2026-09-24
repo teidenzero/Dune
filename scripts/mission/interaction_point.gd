@@ -21,6 +21,9 @@ signal interaction_completed(id: StringName)
 @export var interrupt_on_damage: bool = true
 
 var used: bool = false
+## Set by Paul while he stands here on an INTERACT order; right-clicking the
+## point is how the player uses it.
+var command_hold: bool = false
 var holding: bool = false
 var progress: float = 0.0
 
@@ -72,7 +75,7 @@ func _physics_process(delta: float) -> void:
 		if holding:
 			cancel("UNAVAILABLE")
 		return
-	var wants: bool = InputMap.has_action("interact") and Input.is_action_pressed("interact") and player_in_range()
+	var wants: bool = command_hold and player_in_range()
 	if not wants:
 		if holding:
 			cancel("RELEASED")
@@ -87,6 +90,7 @@ func _physics_process(delta: float) -> void:
 		holding = false
 		progress = 0.0
 		used = true
+		command_hold = false
 		interaction_completed.emit(id)
 
 
@@ -117,7 +121,7 @@ func _draw() -> void:
 		draw_arc(Vector2.ZERO, 42.0, -PI * 0.5, -PI * 0.5 + TAU * ratio(), 32, Color(1.0, 0.85, 0.4), 5.0, true)
 	if not near:
 		return
-	var text: String = "[F] %s" % label
+	var text: String = "RIGHT-CLICK: %s" % label
 	var size: int = WorldLabel.font_size(self, 14)
 	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var point: Vector2 = Vector2(-width * 0.5, -52.0 - (size - 14) * 0.5)

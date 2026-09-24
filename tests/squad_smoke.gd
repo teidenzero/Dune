@@ -12,6 +12,7 @@ var scout: AllyCharacter
 var warrior: AllyCharacter
 var squad: SquadManager
 var guard: EnemyCharacter
+var camera: TacticalCamera
 
 
 func _initialize() -> void:
@@ -57,6 +58,9 @@ func _load(active_guard: bool = false) -> void:
 	warrior = mission.get_node("Allies/Warrior")
 	squad = mission.get_node("SquadManager")
 	guard = mission.get_node("Enemies/Guard_A")
+	camera = player.get_node("TacticalCamera")
+	# A real pointer resting near a window edge must not pan the view mid-click.
+	camera.edge_scroll_enabled = false
 	await _frames(15)
 
 
@@ -64,61 +68,76 @@ func _selection_and_controls() -> void:
 	await _load()
 	_check(squad.members.size() == 2 and scout.health.current_health == 80 and warrior.health.current_health == 120, "two data-configured Fremen register with correct health")
 	_check(scout.ai.current_order == Order.FOLLOW and warrior.ai.current_order == Order.FOLLOW, "both allies start following")
+	_check(squad.paul_selected and player.selected and squad.selected_members.is_empty(), "Paul starts selected on his own")
 	await _tap(KEY_2)
-	_check(scout.selected and not warrior.selected, "2 selects only Scout")
+	_check(scout.selected and not warrior.selected and not squad.paul_selected, "2 selects only Scout")
 	await _tap(KEY_3)
-	_check(warrior.selected and not scout.selected, "3 selects only Warrior")
+	_check(warrior.selected and not scout.selected and not player.selected, "3 selects only Warrior")
 	await _tap(KEY_4)
-	_check(squad.selected_members.size() == 2, "4 selects both allies")
+	_check(squad.selected_members.size() == 2 and squad.paul_selected and squad.selected_units().size() == 3, "4 selects Paul and both allies")
 	await _tap(KEY_1)
-	_check(squad.selected_members.is_empty(), "1 clears squad selection without changing Paul control")
+	_check(squad.paul_selected and player.selected and squad.selected_members.is_empty(), "1 selects Paul alone")
 	await _tap(KEY_TAB)
-	_check(squad.command_mode and is_equal_approx(Engine.time_scale, 0.4), "Tab enables non-paused command slowdown")
+	_check(squad.paul_selected and squad.selected_units().size() == 1 and Engine.time_scale == 1.0 and not squad.paused, "Tab no longer toggles a command mode or slows time")
+	# Clicks select units; WASD pans the camera and never moves or fires Paul.
 	player.set_physics_process(true)
+	player.retaliate = false
+	player.teleport_to(Vector2(-1100, 750))
+	_place_ally(scout, Vector2(-1000, 700))
+	_place_ally(warrior, Vector2(-1000, 800))
+	camera.snap_to(Vector2(-1050, 750))
+	await _frames(5)
 	var initial: Vector2 = player.position
 	var ammo: int = player.weapon_controller.current_ammo
 	Input.action_press("move_right")
-	_mouse(scout.global_position, MOUSE_BUTTON_LEFT, true)
+	await _left_click(scout.global_position)
 	await _frames(10)
-	_mouse(scout.global_position, MOUSE_BUTTON_LEFT, false)
 	Input.action_release("move_right")
-	_check(scout.selected and not warrior.selected, "command left-click selects an ally")
-	_check(player.position == initial and player.weapon_controller.current_ammo == ammo, "command clicks and WASD cannot move/fire Paul")
-	Input.action_press("fire_primary")
-	await _frames(2)
-	squad.set_command_mode(false)
-	await _frames(5)
-	_check(player.weapon_controller.current_ammo == ammo, "held selection click cannot become a shot when command mode exits")
-	Input.action_release("fire_primary")
-	squad.set_command_mode(true)
-	_mouse(warrior.global_position, MOUSE_BUTTON_LEFT, true, true)
-	await _frames(2)
-	_mouse(warrior.global_position, MOUSE_BUTTON_LEFT, false, true)
-	_check(squad.selected_members.size() == 2, "Shift-click adds a second ally")
-	_mouse(scout.global_position, MOUSE_BUTTON_LEFT, true, true)
-	await _frames(2)
-	_mouse(scout.global_position, MOUSE_BUTTON_LEFT, false, true)
+	camera.snap_to(Vector2(-1050, 750))
+	await _frames(3)
+	_check(scout.selected and not warrior.selected and not squad.paul_selected, "left-click selects an ally")
+	_check(player.position == initial and player.weapon_controller.current_ammo == ammo, "clicks and WASD cannot move or fire Paul")
+	await _left_click(warrior.global_position, true)
+	_check(squad.selected_members.size() == 2 and not squad.paul_selected, "Shift-click adds a second ally")
+	await _left_click(scout.global_position, true)
 	_check(not scout.selected and warrior.selected, "Shift-click toggles an ally out")
+	await _left_click(player.global_position, true)
+	_check(squad.paul_selected and warrior.selected and squad.selected_units().size() == 2, "Shift-click adds Paul")
+	await _left_click(player.global_position)
+	_check(squad.paul_selected and squad.selected_members.is_empty(), "plain click on Paul selects him alone")
+	await _left_click(Vector2(-1100, 950))
+	_check(not squad.has_selection() and not player.selected, "click on empty ground clears everything")
+	await _tap(KEY_3)
 	await _tap(KEY_H)
 	_check(warrior.ai.current_order == Order.HOLD and scout.ai.current_order == Order.FOLLOW, "H affects selected unit only")
 	await _tap(KEY_G)
 	_check(warrior.ai.current_order == Order.FOLLOW, "G restores FOLLOW")
+	# C: Paul crouches, a selected Fremen sneaks, and pressing again stands both.
+	await _tap(KEY_1)
+	await _tap(KEY_C)
+	_check(player.is_crouching and not scout.sneaking, "C with Paul selected crouches Paul only")
 	await _tap(KEY_4)
+	await _tap(KEY_C)
+	_check(player.is_crouching and scout.sneaking and warrior.sneaking, "C with a mixed selection sends everyone low")
+	await _tap(KEY_C)
+	_check(not player.is_crouching and not scout.sneaking and not warrior.sneaking, "C again stands everyone up")
 	await _capture("squad_command")
 	await _tap(KEY_F1)
-	_check(mission.get_node("UI").metric_labels.has("Command mode") and scout.get_node("SelectionIndicator/Details").visible, "F1 exposes squad and ally diagnostics")
+	await _frames(3)
+	var metrics: Dictionary = mission.get_node("UI").metric_labels
+	_check(metrics.has("Selected units") and metrics["Selected units"].text.contains("Paul") and scout.get_node("SelectionIndicator/Details").visible, "F1 exposes squad and ally diagnostics")
 	await _capture("squad_debug")
-	await _tap(KEY_TAB)
-	_check(not squad.command_mode and Engine.time_scale == 1.0 and not player.squad_control_locked, "Tab reliably restores normal control and speed")
-	Input.action_press("move_right")
-	await _frames(12)
-	Input.action_release("move_right")
-	_check(player.position.x > initial.x + 5, "Paul movement resumes outside command mode")
+	await _tap(KEY_F1)
+	# Right-click with only Paul selected moves Paul and nobody else.
+	await _tap(KEY_1)
 	var order: Order = scout.ai.current_order
-	_mouse(Vector2(-500, 500), MOUSE_BUTTON_RIGHT, true)
-	await _frames(2)
-	_mouse(Vector2(-500, 500), MOUSE_BUTTON_RIGHT, false)
-	_check(scout.ai.current_order == order, "normal-mode right click does not issue orders")
+	await _right_click(Vector2(-1250, 750))
+	_check(player.order == PlayerController.Order.MOVE and scout.ai.current_order == order and warrior.ai.current_order == order, "right-click with Paul selected orders only Paul")
+	await _frames(30)
+	_check(player.position.x < initial.x - 5, "Paul walks to the right-clicked point")
+	await _tap(KEY_H)
+	_check(player.order == PlayerController.Order.IDLE, "H stops Paul")
+	player.set_physics_process(false)
 	completed += 1
 
 
@@ -129,19 +148,19 @@ func _navigation_and_orders() -> void:
 	var anchor: Vector2 = warrior.ai.hold_position
 	scout.position = Vector2(-600, 220)
 	squad.select_slot(2)
-	squad.set_command_mode(true)
-	_mouse(Vector2(-100, 220), MOUSE_BUTTON_RIGHT, true)
-	await _frames(2)
-	_mouse(Vector2(-100, 220), MOUSE_BUTTON_RIGHT, false)
+	camera.snap_to(Vector2(-350, 220))
+	await _frames(3)
+	await _right_click(Vector2(-100, 220))
 	_check(scout.ai.current_order == Order.MOVE_TO and warrior.ai.current_order == Order.HOLD, "terrain right click gives independent MOVE_TO")
-	squad.set_command_mode(false)
+	_check(player.order == PlayerController.Order.IDLE, "an order to the Scout alone leaves Paul idle")
 	await _frames(25)
 	var path: PackedVector2Array = scout.agent.get_current_navigation_path()
 	_check(path.size() > 2, "Scout path routes around approach rock")
 	await _frames(340)
 	_check(scout.ai.current_order == Order.HOLD and scout.position.distance_to(Vector2(-100, 220)) < 25, "MOVE_TO reaches destination and persists as HOLD")
 	_check(warrior.position.distance_to(anchor) < 10, "Warrior's independent HOLD stays put")
-	squad.select_slot(4)
+	squad.select_slot(3)
+	squad.select_ally(scout, true)
 	squad.issue_context(Vector2(-850, -80))
 	_check(scout.ai.order_position.distance_to(warrior.ai.order_position) >= 55, "group destinations use distinct formation offsets")
 	await _frames(600)
@@ -340,23 +359,28 @@ func _death_and_time_restore() -> void:
 	_check(not scout.selected and squad.selected_members.size() == 1 and scout.ai.behavior == Behavior.DEAD, "death clears selected ally and stops AI")
 	_check(not scout.weapon.enabled and scout.collision_layer == 0, "dead ally stops combat and blocking")
 	await _tap(KEY_2)
-	_check(squad.selected_members.is_empty(), "dead-unit number selection is safe")
+	_check(squad.selected_units().is_empty(), "dead-unit number selection is safe")
 	await _tap(KEY_4)
-	_check(squad.selected_members.size() == 1 and warrior.selected, "surviving ally remains commandable")
-	await _tap(KEY_TAB)
+	_check(squad.selected_members.size() == 1 and warrior.selected and squad.paul_selected, "surviving ally remains commandable alongside Paul")
+	await _tap(KEY_SPACE)
+	_check(squad.paused and paused, "Space pauses before Paul falls")
 	player.health.die()
 	await _frames(2)
-	_check(not squad.command_mode and Engine.time_scale == 1.0, "player death immediately exits command slowdown")
+	_check(not squad.paused and not paused and Engine.time_scale == 1.0, "player death immediately lifts the pause")
+	_check(not squad.paul_selected and not player.selected, "a dead Paul drops out of the selection")
+	await _tap(KEY_1)
+	_check(not squad.paul_selected, "a dead Paul cannot be reselected")
 	player.set_physics_process(true)
 	await _tap(KEY_ENTER)
 	await _frames(12)
 	mission = current_scene as Node2D
 	squad = mission.get_node("SquadManager")
-	_check(Engine.time_scale == 1.0 and squad.members.size() == 2 and squad.members[0].health.current_health > 0, "Enter restart restores both allies at normal speed")
-	squad.set_command_mode(true)
+	_check(Engine.time_scale == 1.0 and not paused and squad.members.size() == 2 and squad.members[0].health.current_health > 0, "Enter restart restores both allies at normal speed")
+	_check(squad.paul_selected and squad.player.selected, "the restarted mission selects Paul again")
+	squad.set_paused(true)
 	mission.queue_free()
 	await _frames(3)
-	_check(Engine.time_scale == 1.0, "scene teardown during command mode restores speed")
+	_check(Engine.time_scale == 1.0 and not paused, "scene teardown while paused restores the running game")
 	completed += 1
 
 
@@ -369,15 +393,41 @@ func _launch(source: PhysicsBody2D, point: Vector2) -> void:
 	shot.global_position = source.global_position + direction * 28
 
 
-func _mouse(point: Vector2, button: MouseButton, pressed: bool, shift: bool = false) -> void:
+func _place_ally(ally: AllyCharacter, point: Vector2) -> void:
+	ally.ai.set_physics_process(false)
+	ally.set_physics_process(false)
+	ally.velocity = Vector2.ZERO
+	ally.global_position = point
+	ally.stop_moving()
+
+
+## Window coordinates for a world point. Input events arrive in window space,
+## which the 1920 x 1080 canvas is stretched into.
+func _screen(world: Vector2) -> Vector2:
+	var viewport: Viewport = mission.get_viewport()
+	return viewport.get_screen_transform() * (viewport.get_canvas_transform() * world)
+
+
+func _mouse(button: MouseButton, world: Vector2, pressed: bool, shift: bool = false) -> void:
 	var event: InputEventMouseButton = InputEventMouseButton.new()
-	event.position = squad.get_canvas_transform() * point
-	event.global_position = event.position
 	event.button_index = button
 	event.pressed = pressed
 	event.shift_pressed = shift
-	# Coordinates are already in the viewport, not the headless window's pixels.
-	root.push_input(event, true)
+	event.position = _screen(world)
+	event.global_position = event.position
+	Input.parse_input_event(event)
+
+
+func _right_click(world: Vector2) -> void:
+	_mouse(MOUSE_BUTTON_RIGHT, world, true)
+	_mouse(MOUSE_BUTTON_RIGHT, world, false)
+	await _frames(1)
+
+
+func _left_click(world: Vector2, shift: bool = false) -> void:
+	_mouse(MOUSE_BUTTON_LEFT, world, true, shift)
+	_mouse(MOUSE_BUTTON_LEFT, world, false, shift)
+	await _frames(1)
 
 
 func _tap(code: Key) -> void:

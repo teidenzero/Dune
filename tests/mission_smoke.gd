@@ -48,12 +48,13 @@ func _run() -> void:
 	await _prescience_and_shields()
 	await _sabotage_escalation()
 	await _escape_and_completion()
+	await _interact_order_rules()
 	await _worm_before_sabotage()
 	await _worm_catches_paul()
 	await _fremen_and_paul_down()
 	await _checkpoints()
 	await _results_and_debug()
-	_check(completed == 13, "all mission scenarios completed (%d)" % completed)
+	_check(completed == 14, "all mission scenarios completed (%d)" % completed)
 	_check(Engine.time_scale == 1.0, "suite leaves normal game speed")
 	print("MISSION SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
@@ -113,19 +114,22 @@ func _park_allies() -> void:
 
 
 func _place(point: Vector2) -> void:
-	player.global_position = point
-	player.velocity = Vector2.ZERO
+	player.teleport_to(point)
 	player.aim_point = point + Vector2.RIGHT * 100.0
 
 
-## Stands at a hold point and holds F for real, exactly as a player does.
-func _hold(point: InteractionPoint, frames: int) -> void:
+## Stands near a hold point and orders Paul to use it, exactly as a player
+## does: by right-clicking the point with Paul selected. `click` false issues
+## the same order through the API instead of the mouse.
+func _hold(point: InteractionPoint, frames: int, click: bool = true) -> void:
 	_place(point.global_position + Vector2(0, 60))
 	await _frames(4)
-	Input.action_press("interact")
+	if click:
+		squad.select_slot(1)
+		await _right_click(point.global_position)
+	else:
+		player.interact_with(point)
 	await _frames(frames)
-	Input.action_release("interact")
-	await _frames(2)
 
 
 func _sabotage_point(id: StringName) -> InteractionPoint:
@@ -192,11 +196,12 @@ func _stealth_route() -> void:
 	_check(_state(&"approach") == MissionObjective.State.COMPLETE, "walking into the bowl completes the approach")
 	_check(beacon.active, "the beacon starts broadcasting")
 	await _hold(beacon.interaction, 170)
-	_check(not beacon.active, "holding F at the mast takes communications down")
+	_check(not beacon.active, "right-clicking the mast sends Paul to hold it and takes communications down")
+	_check(player.order == PlayerController.Order.IDLE, "a completed hold ends Paul's interact order")
 	_check(_state(&"comms") == MissionObjective.State.COMPLETE, "the communications objective completes")
 	_check(_state(&"sabotage") == MissionObjective.State.ACTIVE, "and sabotage becomes the next thing asked for")
 	_check(mission.results["Communications disabled"] == "YES", "the debrief records it")
-	await _hold(_sabotage_point(&"sabotage_engine"), 160)
+	await _hold(_sabotage_point(&"sabotage_engine"), 160, false)
 	_check(harvester.sabotage_done == 1, "the first panel is done")
 	_check(_objective(&"sabotage").progress == "1 / 2", "the objective shows its own progress")
 	_check(not harvester.is_sabotaged, "one panel is not enough")
@@ -261,10 +266,8 @@ func _combat_route() -> void:
 	var shots: int = 0
 	while not guard.health.is_dead and shots < 40:
 		player.aim_point = guard.global_position
-		Input.action_press("fire_primary")
-		await _frames(3)
-		Input.action_release("fire_primary")
-		await _frames(12)
+		player.fire_weapon()
+		await _frames(15)
 		shots += 1
 	_check(guard.health.is_dead, "a perimeter guard can simply be killed")
 	_check(int(mission.results["Enemies defeated"]) >= 1, "the debrief counts the dead")
@@ -340,10 +343,8 @@ func _prescience_and_shields() -> void:
 	var shots: int = 0
 	while shots < 6:
 		player.aim_point = elite.global_position
-		Input.action_press("fire_primary")
-		await _frames(3)
-		Input.action_release("fire_primary")
-		await _frames(14)
+		player.fire_weapon()
+		await _frames(17)
 		shots += 1
 	_check(elite.health.current_health == health_before, "rifle rounds do not get through it")
 	_check(shield.last_result == ShieldComponent.Result.BLOCKED, "the shield reports the block")
@@ -436,7 +437,63 @@ func _escape_and_completion() -> void:
 
 
 # --------------------------------------------------------------------------
-# Scenario 9 - sequence break: a worm before the crawler is touched
+# Scenario 9 - Paul's INTERACT order: holds, can be called off, and breaks
+# under fire
+# --------------------------------------------------------------------------
+
+func _interact_order_rules() -> void:
+	await _load()
+	var point: InteractionPoint = _sabotage_point(&"sabotage_engine")
+	var cancels: Array[String] = []
+	point.interaction_cancelled.connect(func(reason: String) -> void: cancels.append(reason))
+	# Ordered from a distance, Paul walks over before the hold begins.
+	_place(point.global_position + Vector2(0, 360))
+	await _frames(4)
+	player.interact_with(point)
+	_check(player.order == PlayerController.Order.INTERACT, "interact_with gives Paul an INTERACT order")
+	for index in range(400):
+		if point.holding:
+			break
+		await _frames(1)
+	_check(point.holding and point.player_in_range(), "Paul walks into range and starts the hold on his own")
+	_check(point.command_hold, "the hold is driven by Paul's order, not a key")
+	# A new order (right-click on open ground) calls the hold off.
+	await _frames(30)
+	_check(point.progress > 0.2, "the hold is making progress")
+	squad.select_slot(1)
+	var away: Vector2 = point.global_position + Vector2(0, 420)
+	await _right_click(away)
+	await _frames(3)
+	_check(player.order == PlayerController.Order.MOVE, "right-clicking the ground gives Paul a move order")
+	_check(not point.holding and not point.command_hold, "a new order cancels the hold")
+	_check(cancels.size() == 1 and cancels[0] == "RELEASED", "and the point reports it was released")
+	_check(not point.used and harvester.sabotage_done == 0, "a cancelled hold does not count")
+	_check(point.progress == 0.0, "and its progress is discarded")
+	# Resume, then take a hit mid-hold.
+	player.interact_with(point)
+	for index in range(400):
+		if point.holding and point.progress > 0.8:
+			break
+		await _frames(1)
+	_check(point.holding and point.progress > 0.8, "the hold can be started again")
+	var cancelled_before: int = cancels.size()
+	player.health.take_damage(5.0)
+	_check(cancels.size() == cancelled_before + 1 and cancels[cancels.size() - 1] == "UNDER FIRE", "taking damage interrupts the hold")
+	_check(not point.used and harvester.sabotage_done == 0, "an interrupted hold does not count")
+	# Paul is still on his order, so he starts over from zero.
+	var restart_frames: int = 0
+	while not point.used and restart_frames < 600:
+		await _frames(1)
+		restart_frames += 1
+	_check(point.used and harvester.sabotage_done == 1, "Paul, still ordered to it, completes the hold afterwards")
+	_check(restart_frames >= int(point.hold_seconds * 60.0) - 4, "the interrupted hold started over from nothing")
+	await _frames(2)
+	_check(player.order == PlayerController.Order.IDLE, "and the order ends once the point is used")
+	completed += 1
+
+
+# --------------------------------------------------------------------------
+# Scenario 10 - sequence break: a worm before the crawler is touched
 # --------------------------------------------------------------------------
 
 func _worm_before_sabotage() -> void:
@@ -470,7 +527,7 @@ func _worm_before_sabotage() -> void:
 
 
 # --------------------------------------------------------------------------
-# Scenario 10 - open sand during the escape is fatal
+# Scenario 11 - open sand during the escape is fatal
 # --------------------------------------------------------------------------
 
 func _worm_catches_paul() -> void:
@@ -502,7 +559,7 @@ func _worm_catches_paul() -> void:
 
 
 # --------------------------------------------------------------------------
-# Scenario 11 - the optional objective, and losing Paul
+# Scenario 12 - the optional objective, and losing Paul
 # --------------------------------------------------------------------------
 
 func _fremen_and_paul_down() -> void:
@@ -531,7 +588,7 @@ func _fremen_and_paul_down() -> void:
 
 
 # --------------------------------------------------------------------------
-# Scenario 12 - checkpoints survive a restart
+# Scenario 13 - checkpoints survive a restart
 # --------------------------------------------------------------------------
 
 func _checkpoints() -> void:
@@ -575,7 +632,7 @@ func _checkpoints() -> void:
 
 
 # --------------------------------------------------------------------------
-# Scenario 13 - the debrief states facts, and the debug surfaces are there
+# Scenario 14 - the debrief states facts, and the debug surfaces are there
 # --------------------------------------------------------------------------
 
 func _results_and_debug() -> void:
@@ -639,6 +696,31 @@ func _key(code: Key) -> void:
 	up.physical_keycode = code
 	up.pressed = false
 	Input.parse_input_event(up)
+
+
+func _screen(world: Vector2) -> Vector2:
+	var viewport: Viewport = scene.get_viewport()
+	return viewport.get_screen_transform() * (viewport.get_canvas_transform() * world)
+
+
+func _mouse(button: MouseButton, world: Vector2, pressed: bool) -> void:
+	var event: InputEventMouseButton = InputEventMouseButton.new()
+	event.button_index = button
+	event.pressed = pressed
+	event.position = _screen(world)
+	event.global_position = event.position
+	Input.parse_input_event(event)
+
+
+## Brings the point on screen first: the camera no longer follows Paul.
+func _right_click(world: Vector2) -> void:
+	var camera: TacticalCamera = player.get_node("TacticalCamera")
+	if not camera.sees(world, 80.0):
+		camera.snap_to(world)
+		await _frames(3)
+	_mouse(MOUSE_BUTTON_RIGHT, world, true)
+	_mouse(MOUSE_BUTTON_RIGHT, world, false)
+	await _frames(1)
 
 
 func _tap(code: Key) -> void:

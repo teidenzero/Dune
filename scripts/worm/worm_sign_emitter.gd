@@ -50,8 +50,8 @@ func _bind() -> void:
 	_manager = get_tree().get_first_node_in_group("worm_threat")
 
 
-## One-shot vibration: gunfire, an impact, an explosion. Always reported, even
-## from rock, because the shock itself travels - the terrain only scales it.
+## One-shot vibration: gunfire, an impact, an explosion. The terrain scales it
+## like any other sign, and safe rock mutes it entirely.
 func impulse(amount: float, source_label: String = "") -> void:
 	if amount <= 0.0 or not is_instance_valid(actor):
 		return

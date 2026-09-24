@@ -229,13 +229,17 @@ func _death_and_restart() -> void:
 	_check(player.health.is_dead, "rifle projectile can down Paul")
 	player.set_physics_process(true)
 	var down_position: Vector2 = player.position
-	Input.action_press("move_right")
-	Input.action_press("fire_primary")
+	var squad: SquadManager = mission.get_node("SquadManager") as SquadManager
+	squad.select_slot(1)
+	player.move_to(down_position + Vector2(200, 0))
+	player.attack(shooter)
+	var fired: bool = player.fire_weapon()
+	squad.issue_context(down_position + Vector2(0, 200))
 	await _frames(10)
-	Input.action_release("move_right")
-	Input.action_release("fire_primary")
-	_check(player.position == down_position and not player.weapon_controller.can_fire, "downed player cannot move or shoot")
-	_check(mission.get_node("UI/Screen/CombatHUD/Margin/Rows/Down").visible, "PLAYER DOWN is displayed")
+	_check(player.position == down_position and not fired and not player.weapon_controller.can_fire, "downed player cannot move or shoot")
+	_check(player.order == PlayerController.Order.IDLE and not squad.paul_selected, "downed player refuses orders and cannot be selected")
+	var hud: PlayerHud = mission.get_node("UI/Screen/HUD") as PlayerHud
+	_check(hud.down_label.visible, "PLAYER DOWN is displayed")
 	_key(KEY_ENTER, true)
 	await _frames(15)
 	_key(KEY_ENTER, false)

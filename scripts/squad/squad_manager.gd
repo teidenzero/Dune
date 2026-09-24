@@ -1,41 +1,79 @@
 class_name SquadManager
 extends Node2D
+## RTS control for the whole squad - Paul and the Fremen alike. The only place
+## player input turns into orders:
+##
+##   Left click / drag     select a unit, or every unit inside the box
+##   Left click an enemy   crysknife (Paul selected): click = quick strike,
+##                         hold past the charge threshold = slow strike
+##   Right click           move / attack / use, depending on what is under it
+##   Double right click    run there; Shift + right click queues a waypoint
+##   1 / 2 / 3 / 4         Paul / Scout / Warrior / everyone (twice: camera)
+##   E                     arm the crysknife for the next left click
+##   Z / X                 Paul's weapon slots
+##   C  R  H  G            sneak, reload, hold, follow
+##   Space                 pause; orders can still be given while paused
 
 signal selection_changed
-signal command_mode_changed(active: bool)
 signal order_issued(order: int)
 signal command_rejected(allies: Array)
-signal command_blocked(holder: String)
+signal pause_changed(paused: bool)
+signal targeting_changed(mode: int)
+
+enum Targeting { NONE, STRIKE }
+
+const DOUBLE_TAP_MS: int = 350
+const DRAG_THRESHOLD: float = 8.0
+const PICK_RADIUS: float = 30.0
 
 @export var player: PlayerController
-@export_range(0.1, 1.0) var command_time_scale: float = 0.4
 @export_group("Command link")
-## World-space radius around Paul inside which new orders can be issued.
+## World-space radius around Paul inside which new orders reach the Fremen.
 @export var command_range: float = 700.0
 ## Fraction of the effective range where the link starts warning.
 @export_range(0.05, 1.0) var weak_link_fraction: float = 0.75
 @export var rejection_display_seconds: float = 2.0
-## Tutorial lock; ordinary missions leave squad control available from the start.
+## Tutorial lock on the Fremen. Paul is always under the player's control.
 @export var commands_enabled: bool = true
 var members: Array[AllyCharacter] = []
+## Selected Fremen. Paul's selection is `paul_selected`.
 var selected_members: Array[AllyCharacter] = []
-var command_mode: bool = false
+var paul_selected: bool = false
+var paused: bool = false
+var targeting: Targeting = Targeting.NONE
 var marker_position: Vector2
 var marker_attack: bool = false
 var rejection_message: String = ""
+## Short feedback for the HUD ("PICK A TARGET", "NO BLADE YET"...).
+var notice: String = ""
 ## Future terrain interference, sandstorms, relays, or Paul progression can
 ## register a named multiplier here instead of rewriting command_range users.
 var command_range_modifiers: Dictionary = {}
+var dragging: bool = false
+## Left button held on a target: the blade is being charged. How long it is
+## held decides the stroke, in real time so it works while paused.
+var blade_charging: bool = false
+var _charge_target: Node2D
+var _charge_start: int = 0
+var _drag_start: Vector2
 var _marker_until: int = 0
 var _rejection_until: int = 0
+var _notice_until: int = 0
+var _last_key_slot: int = -1
+var _last_key_time: int = 0
+var _last_context_time: int = 0
+var _last_context_point: Vector2 = Vector2.INF
 
 
 func _ready() -> void:
 	TimeScaleManager.reset()
+	# Selection, orders and the box keep working while the game is paused.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("squad_manager")
 	for ally: AllyCharacter in get_tree().get_nodes_in_group("allies"):
 		register(ally)
 	player.health.died.connect(_on_player_died)
+	call_deferred("select_slot", 1)
 
 
 func register(ally: AllyCharacter) -> void:
@@ -45,6 +83,10 @@ func register(ally: AllyCharacter) -> void:
 	ally.ally_died.connect(_on_ally_died)
 	ally.tree_exiting.connect(_on_ally_exiting.bind(ally))
 
+
+# --------------------------------------------------------------------------
+# Command link
+# --------------------------------------------------------------------------
 
 ## Single authority for command distance, so modifiers never have to be
 ## duplicated at each call site.
@@ -75,41 +117,39 @@ func can_command(ally: AllyCharacter) -> bool:
 	return _available(ally) and ally.command_link != null and ally.command_link.can_receive_orders()
 
 
-## Returns false when another time-slowing system holds the clock; prescience
-## and command mode are deliberately mutually exclusive.
-func set_command_mode(active: bool) -> bool:
-	var wanted: bool = active and is_instance_valid(player) and not player.health.is_dead
-	if wanted and not TimeScaleManager.is_available(TimeScaleManager.Source.COMMAND_MODE):
-		command_blocked.emit(TimeScaleManager.holder_name())
-		return false
-	command_mode = wanted
-	if command_mode:
-		TimeScaleManager.request(TimeScaleManager.Source.COMMAND_MODE, command_time_scale)
-	else:
-		TimeScaleManager.release(TimeScaleManager.Source.COMMAND_MODE)
-	if is_instance_valid(player):
-		player.squad_control_locked = command_mode
-		if not command_mode:
-			player.fire_blocked_until_release = Input.is_action_pressed("fire_primary")
-	for ally in members:
-		if is_instance_valid(ally):
-			ally.command_highlight = command_mode
-	command_mode_changed.emit(command_mode)
-	return true
+# --------------------------------------------------------------------------
+# Pause
+# --------------------------------------------------------------------------
+
+func set_paused(value: bool) -> void:
+	value = value and _paul_alive()
+	if paused == value:
+		return
+	paused = value
+	get_tree().paused = paused
+	pause_changed.emit(paused)
 
 
+# --------------------------------------------------------------------------
+# Selection
+# --------------------------------------------------------------------------
+
+## 1 Paul, 2 Scout, 3 Warrior, 4 everyone.
 func select_slot(slot: int) -> void:
-	clear_selection()
-	for ally in members:
-		if _available(ally) and (slot == 4 or ally.selection_slot == slot):
-			selected_members.append(ally)
+	selected_members.clear()
+	paul_selected = (slot == 1 or slot == 4) and _paul_alive()
+	if commands_enabled:
+		for ally in members:
+			if _available(ally) and (slot == 4 or ally.selection_slot == slot):
+				selected_members.append(ally)
 	_refresh_selection()
 
 
 func select_ally(ally: AllyCharacter, additive: bool = false) -> void:
 	if not additive:
-		clear_selection()
-	if _available(ally):
+		selected_members.clear()
+		paul_selected = false
+	if _available(ally) and commands_enabled:
 		if selected_members.has(ally):
 			selected_members.erase(ally)
 		else:
@@ -117,17 +157,70 @@ func select_ally(ally: AllyCharacter, additive: bool = false) -> void:
 	_refresh_selection()
 
 
-func clear_selection() -> void:
-	selected_members.clear()
+## Any unit - Paul or a Fremen. Shift toggles it in and out of the selection.
+func select_unit(unit: Node2D, additive: bool = false) -> void:
+	if unit is AllyCharacter:
+		select_ally(unit, additive)
+		return
+	if unit != player:
+		return
+	if not additive:
+		selected_members.clear()
+		paul_selected = _paul_alive()
+	else:
+		paul_selected = not paul_selected and _paul_alive()
 	_refresh_selection()
 
 
+func select_units(units: Array, additive: bool = false) -> void:
+	if not additive:
+		selected_members.clear()
+		paul_selected = false
+	for unit in units:
+		if unit == player and _paul_alive():
+			paul_selected = true
+		elif unit is AllyCharacter and _available(unit) and commands_enabled and not selected_members.has(unit):
+			selected_members.append(unit)
+	_refresh_selection()
+
+
+func clear_selection() -> void:
+	selected_members.clear()
+	paul_selected = false
+	_refresh_selection()
+
+
+## Everything currently selected, Paul first.
+func selected_units() -> Array[Node2D]:
+	var result: Array[Node2D] = []
+	if paul_selected and _paul_alive():
+		result.append(player)
+	for ally in selected_members:
+		if _available(ally):
+			result.append(ally)
+	return result
+
+
+func has_selection() -> bool:
+	return not selected_units().is_empty()
+
+
 func _refresh_selection() -> void:
+	if is_instance_valid(player):
+		player.selected = paul_selected
 	for ally in members:
 		if is_instance_valid(ally):
 			ally.set_selected(selected_members.has(ally))
+	if not paul_selected:
+		cancel_blade_charge()
+		if targeting != Targeting.NONE:
+			set_targeting(Targeting.NONE)
 	selection_changed.emit()
 
+
+# --------------------------------------------------------------------------
+# Orders
+# --------------------------------------------------------------------------
 
 ## FOLLOW is a recall, not a tactical order, so it reaches an ally who is out
 ## of command range. Everything else still needs the link - but a companion sent
@@ -145,7 +238,10 @@ func issue_follow() -> void:
 		order_issued.emit(AllyAIController.Order.FOLLOW)
 
 
+## Fremen hold their ground; Paul simply stops.
 func issue_hold() -> void:
+	if paul_selected and _paul_alive():
+		player.stop()
 	var recipients: Array[AllyCharacter] = _resolve_recipients()
 	for ally in recipients:
 		ally.ai.issue_order(AllyAIController.Order.HOLD, ally.global_position)
@@ -153,31 +249,141 @@ func issue_hold() -> void:
 		order_issued.emit(AllyAIController.Order.HOLD)
 
 
-func issue_context(point: Vector2) -> void:
-	if selected_members.is_empty() or not point.is_finite():
+## Right click. What is under the cursor decides the order.
+func issue_context(point: Vector2, queue: bool = false, run: bool = false) -> void:
+	if not point.is_finite() or not has_selection():
 		return
+	var enemy: Node2D = hostile_at(point)
+	var usable: Node2D = interactable_at(point) if enemy == null else null
+	var paul_ordered: bool = false
+	if paul_selected and _paul_alive():
+		paul_ordered = true
+		if enemy != null:
+			player.attack(enemy)
+		elif usable != null:
+			player.interact_with(usable)
+		elif queue:
+			player.queue_move(point)
+		else:
+			player.move_to(point, run)
 	var recipients: Array[AllyCharacter] = _resolve_recipients()
-	if recipients.is_empty():
-		return
-	var target: Node2D = actor_at(point, "enemies")
 	var index: int = 0
 	for ally in recipients:
 		if not ally.navigation_ready():
 			continue
-		if target != null:
-			ally.ai.issue_order(AllyAIController.Order.ATTACK, point, target)
+		if enemy != null and enemy.is_in_group("enemies"):
+			ally.ai.issue_order(AllyAIController.Order.ATTACK, point, enemy)
 		else:
-			var offset: Vector2 = Vector2((index - (recipients.size() - 1) * 0.5) * 60, 0)
-			var destination: Vector2 = NavigationServer2D.map_get_closest_point(ally.agent.get_navigation_map(), point + offset)
+			# Fan out beside the click so nobody queues for the same spot. Paul
+			# takes the click itself, so the Fremen flank him: -1, +1, -2...
+			var slot: float = index - (recipients.size() - 1) * 0.5
+			if paul_ordered:
+				slot = float(floori(index / 2.0) + 1) * (-1.0 if index % 2 == 0 else 1.0)
+			var destination: Vector2 = NavigationServer2D.map_get_closest_point(ally.agent.get_navigation_map(), point + Vector2(slot * 60.0, 0.0))
 			ally.ai.issue_order(AllyAIController.Order.MOVE_TO, destination)
 		index += 1
+	if not paul_ordered and recipients.is_empty():
+		return
 	marker_position = point
-	marker_attack = target != null
+	marker_attack = enemy != null
 	_marker_until = Time.get_ticks_msec() + 850
 	order_issued.emit(AllyAIController.Order.ATTACK if marker_attack else AllyAIController.Order.MOVE_TO)
 
 
-## Splits the current selection: connected allies receive the order, the rest
+## C: every selected unit goes low - or stands, if they all already were.
+func toggle_sneak() -> void:
+	var units: Array[Node2D] = selected_units()
+	if units.is_empty():
+		return
+	var all_low: bool = true
+	for unit in units:
+		if unit == player:
+			all_low = all_low and player.is_crouching
+		elif unit is AllyCharacter:
+			all_low = all_low and unit.sneaking
+	for unit in units:
+		if unit == player:
+			player.set_crouching(not all_low)
+		elif unit is AllyCharacter:
+			unit.sneaking = not all_low
+
+
+func reload_selected() -> void:
+	for unit in selected_units():
+		if unit == player:
+			player.weapon_controller.start_reload()
+		elif unit is AllyCharacter:
+			unit.weapon.start_reload()
+
+
+## E arms the crysknife; the next left click (or hold) on a target delivers it.
+## Clicking an enemy with Paul selected does the same without arming first.
+func set_targeting(mode: Targeting) -> void:
+	if mode != Targeting.NONE:
+		if not paul_selected or not _paul_alive():
+			flash_notice("SELECT PAUL FOR THE CRYSKNIFE")
+			mode = Targeting.NONE
+		elif not player.melee.enabled:
+			flash_notice("THE CRYSKNIFE IS NOT YOURS YET")
+			mode = Targeting.NONE
+	if targeting == mode:
+		return
+	targeting = mode
+	targeting_changed.emit(targeting)
+
+
+## Seconds the button must be held for the slow, shield-penetrating stroke.
+func slow_hold_seconds() -> float:
+	return player.melee.slow_charge_threshold if is_instance_valid(player) else 0.35
+
+
+## 0..1 while the left button is held on a target; 1 means release = slow.
+func blade_charge_ratio() -> float:
+	if not blade_charging:
+		return 0.0
+	var held: float = (Time.get_ticks_msec() - _charge_start) / 1000.0
+	return clampf(held / maxf(slow_hold_seconds(), 0.01), 0.0, 1.0)
+
+
+func _begin_blade_charge(target: Node2D) -> void:
+	if not player.melee.enabled:
+		flash_notice("THE CRYSKNIFE IS NOT YOURS YET")
+		return
+	blade_charging = true
+	_charge_target = target
+	_charge_start = Time.get_ticks_msec()
+
+
+## Button released: a quick click cuts fast, a held one commits the slow stroke.
+func _release_blade_charge() -> void:
+	var slow: bool = blade_charge_ratio() >= 1.0
+	blade_charging = false
+	var target: Node2D = _charge_target
+	_charge_target = null
+	if not is_instance_valid(target) or not _paul_alive():
+		return
+	player.melee_strike(target, slow)
+	marker_position = target.global_position
+	marker_attack = true
+	_marker_until = Time.get_ticks_msec() + 850
+	set_targeting(Targeting.NONE)
+
+
+func cancel_blade_charge() -> void:
+	blade_charging = false
+	_charge_target = null
+
+
+func flash_notice(text: String, seconds: float = 1.8) -> void:
+	notice = text
+	_notice_until = Time.get_ticks_msec() + int(seconds * 1000.0)
+
+
+func notice_active() -> bool:
+	return Time.get_ticks_msec() < _notice_until
+
+
+## Splits the selected Fremen: connected allies receive the order, the rest
 ## keep their existing order and produce visible feedback.
 func _resolve_recipients() -> Array[AllyCharacter]:
 	var recipients: Array[AllyCharacter] = []
@@ -208,11 +414,15 @@ func rejection_active() -> bool:
 	return Time.get_ticks_msec() < _rejection_until
 
 
-func actor_at(point: Vector2, group: String) -> Node2D:
+# --------------------------------------------------------------------------
+# Picking
+# --------------------------------------------------------------------------
+
+func actor_at(point: Vector2, group: String, radius: float = PICK_RADIUS) -> Node2D:
 	var closest: Node2D
-	var distance: float = 25.0
+	var distance: float = radius
 	for actor: Node2D in get_tree().get_nodes_in_group(group):
-		if not actor.can_process():
+		if not actor.can_process() and not get_tree().paused:
 			continue
 		var health: HealthComponent = HealthComponent.find_on(actor)
 		if health == null or health.is_dead:
@@ -224,35 +434,176 @@ func actor_at(point: Vector2, group: String) -> Node2D:
 	return closest
 
 
+## Anything Paul may attack: Harkonnen, and the tutorial's training targets.
+func hostile_at(point: Vector2) -> Node2D:
+	var enemy: Node2D = actor_at(point, "enemies")
+	return enemy if enemy != null else actor_at(point, "training_targets")
+
+
+func unit_at(point: Vector2) -> Node2D:
+	var ally: Node2D = actor_at(point, "allies")
+	if ally != null and commands_enabled:
+		return ally
+	if _paul_alive() and point.distance_to(player.global_position) <= PICK_RADIUS:
+		return player
+	return null
+
+
+## Spice machines and hold-to-use points (beacons, sabotage panels).
+func interactable_at(point: Vector2) -> Node2D:
+	var best: Node2D
+	var distance: float = 70.0
+	for node: Node in get_tree().get_nodes_in_group("interaction_points") + get_tree().get_nodes_in_group("worm_machines"):
+		var candidate: Node2D = node as Node2D
+		if candidate == null or not (candidate is InteractionPoint or candidate is SpiceMachine):
+			continue
+		if candidate is InteractionPoint and not candidate.available():
+			continue
+		var candidate_distance: float = point.distance_to(candidate.global_position)
+		if candidate_distance < distance:
+			distance = candidate_distance
+			best = candidate
+	return best
+
+
+## What a right click here would do, for the cursor readout.
+func context_kind(point: Vector2) -> String:
+	if blade_charging:
+		return "SLOW STRIKE - RELEASE" if blade_charge_ratio() >= 1.0 else "QUICK STRIKE - HOLD FOR SLOW"
+	if targeting != Targeting.NONE:
+		return "STRIKE" if hostile_at(point) != null else "PICK TARGET"
+	if unit_at(point) != null:
+		return "SELECT"
+	if not has_selection():
+		return ""
+	if hostile_at(point) != null:
+		return "LEFT: KNIFE · RIGHT: FIRE" if paul_selected and player.melee.enabled else "ATTACK"
+	if paul_selected and interactable_at(point) != null:
+		return "USE"
+	return "MOVE"
+
+
+# --------------------------------------------------------------------------
+# Input
+# --------------------------------------------------------------------------
+
 func _unhandled_input(event: InputEvent) -> void:
-	if player.health.is_dead or event.is_echo() or not commands_enabled:
+	if not is_instance_valid(player):
 		return
-	if event.is_action_pressed("squad_command"):
-		set_command_mode(not command_mode)
+	if event is InputEventMouseMotion:
+		if dragging:
+			queue_redraw()
+		return
+	if player.health.is_dead:
+		return
+	if event is InputEventMouseButton:
+		_handle_mouse(event as InputEventMouseButton)
+		return
+	if event.is_echo() or not event.is_pressed():
+		return
+	if event.is_action_pressed("pause_game"):
+		set_paused(not paused)
 	elif event.is_action_pressed("squad_paul"):
-		clear_selection()
+		_select_key(1)
 	elif event.is_action_pressed("squad_scout"):
-		select_slot(2)
+		_select_key(2)
 	elif event.is_action_pressed("squad_warrior"):
-		select_slot(3)
+		_select_key(3)
 	elif event.is_action_pressed("squad_all"):
-		select_slot(4)
+		_select_key(4)
 	elif event.is_action_pressed("squad_hold"):
 		issue_hold()
 	elif event.is_action_pressed("squad_follow"):
 		issue_follow()
-	elif command_mode and event is InputEventMouseButton and event.pressed:
-		var point: Vector2 = get_canvas_transform().affine_inverse() * event.position
-		if event.is_action_pressed("fire_primary"):
-			select_ally(actor_at(point, "allies") as AllyCharacter, event.shift_pressed)
-		elif event.is_action_pressed("squad_context"):
-			issue_context(point)
-		else:
-			return
+	elif event.is_action_pressed("crouch"):
+		toggle_sneak()
+	elif event.is_action_pressed("reload"):
+		reload_selected()
+	elif event.is_action_pressed("melee_attack"):
+		set_targeting(Targeting.NONE if targeting == Targeting.STRIKE else Targeting.STRIKE)
+	elif event.is_action_pressed("weapon_1") and paul_selected:
+		player.equip_slot(0)
+	elif event.is_action_pressed("weapon_2") and paul_selected:
+		player.equip_slot(1)
+	elif event.is_action_pressed("ui_cancel") and (targeting != Targeting.NONE or blade_charging):
+		cancel_blade_charge()
+		set_targeting(Targeting.NONE)
 	else:
 		return
 	get_viewport().set_input_as_handled()
 
+
+func _handle_mouse(event: InputEventMouseButton) -> void:
+	var point: Vector2 = get_canvas_transform().affine_inverse() * event.position
+	if event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			var hostile: Node2D = hostile_at(point)
+			if targeting != Targeting.NONE:
+				if hostile != null:
+					_begin_blade_charge(hostile)
+				else:
+					flash_notice("LEFT-CLICK A TARGET · RIGHT-CLICK CANCELS")
+			elif hostile != null and paul_selected and _paul_alive():
+				_begin_blade_charge(hostile)
+			else:
+				dragging = true
+				_drag_start = point
+		elif blade_charging:
+			_release_blade_charge()
+		elif dragging:
+			dragging = false
+			_finish_drag(point, event.shift_pressed)
+			queue_redraw()
+		get_viewport().set_input_as_handled()
+	elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		if blade_charging or targeting != Targeting.NONE:
+			cancel_blade_charge()
+			set_targeting(Targeting.NONE)
+		else:
+			var now: int = Time.get_ticks_msec()
+			var run: bool = now - _last_context_time <= DOUBLE_TAP_MS and point.distance_to(_last_context_point) <= 60.0
+			_last_context_time = now
+			_last_context_point = point
+			issue_context(point, event.shift_pressed, run)
+		get_viewport().set_input_as_handled()
+
+
+func _finish_drag(point: Vector2, additive: bool) -> void:
+	var zoom: float = maxf(get_canvas_transform().get_scale().x, 0.01)
+	if _drag_start.distance_to(point) * zoom < DRAG_THRESHOLD:
+		var unit: Node2D = unit_at(point)
+		if unit != null:
+			select_unit(unit, additive)
+		elif not additive:
+			clear_selection()
+		return
+	var box: Rect2 = Rect2(_drag_start, Vector2.ZERO).expand(point)
+	var inside: Array = []
+	if _paul_alive() and box.has_point(player.global_position):
+		inside.append(player)
+	for ally in members:
+		if _available(ally) and box.has_point(ally.global_position):
+			inside.append(ally)
+	select_units(inside, additive)
+
+
+## Pressing the same number twice jumps the camera to that unit.
+func _select_key(slot: int) -> void:
+	var now: int = Time.get_ticks_msec()
+	var repeated: bool = slot == _last_key_slot and now - _last_key_time <= DOUBLE_TAP_MS
+	_last_key_slot = slot
+	_last_key_time = now
+	select_slot(slot)
+	if repeated:
+		var units: Array[Node2D] = selected_units()
+		var camera: TacticalCamera = player.get_node_or_null("TacticalCamera") as TacticalCamera
+		if camera != null and not units.is_empty():
+			camera.center_on(units[0].global_position)
+
+
+# --------------------------------------------------------------------------
+# Runtime
+# --------------------------------------------------------------------------
 
 func _process(_delta: float) -> void:
 	_update_links()
@@ -272,12 +623,13 @@ func _draw() -> void:
 	_draw_command_range()
 	_draw_links()
 	_draw_marker()
+	_draw_box()
 
 
 func _draw_command_range() -> void:
 	if not is_instance_valid(player):
 		return
-	var reveal: bool = command_mode or _debug_visible()
+	var reveal: bool = not selected_members.is_empty() or _debug_visible()
 	if not reveal:
 		for ally in members:
 			if _available(ally) and link_state(ally) != CommandLinkComponent.State.CONNECTED:
@@ -330,8 +682,24 @@ func _draw_marker() -> void:
 	draw_line(to_local(marker_position) - Vector2(0, 10), to_local(marker_position) + Vector2(0, 10), color, 2)
 
 
+func _draw_box() -> void:
+	if not dragging:
+		return
+	var here: Vector2 = get_global_mouse_position()
+	var zoom: float = maxf(get_canvas_transform().get_scale().x, 0.01)
+	if _drag_start.distance_to(here) * zoom < DRAG_THRESHOLD:
+		return
+	var box: Rect2 = Rect2(to_local(_drag_start), Vector2.ZERO).expand(to_local(here))
+	draw_rect(box, Color(0.55, 0.95, 0.75, 0.1))
+	draw_rect(box, Color(0.55, 0.95, 0.75, 0.8), false, 1.5 / zoom)
+
+
 func _available(ally: AllyCharacter) -> bool:
-	return is_instance_valid(ally) and ally.can_process() and not ally.health.is_dead
+	return is_instance_valid(ally) and (ally.can_process() or get_tree().paused) and not ally.health.is_dead
+
+
+func _paul_alive() -> bool:
+	return is_instance_valid(player) and not player.health.is_dead
 
 
 func _on_ally_died(ally: AllyCharacter) -> void:
@@ -346,13 +714,17 @@ func _on_ally_exiting(ally: AllyCharacter) -> void:
 
 
 func _on_player_died() -> void:
-	set_command_mode(false)
+	cancel_blade_charge()
+	set_targeting(Targeting.NONE)
+	set_paused(false)
+	paul_selected = false
+	_refresh_selection()
 
 
 func _exit_tree() -> void:
 	TimeScaleManager.reset()
-	if is_instance_valid(player):
-		player.squad_control_locked = false
+	if paused and is_inside_tree():
+		get_tree().paused = false
 
 
 ## Autoload path lookup, not the global identifier: these scripts can be

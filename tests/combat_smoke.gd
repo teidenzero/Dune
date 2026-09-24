@@ -4,8 +4,8 @@ const PROJECTILE: PackedScene = preload("res://scenes/combat/projectile.tscn")
 const DUMMY: PackedScene = preload("res://scenes/characters/test_dummy.tscn")
 
 class AimedPlayer extends PlayerController:
-	# Synthetic mouse events do not move the OS cursor. Control only aim for
-	# deterministic combat tests; foundation_smoke checks the real mouse path.
+	# Scripted aim through the _update_aim() hook, so fire_weapon() shots are
+	# deterministic; the attack-order test below lets Paul aim for himself.
 	var target: Vector2 = Vector2(-580, 40)
 
 	func _update_aim() -> void:
@@ -49,73 +49,82 @@ func _run() -> void:
 	_check(weapon.current_ammo == 8 and weapon.can_fire, "pistol starts with eight rounds")
 	_check(not weapon.start_reload(), "full magazine cannot reload")
 	_check(HealthComponent.find_on(player).current_health == 100, "player reuses HealthComponent")
+	var hud: PlayerHud = mission.get_node("UI/Screen/HUD") as PlayerHud
 	await _aim_at(open_target.global_position)
-	_mouse(true)
-	await _frames(2)
-	_check(counts.shots == 1 and weapon.current_ammo == 7, "left mouse fires and consumes one round")
+	_check(player.fire_weapon(), "fire_weapon shoots along the current aim")
+	await _frames(1)
+	_check(counts.shots == 1 and weapon.current_ammo == 7, "one shot consumes one round")
 	var shots: Array[Node] = get_nodes_in_group("projectiles")
 	_check(shots.size() == 1, "visible projectile exists in flight")
 	if not shots.is_empty():
 		var shot: CombatProjectile = shots[0] as CombatProjectile
 		_check(shot.global_position.distance_to(player.global_position) > 25, "projectile leaves muzzle away from owner")
 		_check(shot.owner_actor == player and shot.visible, "projectile retains generic ownership and visuals")
-	_check(not weapon.try_fire() and weapon.current_ammo == 7, "fire cooldown rejects rapid shots")
+	_check(not player.fire_weapon() and weapon.current_ammo == 7, "fire cooldown rejects rapid shots")
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("combat_flight")
 	await _frames(48)
-	_check(counts.shots == 1, "holding mouse does not repeat semi-automatic fire")
-	_mouse(false)
+	_check(counts.shots == 1, "an idle Paul without orders does not fire on his own")
 	_check(health.current_health == 70, "traveling projectile deals thirty damage")
 	for hit in range(3):
 		await _aim_at(open_target.global_position)
-		_mouse(true)
-		await _frames(1)
-		_mouse(false)
-		await _frames(24)
+		player.fire_weapon()
+		await _frames(25)
 	_check(health.current_health == 0 and health.is_dead and counts.deaths == 1, "dummy dies once on fourth hit")
 	_check(open_target.get_node("Status").text.contains("DESTROYED"), "dummy has visible death state")
 	_check(open_target.collision_layer == 0, "dead dummy no longer blocks shots")
 	_check(weapon.current_ammo == 4, "four hits consume four rounds")
+	await _frames(2)
+	_check(hud.ammo_label.text == "4 / 8" and hud.status_label.text != "RELOADING", "HUD ammo readout follows the magazine")
 	for shot_index in range(4):
-		_mouse(true)
-		await _frames(1)
-		_mouse(false)
-		await _frames(24)
+		player.fire_weapon()
+		if shot_index < 3:
+			await _frames(25)
+	# Checked in the same tick as the last shot: Paul auto-reloads on his next physics step.
 	_check(weapon.current_ammo == 0 and not weapon.can_fire, "magazine empties after eight shots")
 	var fired_before: int = counts.shots
-	_mouse(true)
+	_check(not player.fire_weapon() and counts.dry == 0, "empty weapon on cooldown refuses silently")
+	# Paul never sits empty off cooldown (he auto-reloads next tick), so expire
+	# the cooldown in this same tick to reach the weapon's dry-fire path.
+	weapon.cooldown_remaining = 0.0
+	_check(not player.fire_weapon(), "empty weapon refuses to fire")
+	_check(counts.shots == fired_before and counts.dry == 1, "empty trigger emits dry fire without spawning")
 	await _frames(2)
-	_mouse(false)
-	_check(counts.shots == fired_before and counts.dry == 1, "empty click emits dry fire without spawning")
-	_key(KEY_R, true)
-	await _frames(2)
-	_key(KEY_R, false)
-	_check(weapon.is_reloading and counts.reloads == 1, "R starts reload")
+	_check(weapon.is_reloading and counts.reloads == 1, "empty magazine auto-reloads")
 	_check(not weapon.start_reload() and not weapon.try_fire(), "reload cannot restart or fire")
-	var status: Label = mission.get_node("UI/Screen/CombatHUD/Margin/Rows/Status")
-	_check(status.visible and status.text == "Reloading...", "HUD displays reload status")
+	_check(hud.status_label.visible and hud.status_label.text == "RELOADING", "HUD displays reload status")
+	_check(hud.ammo_label.text == "0 / 8", "HUD ammo shows the empty magazine while reloading")
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("combat_reload")
 	await _frames(40)
 	_check(weapon.is_reloading and weapon.current_ammo == 0, "reload does not refill early")
 	await _frames(40)
 	_check(not weapon.is_reloading and weapon.current_ammo == 8 and counts.finished == 1, "timed reload restores eight rounds")
-	_check(not status.visible, "HUD hides reload message on completion")
-	_check(mission.get_node("UI/Screen/CombatHUD/Margin/Rows/Ammo").text == "Ammo: 8 / 8", "HUD ammo follows weapon signals")
+	_check(hud.status_label.text != "RELOADING" and not hud.status_label.text.begins_with("EMPTY"), "HUD drops reload message on completion")
+	_check(hud.ammo_label.text == "8 / 8", "HUD ammo follows weapon signals")
+	_check(hud.weapon_name_label.text == weapon.weapon_data.weapon_name.to_upper(), "HUD names Paul's weapon")
+	# R reloads a partial magazine for the selected Paul.
+	_check(player.selected, "Paul is selected for keyboard orders")
+	player.fire_weapon()
+	await _frames(25)
+	_key(KEY_R, true)
+	await _frames(2)
+	_key(KEY_R, false)
+	_check(weapon.is_reloading and counts.reloads == 2, "R reloads the selected Paul's partial magazine")
+	await _frames(3)
+	_check(hud.status_label.text == "RELOADING" and hud.ammo_label.text == "7 / 8", "HUD shows the manual reload")
+	await _frames(80)
+	_check(weapon.current_ammo == 8 and hud.ammo_label.text == "8 / 8", "manual reload refills and HUD follows")
 
 	var rock_target: StaticBody2D = mission.get_node("TestTargets/RockTarget")
 	await _aim_at(rock_target.global_position)
-	_mouse(true)
-	await _frames(1)
-	_mouse(false)
+	player.fire_weapon()
 	await _frames(40)
 	_check(HealthComponent.find_on(rock_target).current_health == 100, "rock blocks shot toward covered target")
 	_check(get_nodes_in_group("projectiles").is_empty(), "rock destroys projectile")
 	player.position = Vector2(-160, 360)
 	await _aim_at(rock_target.global_position)
-	_mouse(true)
-	await _frames(1)
-	_mouse(false)
+	player.fire_weapon()
 	await _frames(12)
 	_check(HealthComponent.find_on(rock_target).current_health == 70, "covered dummy is damageable from open angle")
 	_check(rock_target.get_node("Visuals").modulate.r > 1.0, "impact gives visible flash")
@@ -127,6 +136,7 @@ func _run() -> void:
 	var ui: CanvasLayer = mission.get_node("UI")
 	_check(ui.metric_labels.has_all(["Current weapon", "Ammo", "Is reloading", "Fire cooldown", "Active projectiles"]), "F1 includes combat metrics")
 	_check(HealthComponent.find_on(player).current_health == 100, "player remains undamaged by own shots")
+	await _test_attack_order()
 	if "--capture" in OS.get_cmdline_user_args():
 		player.position = Vector2(-600, 280)
 		await _aim_at(Vector2(-580, 40))
@@ -206,6 +216,57 @@ func _test_projectile_safety() -> void:
 	behind.queue_free()
 
 
+## Right-click on a target out of range: Paul closes in until it is inside
+## effective range with line of sight, fires until it dies, then stands down.
+func _test_attack_order() -> void:
+	var squad: SquadManager = mission.get_node("SquadManager") as SquadManager
+	var camera: TacticalCamera = player.get_node("TacticalCamera") as TacticalCamera
+	var dummy: StaticBody2D = DUMMY.instantiate()
+	dummy.position = Vector2(-750, 800)
+	dummy.add_to_group("training_targets")
+	mission.add_child(dummy)
+	var dummy_health: HealthComponent = HealthComponent.find_on(dummy)
+	var fired_from: Array[float] = []
+	var record: Callable = func() -> void: fired_from.append(player.global_position.distance_to(dummy.global_position))
+	weapon.weapon_fired.connect(record)
+	player.teleport_to(Vector2(-1350, 800))
+	await _frames(3)
+	if weapon.current_ammo < 8:
+		weapon.start_reload()
+		await _frames(90)
+	var range_limit: float = weapon.weapon_data.effective_range
+	var start_distance: float = player.global_position.distance_to(dummy.global_position)
+	_check(start_distance > range_limit + 50.0, "attack target starts well out of range")
+	squad.select_slot(1)
+	camera.snap_to(dummy.global_position)
+	await _frames(3)
+	# Paul selected with his blade: the pointer offers both, knife on the left and fire on the right.
+	_check(squad.context_kind(dummy.global_position) == ("LEFT: KNIFE · RIGHT: FIRE" if player.melee.enabled else "ATTACK"), "cursor over a hostile offers the attack")
+	await _right_click(dummy.global_position)
+	await _frames(2)
+	_check(player.order == PlayerController.Order.ATTACK and player.order_target == dummy, "right-click on a hostile orders Paul to attack it")
+	_check(player.velocity.x > 0.0 and fired_from.is_empty(), "out of range, Paul closes in instead of firing")
+	var died_at: int = -1
+	for index in range(600):
+		await _frames(1)
+		if dummy_health.is_dead:
+			died_at = index
+			break
+	_check(died_at >= 0, "attack order kills the target")
+	_check(not fired_from.is_empty() and fired_from[0] <= range_limit + 1.0, "first shot is fired from inside effective range")
+	_check(player.global_position.distance_to(dummy.global_position) < start_distance - 50.0, "Paul moved toward the target to engage")
+	await _frames(3)
+	_check(player.order == PlayerController.Order.IDLE, "attack order ends when the target dies")
+	var shots_at_death: int = fired_from.size()
+	_check(shots_at_death >= 4 and shots_at_death <= 6, "attack spends only the shots it needs (%d)" % shots_at_death)
+	var resting: Vector2 = player.global_position
+	await _frames(60)
+	_check(fired_from.size() == shots_at_death, "Paul stops firing at the dead target")
+	_check(player.global_position.distance_to(resting) < 2.0 and player.velocity.is_zero_approx(), "and stops moving")
+	weapon.weapon_fired.disconnect(record)
+	dummy.queue_free()
+
+
 func _spawn_shot(at: Vector2, direction: Vector2, speed: float, lifetime: float) -> CombatProjectile:
 	var data: WeaponData = weapon.weapon_data.duplicate() as WeaponData
 	data.projectile_speed = speed
@@ -228,13 +289,26 @@ func _frames(count: int) -> void:
 		await process_frame
 
 
-func _mouse(pressed: bool) -> void:
+## Window coordinates for a world point (the 1920 x 1080 canvas is stretched
+## into the window).
+func _screen(world: Vector2) -> Vector2:
+	var viewport: Viewport = mission.get_viewport()
+	return viewport.get_screen_transform() * (viewport.get_canvas_transform() * world)
+
+
+func _mouse(button: MouseButton, world: Vector2, pressed: bool) -> void:
 	var event: InputEventMouseButton = InputEventMouseButton.new()
-	event.button_index = MOUSE_BUTTON_LEFT
-	event.position = root.get_mouse_position()
-	event.global_position = event.position
+	event.button_index = button
 	event.pressed = pressed
+	event.position = _screen(world)
+	event.global_position = event.position
 	Input.parse_input_event(event)
+
+
+func _right_click(world: Vector2) -> void:
+	_mouse(MOUSE_BUTTON_RIGHT, world, true)
+	_mouse(MOUSE_BUTTON_RIGHT, world, false)
+	await _frames(1)
 
 
 func _key(code: Key, pressed: bool) -> void:

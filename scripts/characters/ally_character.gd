@@ -10,7 +10,8 @@ signal selection_changed
 @export var acceleration: float = 1000.0
 @export var separation_distance: float = 42.0
 var selected: bool = false
-var command_highlight: bool = false
+## Player-set stance (C): stay low and slow on every move until toggled off.
+var sneaking: bool = false
 var player: PlayerController
 var destination: Vector2
 var has_destination: bool = false
@@ -20,6 +21,9 @@ var face_travel: bool = true
 var is_crouching: bool = false
 var command_feedback_text: String = ""
 var _command_feedback_until: int = 0
+## Stuck recovery: if an ally wanting to move makes no progress, re-path.
+var _stuck_anchor: Vector2 = Vector2.ZERO
+var _stuck_time: float = 0.0
 @onready var health: HealthComponent = $HealthComponent
 @onready var command_link: CommandLinkComponent = $CommandLinkComponent
 @onready var recon: ReconObserverComponent = $ReconObserverComponent
@@ -42,6 +46,8 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player") as PlayerController
 	$Visuals/Body.color = data.body_color
+	if data.sprite_sheets.has("idle"):
+		_use_drawn_art()
 	$NameLabel.text = data.display_name
 	health.died.connect(_on_died)
 	health.damage_received.connect(_on_damage_received)
@@ -76,8 +82,38 @@ func _physics_process(delta: float) -> void:
 	desired += separation
 	velocity = velocity.move_toward(desired, acceleration * delta)
 	move_and_slide()
+	_check_stuck(delta)
 	if face_travel and velocity.length_squared() > 16.0:
 		face_position(global_position + velocity)
+
+
+func _check_stuck(delta: float) -> void:
+	if not has_destination or agent.is_navigation_finished():
+		_stuck_time = 0.0
+		_stuck_anchor = global_position
+		return
+	if global_position.distance_to(_stuck_anchor) > 12.0:
+		_stuck_anchor = global_position
+		_stuck_time = 0.0
+		return
+	_stuck_time += delta
+	if _stuck_time > 0.8:
+		_stuck_time = 0.0
+		# Reassigning the target forces a fresh path query from where we are.
+		agent.target_position = destination
+
+
+## Swap the placeholder body for the character art; the shadow stays.
+func _use_drawn_art() -> void:
+	var sprite: UnitSprite = UnitSprite.new()
+	sprite.name = "Sprite"
+	$Visuals.add_child(sprite)
+	sprite.setup(self, data.sprite_sheets, data.sprite_frame_size, data.sprite_world_height, data.sprite_feet_y)
+	sprite.walk_speed = data.move_speed
+	$Visuals/Body.hide()
+	$Visuals/Hood.hide()
+	# The figure stands taller than the placeholder disc; keep the name above it.
+	$NameLabel.position.y -= data.sprite_world_height * 0.85
 
 
 func navigation_ready() -> bool:
@@ -136,8 +172,12 @@ func _on_died() -> void:
 	stop_moving()
 	velocity = Vector2.ZERO
 	set_selected(false)
-	$Visuals.scale.y = 0.3
-	$Visuals.modulate = Color(0.4, 0.4, 0.4)
+	if has_node("Visuals/Sprite"):
+		# The death animation does the falling; just take the life out of it.
+		$Visuals.modulate = Color(0.8, 0.8, 0.8)
+	else:
+		$Visuals.scale.y = 0.3
+		$Visuals.modulate = Color(0.4, 0.4, 0.4)
 	$AimPivot.hide()
 	$NameLabel.text = data.display_name + " DOWN"
 	set_deferred("collision_layer", 0)

@@ -1,10 +1,16 @@
 extends SceneTree
 ## Run: godot --headless --path . --script res://tests/foundation_smoke.gd
+##
+## RTS foundation: right-click orders move Paul along the navigation mesh,
+## left-click and box drags select, WASD pans the free camera without moving
+## anyone, and F1 still toggles the metrics panel.
 
 const ARENA: String = "res://scenes/missions/harvester_raid_test.tscn"
 const TUTORIAL: String = "res://scenes/missions/tutorial/tutorial_arrakeen.tscn"
 var failures: int = 0
 var player: PlayerController
+var squad: SquadManager
+var mission: Node2D
 
 
 func _initialize() -> void:
@@ -19,7 +25,7 @@ func _run() -> void:
 	_check(load(main_path) != null, "launcher scene loads")
 	_check(ResourceLoader.exists(ARENA) and ResourceLoader.exists(TUTORIAL), "both missions remain reachable")
 	var packed: PackedScene = load(ARENA) as PackedScene
-	var mission: Node2D = packed.instantiate() as Node2D
+	mission = packed.instantiate() as Node2D
 	# Isolate foundation regression from live AI; ai_smoke exercises the guards.
 	mission.get_node("Enemies").process_mode = Node.PROCESS_MODE_DISABLED
 	mission.get_node("ShieldRange").process_mode = Node.PROCESS_MODE_DISABLED
@@ -30,65 +36,102 @@ func _run() -> void:
 	root.add_child(mission)
 	current_scene = mission
 	player = mission.get_node("Player") as PlayerController
-	await _frames(3)
+	squad = mission.get_node("SquadManager") as SquadManager
+	await _frames(6)
 	_check(root.has_node("GameManager"), "GameManager autoload present")
 	_check(player.global_position == mission.get_node("Environment/SpawnMarker").global_position, "player spawns in clearing")
-	for action in ["move_up", "move_down", "move_left", "move_right", "sprint", "interact", "prescience", "squad_command", "debug_toggle"]:
+	for action in ["move_up", "move_down", "move_left", "move_right", "crouch", "prescience", "pause_game", "fire_primary", "squad_context", "melee_attack", "debug_toggle"]:
 		_check(InputMap.has_action(action) and not InputMap.action_get_events(action).is_empty(), "bound input: " + action)
+	_check(squad.paul_selected and player.selected, "Paul starts selected, so the first right-click already works")
 
-	# Open space away from all obstacles for speed and stopping measurements.
-	player.position = Vector2(-1100, 750)
-	Input.action_press("move_right")
+	# Open ground away from all obstacles for speed and stopping measurements.
+	player.teleport_to(Vector2(-1100, 750))
+	await _frames(3)
+	var goal: Vector2 = Vector2(-700, 750)
+	await _right_click(goal)
 	await _frames(2)
-	_check(player.velocity.x > 0.0 and player.velocity.length() < player.walk_speed, "accelerates gradually")
+	_check(player.order == PlayerController.Order.MOVE and player.velocity.x > 0.0 and player.velocity.length() < player.walk_speed, "right-click ground: Paul accelerates toward it")
+	await _frames(25)
+	_check(absf(player.velocity.length() - player.walk_speed) < 1.0, "walking reaches configured speed")
+	_check(player.aim_direction.x > 0.9, "Paul faces where he walks")
+	await _frames(150)
+	_check(player.global_position.distance_to(goal) <= player.arrive_distance + 4.0, "Paul arrives at the clicked point")
 	await _frames(20)
-	_check(absf(player.velocity.length() - player.walk_speed) < 0.1, "walking reaches configured speed")
-	_check(player.position.x > -1100, "movement changes world position")
-	Input.action_press("move_up")
-	await _frames(20)
-	_check(absf(player.velocity.length() - player.walk_speed) < 0.1, "diagonal speed is normalized")
-	_check(player.velocity.x > 0.0 and player.velocity.y < 0.0, "diagonal direction correct")
-	Input.action_press("sprint")
-	await _frames(20)
-	_check(player.is_sprinting and absf(player.velocity.length() - player.sprint_speed) < 0.1, "Shift action sprints")
-	Input.action_release("sprint")
-	await _frames(15)
-	_check(not player.is_sprinting and absf(player.velocity.length() - player.walk_speed) < 0.1, "releasing sprint returns to walk")
-	Input.action_release("move_right")
-	Input.action_release("move_up")
-	await _frames(2)
-	_check(player.velocity.length() > 0.0 and player.velocity.length() < player.walk_speed, "release decelerates gradually")
-	await _frames(15)
-	_check(player.velocity.is_zero_approx(), "release stops movement")
+	_check(player.order == PlayerController.Order.IDLE and player.velocity.is_zero_approx(), "and stops there")
 
-	# Drive into the left face of the actual mission rock, then steer around it.
-	player.position = Vector2(-500, 220)
-	Input.action_press("move_right")
-	await _frames(90)
-	_check(player.position.x < -400 and player.get_slide_collision_count() > 0, "rock physically blocks movement")
-	Input.action_release("move_right")
-	Input.action_press("move_up")
-	await _frames(60)
-	Input.action_release("move_up")
-	Input.action_press("move_right")
-	await _frames(65)
-	_check(player.position.x > -340, "can move around rock")
-	Input.action_release("move_right")
-	await _frames(15)
-
-	player.position = Vector2(-1530, 750)
-	Input.action_press("move_left")
+	# Double right-click runs.
+	await _right_click(Vector2(-1100, 750))
+	await _right_click(Vector2(-1100, 750))
+	await _frames(30)
+	_check(player.running and player.is_sprinting and absf(player.velocity.length() - player.sprint_speed) < 1.0, "double right-click runs at sprint speed")
+	await _right_click(Vector2(-1350, 750))
 	await _frames(40)
-	_check(player.position.x > -1565 and player.get_slide_collision_count() > 0, "arena boundary blocks movement")
-	Input.action_release("move_left")
-	await _frames(15)
+	_check(not player.is_sprinting and absf(player.velocity.length() - player.walk_speed) < 1.0, "a single click walks again")
+	player.stop()
+	await _frames(20)
+
+	# Order Paul to the far side of a mission rock: the path goes around it.
+	player.teleport_to(Vector2(-560, 220))
+	await _frames(3)
+	var far_side: Vector2 = Vector2(-250, 220)
+	player.move_to(far_side)
+	var arrived: bool = false
+	for index in range(360):
+		await _frames(1)
+		if player.order == PlayerController.Order.IDLE:
+			arrived = player.global_position.distance_to(far_side) < 30.0
+			break
+	_check(arrived, "Paul paths around a rock instead of pushing into it")
+
+	# The arena edge is not walkable; Paul stops at the nearest reachable point.
+	player.teleport_to(Vector2(-1450, 750))
+	await _frames(3)
+	player.move_to(Vector2(-1700, 750))
+	await _frames(120)
+	_check(player.position.x > -1565 and player.order == PlayerController.Order.IDLE, "arena boundary holds and the order ends")
+
+	# Queued waypoints.
+	player.teleport_to(Vector2(-1100, 750))
+	await _frames(3)
+	player.move_to(Vector2(-1000, 750))
+	player.queue_move(Vector2(-1000, 650))
+	await _frames(200)
+	_check(player.global_position.distance_to(Vector2(-1000, 650)) < 20.0, "Shift-queued waypoints are walked in order")
+
+	# Selection by click and by box.
+	var camera: TacticalCamera = player.get_node("TacticalCamera")
+	camera.snap_to(player.global_position)
+	await _frames(3)
+	await _left_click(player.global_position + Vector2(300, 0))
+	_check(not squad.paul_selected and not squad.has_selection(), "left-click on empty ground clears the selection")
+	await _right_click(player.global_position + Vector2(100, 0))
+	await _frames(3)
+	_check(player.order == PlayerController.Order.IDLE, "with nothing selected a right-click orders nobody")
+	await _left_click(player.global_position)
+	_check(squad.paul_selected, "left-click on Paul selects him")
+	await _left_click(player.global_position + Vector2(300, 0))
+	await _drag(player.global_position - Vector2(80, 80), player.global_position + Vector2(80, 80))
+	_check(squad.paul_selected, "a drag box around Paul selects him")
+
+	# Free camera: WASD pans the view and never moves a unit.
+	var start_anchor: Vector2 = camera.anchor
+	var paul_before: Vector2 = player.global_position
+	Input.action_press("move_right")
+	await _frames(20)
+	Input.action_release("move_right")
+	_check(camera.anchor.x > start_anchor.x + 50.0, "WASD pans the camera")
+	_check(player.global_position.distance_to(paul_before) < 1.0, "and does not move Paul")
+	_check(camera.is_current(), "tactical camera is current")
+	camera.snap_to(player.global_position)
+	await _frames(3)
+	_check(camera.sees(player.global_position, 80.0), "snap_to brings Paul back on screen")
 
 	var ui: CanvasLayer = mission.get_node("UI")
 	var panel: Control = ui.get_node("Screen/DebugPanel")
 	_check(not panel.visible, "debug starts hidden")
 	_key(KEY_F1, true)
 	await _frames(3)
-	_check(panel.visible and ui.metric_labels.has_all(["FPS", "World position", "Speed", "Sprinting"]), "F1 retains foundation metrics")
+	_check(panel.visible and ui.metric_labels.has_all(["FPS", "World position", "Speed", "Sprinting", "Paul order"]), "F1 retains foundation metrics")
 	_key(KEY_F1, true, true)
 	await _frames(2)
 	_check(panel.visible, "key repeat does not flicker debug")
@@ -98,32 +141,7 @@ func _run() -> void:
 	_check(not panel.visible, "F1 hides debug")
 	_key(KEY_F1, false)
 
-	player.position = Vector2(-600, 280)
-	var camera: Camera2D = player.get_node("TacticalCamera")
-	await _frames(90)
-	_check(camera.is_current() and camera.position_smoothing_enabled, "smooth tactical camera active")
-	# Mouse look is a constant offset on screen, so its world-space reach grows
-	# as the view widens. Bounded means bounded against that, not against a
-	# constant that only held while the camera sat at zoom 1.0.
-	_check(camera.position.length() <= camera.look_reach() + 0.1, "mouse look remains bounded")
-	_check(camera.look_reach() > camera.mouse_look_strength, "and its world reach follows the widened default view")
-	# Mouse look travels further in world space now that the view is wider, so
-	# the same smoothing rate needs longer to converge. Measured: it settles to
-	# under half a pixel; this waits for that rather than sampling mid-glide.
-	await _frames(120)
-	_check(camera.get_screen_center_position().distance_to(player.position + camera.position) < 4.0, "camera settles on player with look offset")
-	_check(camera.sees(player.position, 80.0), "and Paul stays comfortably on screen")
-	var expected_aim: Vector2 = (player.get_global_mouse_position() - player.global_position).normalized()
-	_check(player.aim_direction.dot(expected_aim) > 0.99, "aim points to world mouse position")
-	Input.action_press("move_down")
-	await _frames(10)
-	expected_aim = (player.get_global_mouse_position() - player.global_position).normalized()
-	_check(player.aim_direction.dot(expected_aim) > 0.99 and player.velocity.y > 0, "mouse aim is independent of movement")
-	Input.action_release("move_down")
-	await _frames(15)
-
 	if "--capture" in OS.get_cmdline_user_args():
-		player.position = Vector2(-600, 280)
 		_key(KEY_F1, true)
 		await _frames(90)
 		await RenderingServer.frame_post_draw
@@ -131,6 +149,41 @@ func _run() -> void:
 		_check(screenshot.save_png("res://.validation/foundation.png") == OK, "rendered screenshot saved")
 	print("FOUNDATION SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
+
+
+## Window coordinates for a world point. Input events arrive in window space,
+## which the 1920 x 1080 canvas is stretched into.
+func _screen(world: Vector2) -> Vector2:
+	var viewport: Viewport = mission.get_viewport()
+	return viewport.get_screen_transform() * (viewport.get_canvas_transform() * world)
+
+
+func _mouse(button: MouseButton, world: Vector2, pressed: bool) -> void:
+	var event: InputEventMouseButton = InputEventMouseButton.new()
+	event.button_index = button
+	event.pressed = pressed
+	event.position = _screen(world)
+	event.global_position = event.position
+	Input.parse_input_event(event)
+
+
+func _right_click(world: Vector2) -> void:
+	_mouse(MOUSE_BUTTON_RIGHT, world, true)
+	_mouse(MOUSE_BUTTON_RIGHT, world, false)
+	await _frames(1)
+
+
+func _left_click(world: Vector2) -> void:
+	_mouse(MOUSE_BUTTON_LEFT, world, true)
+	_mouse(MOUSE_BUTTON_LEFT, world, false)
+	await _frames(1)
+
+
+func _drag(from: Vector2, to: Vector2) -> void:
+	_mouse(MOUSE_BUTTON_LEFT, from, true)
+	await _frames(1)
+	_mouse(MOUSE_BUTTON_LEFT, to, false)
+	await _frames(1)
 
 
 func _frames(count: int) -> void:
@@ -153,4 +206,3 @@ func _check(condition: bool, description: String) -> void:
 	else:
 		failures += 1
 		push_error("FAIL: " + description)
-

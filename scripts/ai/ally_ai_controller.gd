@@ -110,7 +110,7 @@ func _execute_order() -> void:
 			if not is_instance_valid(actor.player) or actor.player.health.is_dead:
 				actor.stop_moving()
 				return
-			var crouched: bool = actor.player.is_crouching
+			var crouched: bool = actor.player.is_crouching or actor.sneaking
 			# Match Paul's stance, so crouching is a squad decision rather than
 			# something only Paul benefits from.
 			actor.is_crouching = crouched
@@ -133,8 +133,8 @@ func _execute_order() -> void:
 		Order.MOVE_TO:
 			behavior = Behavior.MOVE_TO
 			# Moving to a spot is a deliberate reposition, not a stroll.
-			actor.is_crouching = false
-			actor.navigate_to(order_position, actor.data.move_speed)
+			actor.is_crouching = actor.sneaking
+			actor.navigate_to(order_position, _order_speed())
 			if actor.global_position.distance_to(order_position) < 20:
 				issue_order(Order.HOLD, order_position)
 		Order.HOLD:
@@ -142,9 +142,9 @@ func _execute_order() -> void:
 			var settled: bool = actor.global_position.distance_to(hold_position) <= 22
 			# A Fremen told to hold goes to ground. Holding is how the player
 			# makes the squad quiet.
-			actor.is_crouching = settled
+			actor.is_crouching = settled or actor.sneaking
 			if not settled:
-				actor.navigate_to(hold_position, actor.data.move_speed)
+				actor.navigate_to(hold_position, _order_speed())
 			else:
 				actor.stop_moving()
 
@@ -217,10 +217,18 @@ func _resume_previous() -> void:
 
 func _valid_hostile(candidate: Variant) -> bool:
 	# A freed target must reach this validity check before typed Node coercion.
-	if not is_instance_valid(candidate) or not candidate.can_process() or candidate.get_meta("team_id", &"") != &"harkonnen":
+	# Orders given while the game is paused must still find their target.
+	if not is_instance_valid(candidate) or not (candidate.can_process() or get_tree().paused) or candidate.get_meta("team_id", &"") != &"harkonnen":
 		return false
 	var health: HealthComponent = HealthComponent.find_on(candidate)
 	return health != null and not health.is_dead
+
+
+## Sneaking (C) trades speed for silence on every deliberate move.
+func _order_speed() -> float:
+	if actor.sneaking and is_instance_valid(actor.player):
+		return minf(actor.data.move_speed, actor.player.crouch_speed)
+	return actor.data.move_speed
 
 
 func _nav_point(point: Vector2) -> Vector2:
