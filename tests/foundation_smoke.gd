@@ -121,7 +121,7 @@ func _run() -> void:
 	Input.action_release("move_right")
 	_check(camera.anchor.x > start_anchor.x + 50.0, "WASD pans the camera")
 	_check(player.global_position.distance_to(paul_before) < 1.0, "and does not move Paul")
-	_check(camera.is_current(), "tactical camera is current")
+	_check(camera.is_current() or (camera.iso and IsoView.active), "the tactical camera drives the view (isometric in the squad scope)")
 	camera.snap_to(player.global_position)
 	await _frames(3)
 	_check(camera.sees(player.global_position, 80.0), "snap_to brings Paul back on screen")

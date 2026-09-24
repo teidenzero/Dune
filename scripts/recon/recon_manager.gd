@@ -164,7 +164,7 @@ func _draw() -> void:
 		var color: Color = Color(1.0, 0.75, 0.45, 0.55)
 		draw_line(point - Vector2(7, 7), point + Vector2(7, 7), color, 1.5)
 		draw_line(point - Vector2(7, -7), point + Vector2(7, -7), color, 1.5)
-		draw_string(font, point + Vector2(10, -6), "LAST SEEN: %.1fs ago" % (_now() - float(contact["last_seen_time"])), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, color)
+		IsoView.draw_text(self, font, point, Vector2(10, -6), "LAST SEEN: %.1fs ago" % (_now() - float(contact["last_seen_time"])), 11, color)
 
 
 ## Autoload path lookup, not the global identifier: these scripts can be

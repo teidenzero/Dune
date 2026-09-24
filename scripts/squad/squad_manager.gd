@@ -1086,11 +1086,11 @@ func _draw_staged() -> void:
 		if hostile:
 			draw_arc(to_local(at), 26.0, 0, TAU, 32, color, 2.5, true)
 			var label: String = number + (" KNIFE" if order.kind == &"melee" else "")
-			draw_string(font, to_local(at) + Vector2(24, -24), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)
+			IsoView.draw_text(self, font, to_local(at), Vector2(24, -24), label, 16, color, 4)
 		else:
 			draw_circle(to_local(at), 16.0, Color(color, 0.18))
 			draw_arc(to_local(at), 16.0, 0, TAU, 24, color, 2.0, true)
-			draw_string(font, to_local(at) + Vector2(-5, 6), number, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)
+			IsoView.draw_text(self, font, to_local(at), Vector2(-5, 6), number, 16, color, 4)
 
 
 ## The route a planned unit will walk: a read-only navigation query.

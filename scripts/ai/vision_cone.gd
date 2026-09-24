@@ -40,6 +40,8 @@ var _wait: float = 0.0
 func _ready() -> void:
 	# Above the ground, below every actor, so it reads as painted on the sand.
 	z_index = CONE_Z
+	# Painted on the ground whatever depth its guard is drawn at.
+	z_as_relative = false
 	if actor == null:
 		actor = get_parent() as EnemyCharacter
 	if perception == null and is_instance_valid(actor):

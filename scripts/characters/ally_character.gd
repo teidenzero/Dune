@@ -49,10 +49,10 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player") as PlayerController
-	$Visuals/Body.color = data.body_color
+	(IsoView.part(self, "Visuals/Body") as Polygon2D).color = data.body_color
 	if data.art != null and data.art.has_sprites():
 		_use_drawn_art()
-	$NameLabel.text = data.display_name
+	(IsoView.part(self, "NameLabel") as Label).text = data.display_name
 	health.died.connect(_on_died)
 	health.damage_received.connect(_on_damage_received)
 	ai.setup(self)
@@ -110,12 +110,12 @@ func _check_stuck(delta: float) -> void:
 ## Swap the placeholder body for the character art; the shadow stays.
 func _use_drawn_art() -> void:
 	var sprite: UnitSprite = data.art.make_sprite(self, data.move_speed)
-	$Visuals.add_child(sprite)
+	(IsoView.part(self, "Visuals") as Node2D).add_child(sprite)
 	data.art.apply_to(sprite, self)
-	$Visuals/Body.hide()
-	$Visuals/Hood.hide()
+	(IsoView.part(self, "Visuals/Body") as Polygon2D).hide()
+	(IsoView.part(self, "Visuals/Hood") as Polygon2D).hide()
 	# The figure stands taller than the placeholder disc; keep the name above it.
-	$NameLabel.raise(data.art.world_height * 0.75)
+	(IsoView.part(self, "NameLabel") as Label).raise(data.art.world_height * 0.75)
 
 
 func navigation_ready() -> bool:
@@ -188,14 +188,14 @@ func _on_died() -> void:
 	stop_moving()
 	velocity = Vector2.ZERO
 	set_selected(false)
-	if has_node("Visuals/Sprite"):
+	if IsoView.part(self, "Visuals/Sprite") != null:
 		# The death animation does the falling; just take the life out of it.
-		$Visuals.modulate = Color(0.8, 0.8, 0.8)
+		(IsoView.part(self, "Visuals") as Node2D).modulate = Color(0.8, 0.8, 0.8)
 	else:
-		$Visuals.scale.y = 0.3
-		$Visuals.modulate = Color(0.4, 0.4, 0.4)
+		(IsoView.part(self, "Visuals") as Node2D).scale.y = 0.3
+		(IsoView.part(self, "Visuals") as Node2D).modulate = Color(0.4, 0.4, 0.4)
 	$AimPivot.hide()
-	$NameLabel.text = data.display_name + " DOWN"
+	(IsoView.part(self, "NameLabel") as Label).text = data.display_name + " DOWN"
 	set_deferred("collision_layer", 0)
 	$CollisionShape2D.set_deferred("disabled", true)
 	ally_died.emit(self)

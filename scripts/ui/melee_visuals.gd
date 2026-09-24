@@ -75,7 +75,7 @@ func _draw_debug(angle: float, reach: float, half_arc: float) -> void:
 	draw_polyline(wedge, Color(1.0, 0.45, 0.35, 0.65), 1.0)
 	var font: Font = ThemeDB.fallback_font
 	var text: String = "%s v%.0f" % [melee.state_name(), melee.attack_velocity()]
-	draw_string(font, Vector2(-38, -48), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1.0, 0.75, 0.6))
+	IsoView.draw_text(self, font, Vector2.ZERO, Vector2(-38, -48), text, 11, Color(1.0, 0.75, 0.6))
 
 
 func _debug_visible() -> bool:

@@ -25,6 +25,8 @@ var _px: float = 1.0
 
 func _ready() -> void:
 	z_index = 6
+	# On the ground under the figures, whatever depth Paul is drawn at.
+	z_as_relative = false
 
 
 func _process(delta: float) -> void:
@@ -113,9 +115,7 @@ func _draw_plan_route(projection: FuturePredictor.FutureTrack, font: Font) -> vo
 	var size: int = maxi(int(round(17.0 * _px)), 1)
 	var label: String = "SEEN +%.1fs" % projection.seen_time
 	var width: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var label_at: Vector2 = at + Vector2(-width * 0.5, -30.0 * _px)
-	draw_string_outline(font, label_at, label, HORIZONTAL_ALIGNMENT_LEFT, -1, size, maxi(int(5.0 * _px), 1), OUTLINE)
-	draw_string(font, label_at, label, HORIZONTAL_ALIGNMENT_LEFT, -1, size, SEEN)
+	IsoView.draw_text(self, font, at, Vector2(-width * 0.5, -30.0 * _px), label, size, SEEN, maxi(int(5.0 * _px), 1), OUTLINE)
 
 
 ## A thick line from the actor through each sample, on a dark outline, so the
@@ -166,9 +166,7 @@ func _draw_ghost(projection: FuturePredictor.FutureTrack, index: int, tint: Colo
 	if seen_here:
 		label = "SEEN +%ds" % int(roundf(seconds))
 	var width: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var at: Vector2 = point + Vector2(-width * 0.5, -radius - 6.0 * _px)
-	draw_string_outline(font, at, label, HORIZONTAL_ALIGNMENT_LEFT, -1, size, maxi(int(4.0 * _px), 1), OUTLINE)
-	draw_string(font, at, label, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(tint.lightened(0.35), alpha))
+	IsoView.draw_text(self, font, point, Vector2(-width * 0.5, -radius - 6.0 * _px), label, size, Color(tint.lightened(0.35), alpha), maxi(int(4.0 * _px), 1), OUTLINE)
 
 
 ## Where he will be looking at the last sample: his real cone, placed at his

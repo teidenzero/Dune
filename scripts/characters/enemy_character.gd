@@ -103,15 +103,15 @@ func revive(health_value: float) -> void:
 	var blade: MeleeController = get_node_or_null("MeleeController") as MeleeController
 	if blade != null:
 		blade.enabled = true
-	$Visuals.modulate = Color.WHITE
-	$Visuals.scale = Vector2.ONE
+	(IsoView.part(self, "Visuals") as Node2D).modulate = Color.WHITE
+	(IsoView.part(self, "Visuals") as Node2D).scale = Vector2.ONE
 	$AimPivot.show()
-	$NameLabel.text = display_name
+	(IsoView.part(self, "NameLabel") as Label).text = display_name
 	if shield != null:
 		shield.enabled = true
 	collision_layer = _alive_layer
 	$CollisionShape2D.disabled = false
-	var sprite: UnitSprite = get_node_or_null("Sprite") as UnitSprite
+	var sprite: UnitSprite = IsoView.part(self, "Sprite") as UnitSprite
 	if sprite != null:
 		sprite.revive()
 
@@ -130,9 +130,9 @@ func _on_damage_received(_amount: float, source: Node) -> void:
 func _on_damaged(_amount: float) -> void:
 	if _flash != null:
 		_flash.kill()
-	$Visuals.modulate = Color(2.5, 2.5, 2.5)
+	(IsoView.part(self, "Visuals") as Node2D).modulate = Color(2.5, 2.5, 2.5)
 	_flash = create_tween()
-	_flash.tween_property($Visuals, "modulate", Color.WHITE, hit_flash_duration)
+	_flash.tween_property((IsoView.part(self, "Visuals") as Node2D), "modulate", Color.WHITE, hit_flash_duration)
 
 
 func _on_died() -> void:
@@ -146,10 +146,10 @@ func _on_died() -> void:
 		blade.disable()
 	if _flash != null:
 		_flash.kill()
-	$Visuals.modulate = Color(0.4, 0.4, 0.4)
-	$Visuals.scale = Vector2(1.0, 0.3)
+	(IsoView.part(self, "Visuals") as Node2D).modulate = Color(0.4, 0.4, 0.4)
+	(IsoView.part(self, "Visuals") as Node2D).scale = Vector2(1.0, 0.3)
 	$AimPivot.hide()
-	$NameLabel.text = display_name + " DOWN"
+	(IsoView.part(self, "NameLabel") as Label).text = display_name + " DOWN"
 	if shield != null:
 		shield.shut_down()
 	set_deferred("collision_layer", 0)

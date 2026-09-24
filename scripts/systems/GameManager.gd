@@ -6,6 +6,8 @@ signal debug_visibility_changed(is_visible: bool)
 ## Step id the tutorial resumes at after a reload. Session-only; there is no
 ## save-game persistence.
 var tutorial_checkpoint: StringName = &""
+## The squad scope seen isometrically (Syndicate style); false keeps the top-down view.
+var squad_iso: bool = true
 
 ## Same idea for missions: the phase a restart resumes from.
 var mission_checkpoint: StringName = &""

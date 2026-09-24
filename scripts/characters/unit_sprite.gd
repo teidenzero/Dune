@@ -148,6 +148,8 @@ func _process(_delta: float) -> void:
 
 func _update_facing(moving: bool) -> void:
 	var facing: Vector2 = actor.velocity if moving and not _in_combat() else Vector2.RIGHT.rotated(_aim_rotation())
+	# Left or right as the player sees it, in the isometric view too.
+	facing = IsoView.screen_direction(facing)
 	if absf(facing.x) > 0.05:
 		flip_h = facing.x < 0.0
 

@@ -93,6 +93,4 @@ func _draw_message() -> void:
 	var color: Color = BLOCK_COLOR if _flash_blocked else PENETRATE_COLOR
 	var size: int = WorldLabel.font_size(self, 13)
 	var width: float = font.get_string_size(_message, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var point: Vector2 = Vector2(-width * 0.5, -shimmer_radius - 16.0)
-	draw_string_outline(font, point, _message, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color(0.05, 0.07, 0.09))
-	draw_string(font, point, _message, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	IsoView.draw_text(self, font, Vector2.ZERO, Vector2(-width * 0.5, -shimmer_radius - 16.0), _message, size, color, 4, Color(0.05, 0.07, 0.09))

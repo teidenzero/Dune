@@ -125,6 +125,4 @@ func _draw() -> void:
 	var text: String = ("HOLD F: %s" if direct else "RIGHT-CLICK: %s") % label
 	var size: int = WorldLabel.font_size(self, 14)
 	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var point: Vector2 = Vector2(-width * 0.5, -52.0 - (size - 14) * 0.5)
-	draw_string_outline(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color(0.05, 0.07, 0.08))
-	draw_string(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0.85, 0.97, 1.0))
+	IsoView.draw_text(self, font, Vector2.ZERO, Vector2(-width * 0.5, -52.0 - (size - 14) * 0.5), text, size, Color(0.85, 0.97, 1.0), 4, Color(0.05, 0.07, 0.08))

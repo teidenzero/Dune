@@ -90,7 +90,11 @@ func _draw() -> void:
 	if not detonated:
 		if _drum != null:
 			draw_circle(Vector2(4, 4), 22.0, Color(0.1, 0.08, 0.06, 0.35))
+			if IsoView.active:
+				# Stood up against the squad scope's isometric view.
+				draw_set_transform_matrix(IsoView.upright())
 			draw_texture(_drum, -IsoKit.DRUM_ANCHOR)
+			draw_set_transform_matrix(Transform2D.IDENTITY)
 			return
 		# Canister: a squat drum with hazard bands.
 		draw_circle(Vector2(4, 6), 20.0, Color(0.1, 0.08, 0.06, 0.35))

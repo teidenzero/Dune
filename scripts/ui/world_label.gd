@@ -78,6 +78,9 @@ static func camera_zoom(node: CanvasItem) -> float:
 	var viewport: Viewport = node.get_viewport()
 	if viewport == null:
 		return 1.0
+	if IsoView.active:
+		# The squad scope's view is set by hand, not by a Camera2D.
+		return maxf(viewport.canvas_transform.x.length() / IsoView.BASIS.x.length(), 0.05)
 	var camera: Camera2D = viewport.get_camera_2d()
 	if camera == null:
 		return 1.0

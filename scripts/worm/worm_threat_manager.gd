@@ -373,4 +373,4 @@ func _draw() -> void:
 	if target.is_finite():
 		var centre: Vector2 = to_local(target)
 		draw_arc(centre, danger_radius, 0, TAU, 48, Color(1.0, 0.45, 0.3, 0.6), 2.0, true)
-		draw_string(font, centre + Vector2(6, -danger_radius - 8), "WORM TARGET %s" % strongest_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1.0, 0.6, 0.4))
+		IsoView.draw_text(self, font, centre, Vector2(6, -danger_radius - 8), "WORM TARGET %s" % strongest_label, 12, Color(1.0, 0.6, 0.4))

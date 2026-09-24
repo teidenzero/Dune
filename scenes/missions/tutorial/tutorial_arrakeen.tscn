@@ -559,84 +559,84 @@ position = Vector2(-1180.0, 0.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "MOVE HERE"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_MoveB" type="Node2D" parent="Markers"]
 position = Vector2(-830.0, -330.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "SPRINT HERE"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_MoveC" type="Node2D" parent="Markers"]
 position = Vector2(-830.0, 330.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "CROUCH ACROSS"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_SquadMove" type="Node2D" parent="Markers"]
 position = Vector2(3340.0, -300.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "SEND THE SCOUT"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_Overlook" type="Node2D" parent="Markers"]
 position = Vector2(5540.0, -260.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "OVERLOOK"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_StealthExit" type="Node2D" parent="Markers"]
 position = Vector2(2600.0, 0.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "EXIT"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_Extraction" type="Node2D" parent="Markers"]
 position = Vector2(9620.0, 0.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "EXTRACTION"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_MidRock" type="Node2D" parent="Markers"]
 position = Vector2(7520.0, -200.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "ROCK"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_FarRock" type="Node2D" parent="Markers"]
 position = Vector2(8040.0, 200.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "ROCK"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_Haven" type="Node2D" parent="Markers"]
 position = Vector2(8460.0, -140.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "SAFE ROCK"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_PrescienceWatch" type="Node2D" parent="Markers"]
 position = Vector2(5980.0, 220.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "WATCH POST"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Marker_PrescienceExit" type="Node2D" parent="Markers"]
 position = Vector2(6720.0, 280.0)
 script = ExtResource("marker")
 radius = 42.0
 label = "CROSS TO HERE"
-color = Color(0.95, 0.82, 0.45, 1)
+color = Color(0.3, 0.8, 1, 1)
 
 [node name="Checkpoints" type="Node2D" parent="."]
 

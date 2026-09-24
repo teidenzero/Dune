@@ -74,7 +74,7 @@ func _crouch_and_pulses() -> void:
 	_key(KEY_C, true)
 	await _frames(3)
 	_key(KEY_C, false)
-	_check(player.is_crouching and player.get_node("Body").scale.y < 1.0, "physical C toggles visibly compressed crouch")
+	_check(player.is_crouching and (IsoView.part(player, "Body") as Node2D).scale.y < 1.0, "physical C toggles visibly compressed crouch")
 	await _frames(40)
 	_check(player.is_crouching and events.is_empty(), "toggle persists and stationary crouch emits no noise")
 	var east: Vector2 = Vector2(-100, -700)
@@ -154,7 +154,7 @@ func _rates_and_geometry() -> void:
 	await _frames(10)
 	var walking_rate: float = guard.perception.detection_gain_per_second
 	_check(guard.perception.detection_value > 5 and guard.perception.detection_value < 25 and guard.ai.state == State.PATROL, "first sight builds a partial meter without combat")
-	_check(guard.get_node("DetectionIndicator").visible, "normal detection bar appears without F1")
+	_check(IsoView.part(guard, "DetectionIndicator").visible, "normal detection bar appears without F1")
 	player.stealth_profile.update_profile(true, false, 110, 0)
 	await _frames(10)
 	_check(guard.perception.detection_gain_per_second < walking_rate * 0.5, "equivalent-distance crouching halves visual gain")
@@ -265,7 +265,7 @@ func _hearing_and_priorities() -> void:
 	guard.ai.set_physics_process(true)
 	await _frames(60)
 	_check(guard.ai.state == State.INVESTIGATE and guard.ai.suspicious_position == sound, "audio investigation follows remembered sound, not hidden player")
-	_check(guard.get_node("DetectionIndicator/State").text.contains("?"), "sound-only suspicion displays question mark")
+	_check(IsoView.part(guard, "DetectionIndicator/State").text.contains("?"), "sound-only suspicion displays question mark")
 	guard.ai.change_state(State.COMBAT)
 	bus.emit_noise(guard.position, 650, player, DisturbanceBus.Type.GUNSHOT)
 	_check(guard.ai.state == State.COMBAT and guard.ai.suspicious_position == sound, "combat ignores disturbances")
@@ -307,8 +307,8 @@ func _independent_guards_and_impacts() -> void:
 	player.position = Vector2(-140, 470)
 	player.is_crouching = true
 	player.stealth_profile.update_profile(true, false, 0, 0)
-	player.get_node("Body").scale.y = 0.65
-	player.get_node("Hood").scale.y = 0.65
+	(IsoView.part(player, "Body") as Node2D).scale.y = 0.65
+	(IsoView.part(player, "Hood") as Node2D).scale.y = 0.65
 	guard.face_position(player.position)
 	guard.perception._set_detection(65)
 	await _frames(10)
@@ -321,7 +321,7 @@ func _independent_guards_and_impacts() -> void:
 	await _capture("stealth_debug")
 	guard.health.die()
 	await _frames(3)
-	_check(not guard.get_node("DetectionIndicator").visible, "dead guard hides detection indicator")
+	_check(not IsoView.part(guard, "DetectionIndicator").visible, "dead guard hides detection indicator")
 	completed += 1
 
 

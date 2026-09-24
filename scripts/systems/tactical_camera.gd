@@ -51,6 +51,11 @@ var _shake_time: float = 0.0
 ## polled cursor, so a stale default position cannot pan the camera on its own.
 var _pointer_seen: bool = false
 var _pointer_position: Vector2 = Vector2.ZERO
+## The squad scope's isometric view (IsoView): the camera sets the viewport's
+## canvas transform itself, since a Camera2D cannot slant the view. Off in the
+## interiors, which are drawn isometric already, and in follow mode.
+var iso: bool = false
+var _iso_view: IsoView
 
 
 func _ready() -> void:
@@ -65,9 +70,34 @@ func _ready() -> void:
 
 
 func _settle() -> void:
+	_setup_iso()
 	anchor = _clamp_to_bounds(_player_position())
 	position = anchor - _player_position()
 	reset_smoothing()
+
+
+## Squad maps are seen isometrically unless the game says otherwise; an
+## interior (an IsoLevel) never is.
+func _setup_iso() -> void:
+	var game: Node = get_node_or_null("/root/GameManager")
+	var wanted: bool = game == null or game.get("squad_iso") != false
+	iso = wanted and not follow and get_tree().get_first_node_in_group("iso_level") == null
+	IsoView.active = iso
+	if not iso:
+		return
+	enabled = false
+	_iso_view = IsoView.new()
+	var host: Node = get_tree().current_scene if get_tree().current_scene != null else _player.get_parent()
+	host.add_child.call_deferred(_iso_view)
+	_apply_iso_view(0.0)
+
+
+## The isometric view: centre on the anchor, zoom, slant, shake.
+func _apply_iso_view(unscaled: float) -> void:
+	var screen: Vector2 = get_viewport_rect().size
+	var shake: Vector2 = _shake_offset(unscaled) if unscaled > 0.0 else Vector2.ZERO
+	var view: Transform2D = Transform2D(0.0, screen * 0.5 + shake) * Transform2D(0.0, Vector2.ONE * effective_zoom(), 0.0, Vector2.ZERO) * IsoView.BASIS * Transform2D(0.0, -anchor)
+	get_viewport().canvas_transform = view
 
 
 ## Jump the view to a world point with no glide.
@@ -122,13 +152,18 @@ func _process(delta: float) -> void:
 	pan_active = not direction.is_zero_approx()
 	if pan_active:
 		_centering = false
-		anchor += direction * pan_speed * unscaled / effective_zoom()
+		var step: Vector2 = direction * pan_speed * unscaled / effective_zoom()
+		# In the isometric view "right" is right on screen, not along world x.
+		anchor += IsoView.BASIS.affine_inverse().basis_xform(step) if iso else step
 	elif _centering:
 		anchor = anchor.lerp(_center_target, 1.0 - exp(-center_smoothing * unscaled))
 		if anchor.distance_to(_center_target) < 2.0:
 			anchor = _center_target
 			_centering = false
 	anchor = _clamp_to_bounds(anchor)
+	if iso:
+		_apply_iso_view(unscaled)
+		return
 	# Local position participates in Camera2D limits, unlike Camera2D.offset.
 	position = anchor - _player_position() + _shake_offset(unscaled)
 
@@ -184,6 +219,13 @@ var _was_following: bool = false
 ## The widest this mission can be shown without the view running past the camera
 ## limits. Each scene gets whatever its own bounds can support.
 func _scene_minimum_zoom() -> float:
+	if iso:
+		# The map's outline on screen: its four corners through the slant.
+		var box: Rect2 = Rect2(IsoView.BASIS * Vector2(limit_left, limit_top), Vector2.ZERO)
+		for corner in [Vector2(limit_right, limit_top), Vector2(limit_left, limit_bottom), Vector2(limit_right, limit_bottom)]:
+			box = box.expand(IsoView.BASIS * corner)
+		var shown: Vector2 = get_viewport_rect().size
+		return clampf(maxf(shown.x / maxf(box.size.x, 1.0), shown.y / maxf(box.size.y, 1.0)) * 0.6, 0.05, 1.0)
 	var span: Vector2 = Vector2(float(limit_right - limit_left), float(limit_bottom - limit_top))
 	if span.x <= 0.0 or span.y <= 0.0:
 		return 0.05
@@ -197,6 +239,9 @@ func _minimum_player_zoom() -> float:
 
 ## Whether a world point is actually on screen.
 func sees(point: Vector2, margin: float = 0.0) -> bool:
+	if iso:
+		var on_screen: Vector2 = get_viewport().canvas_transform * point
+		return Rect2(Vector2.ZERO, get_viewport_rect().size).grow(-margin * effective_zoom()).has_point(on_screen)
 	var half: Vector2 = visible_world_size() * 0.5
 	var centre: Vector2 = get_screen_center_position()
 	return absf(point.x - centre.x) <= half.x - margin and absf(point.y - centre.y) <= half.y - margin
@@ -238,6 +283,9 @@ func _edge_scroll_vector() -> Vector2:
 
 
 func _clamp_to_bounds(point: Vector2) -> Vector2:
+	if iso:
+		# The slanted view shows past the corners anyway: keep the centre on the map.
+		return Vector2(clampf(point.x, limit_left, limit_right), clampf(point.y, limit_top, limit_bottom))
 	var half_view: Vector2 = get_viewport_rect().size / effective_zoom() * 0.5
 	var result: Vector2 = point
 	var min_x: float = limit_left + half_view.x

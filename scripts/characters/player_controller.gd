@@ -145,9 +145,9 @@ func _use_drawn_art() -> void:
 	# Above the shadow, under the aim marker and the blade arc.
 	move_child(sprite, $Shadow.get_index() + 1)
 	art.apply_to(sprite, self)
-	$Body.hide()
-	$Hood.hide()
-	$NameLabel.raise(art.world_height * 0.75)
+	(IsoView.part(self, "Body") as Polygon2D).hide()
+	(IsoView.part(self, "Hood") as Polygon2D).hide()
+	(IsoView.part(self, "NameLabel") as Label).raise(art.world_height * 0.75)
 
 
 # --------------------------------------------------------------------------
@@ -372,8 +372,8 @@ func _physics_process(delta: float) -> void:
 	_shield_worm_sign(delta)
 	_check_stuck(delta, desired)
 	stealth_profile.update_profile(is_crouching, is_sprinting, current_speed, delta)
-	$Body.scale = Vector2(1.0, 0.65) if is_crouching else Vector2.ONE
-	$Hood.scale = $Body.scale
+	(IsoView.part(self, "Body") as Polygon2D).scale = Vector2(1.0, 0.65) if is_crouching else Vector2.ONE
+	(IsoView.part(self, "Hood") as Polygon2D).scale = (IsoView.part(self, "Body") as Polygon2D).scale
 	if order == Order.MOVE and current_speed > 8.0:
 		aim_direction = velocity.normalized()
 	if prescience.blocks_combat() and melee.state == MeleeController.State.CHARGING:
@@ -460,8 +460,8 @@ func _direct_control(delta: float) -> void:
 	current_speed = get_real_velocity().length()
 	is_sprinting = (running or dodging) and current_speed > 8.0
 	stealth_profile.update_profile(is_crouching, is_sprinting, current_speed, delta)
-	$Body.scale = Vector2(1.0, 0.65) if is_crouching else Vector2.ONE
-	$Hood.scale = $Body.scale
+	(IsoView.part(self, "Body") as Polygon2D).scale = Vector2(1.0, 0.65) if is_crouching else Vector2.ONE
+	(IsoView.part(self, "Hood") as Polygon2D).scale = (IsoView.part(self, "Body") as Polygon2D).scale
 	_aim_at_mouse()
 	_update_aim()
 	aim_pivot.rotation = aim_direction.angle()
@@ -743,8 +743,8 @@ func _on_died() -> void:
 	weapon_controller.disable()
 	melee.disable()
 	prescience.deactivate()
-	$Body.modulate = Color(0.4, 0.4, 0.4)
-	$NameLabel.text = "DOWN"
+	(IsoView.part(self, "Body") as Polygon2D).modulate = Color(0.4, 0.4, 0.4)
+	(IsoView.part(self, "NameLabel") as Label).text = "DOWN"
 
 
 # --------------------------------------------------------------------------

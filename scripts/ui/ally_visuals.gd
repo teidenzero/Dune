@@ -36,8 +36,7 @@ func _draw() -> void:
 		var font: Font = ThemeDB.fallback_font
 		var text: String = actor.command_feedback_text
 		var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-		draw_string_outline(font, Vector2(-width * 0.5, -46), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, 4, Color(0.06, 0.08, 0.07))
-		draw_string(font, Vector2(-width * 0.5, -46), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1.0, 0.55, 0.45))
+		IsoView.draw_text(self, font, Vector2.ZERO, Vector2(-width * 0.5, -46), text, 13, Color(1.0, 0.55, 0.45), 4, Color(0.06, 0.08, 0.07))
 	if get_node("/root/GameManager").debug_visible:
 		var path: PackedVector2Array = actor.agent.get_current_navigation_path()
 		for i in range(1, path.size()):

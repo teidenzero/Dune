@@ -85,7 +85,7 @@ func _free_camera() -> void:
 	await _load()
 	_freeze(scout)
 	_freeze(warrior)
-	_check(camera.is_current(), "tactical camera starts current")
+	_check(camera.is_current() or (camera.iso and IsoView.active), "the tactical camera drives the view from the start")
 	_check(is_equal_approx(camera.zoom.x, camera.effective_zoom()) and camera.effective_zoom() >= camera.gameplay_zoom - 0.001, "default view is at least the gameplay zoom")
 	_check(camera.mode_name() == "FREE" and not camera.pan_active, "the camera starts FREE, not panning")
 	# The camera keeps its own anchor: moving Paul does not drag the view.
@@ -126,7 +126,7 @@ func _free_camera() -> void:
 	Input.action_release("move_right")
 	Input.action_release("move_down")
 	await _frames(10)
-	var half: Vector2 = camera.visible_world_size() * 0.5
+	var half: Vector2 = Vector2.ZERO if camera.iso else camera.visible_world_size() * 0.5
 	_check(camera.anchor.x <= camera.limit_right - half.x + 1.0 and camera.anchor.y <= camera.limit_bottom - half.y + 1.0, "pan is clamped to the mission bounds")
 	# snap_to jumps immediately; center_on glides.
 	# The headless window's aspect leaves little vertical travel, so targets are
@@ -191,7 +191,11 @@ func _free_camera() -> void:
 	await _frames(120)
 	var widest: Vector2 = camera.visible_world_size()
 	_check(camera.effective_zoom() < camera.gameplay_zoom, "wheel down zooms out past the gameplay view")
-	_check(widest.x <= camera.limit_right - camera.limit_left + 1.0 and widest.y <= camera.limit_bottom - camera.limit_top + 1.0, "the widest zoom never shows past the mission edges")
+	if camera.iso:
+		# Slanted, the view is bounded by the map's isometric outline instead.
+		_check(camera.effective_zoom() >= camera._scene_minimum_zoom() - 0.01, "the widest zoom is bounded by the map's outline")
+	else:
+		_check(widest.x <= camera.limit_right - camera.limit_left + 1.0 and widest.y <= camera.limit_bottom - camera.limit_top + 1.0, "the widest zoom never shows past the mission edges")
 	_check(is_equal_approx(camera.zoom.x, camera.effective_zoom()), "the applied zoom matches the effective zoom")
 	player.set_physics_process(false)
 	completed += 1

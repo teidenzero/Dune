@@ -52,5 +52,4 @@ func _draw() -> void:
 	if player_in_range():
 		label += "   RIGHT-CLICK"
 	var width: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-	draw_string_outline(font, Vector2(-width * 0.5, -78), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, 4, Color(0.08, 0.07, 0.05))
-	draw_string(font, Vector2(-width * 0.5, -78), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1.0, 0.82, 0.5) if running else Color(0.78, 0.76, 0.7))
+	IsoView.draw_text(self, font, Vector2.ZERO, Vector2(-width * 0.5, -78), label, 13, Color(1.0, 0.82, 0.5) if running else Color(0.78, 0.76, 0.7), 4, Color(0.08, 0.07, 0.05))

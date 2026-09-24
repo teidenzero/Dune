@@ -43,5 +43,4 @@ func _draw() -> void:
 	var text: String = "COMMS ACTIVE" if active else "COMMS DOWN"
 	var color: Color = Color(1.0, 0.6, 0.45) if active else Color(0.6, 0.7, 0.72)
 	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-	draw_string_outline(font, Vector2(-width * 0.5, -96), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, 4, Color(0.06, 0.06, 0.08))
-	draw_string(font, Vector2(-width * 0.5, -96), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, color)
+	IsoView.draw_text(self, font, Vector2.ZERO, Vector2(-width * 0.5, -96), text, 13, color, 4, Color(0.06, 0.06, 0.08))

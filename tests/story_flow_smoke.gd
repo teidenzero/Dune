@@ -17,6 +17,10 @@ func _initialize() -> void:
 
 func _run() -> void:
 	game = root.get_node("GameManager")
+	# The player's own setting must not decide the test - nor be changed by
+	# it: music on to start, and whatever they had put back at the end.
+	var players_music: bool = game.music_enabled
+	game.music_enabled = true
 	_check(ProjectSettings.get_setting("application/run/main_scene") == CampaignFlow.MAIN_MENU, "the game opens on the main menu")
 	change_scene_to_file(CampaignFlow.MAIN_MENU)
 	await _frames(5)
@@ -95,6 +99,7 @@ func _run() -> void:
 	await _press(KEY_ESCAPE)
 	await _frames(5)
 	_check(current_scene is MainMenu and not game.flow.active, "and back to the menu")
+	game.music_enabled = players_music
 	print("STORY FLOW SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
 

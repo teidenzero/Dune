@@ -63,7 +63,8 @@ static func current(unit: Node2D) -> String:
 func _ready() -> void:
 	add_to_group("bark_layer")
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	z_index = 30
+	# Above every figure, however deep the isometric view sorts them.
+	z_index = 3500
 
 
 func _say(unit: Node2D, text: String, color: Color) -> bool:
@@ -87,7 +88,7 @@ func _process(_delta: float) -> void:
 
 func _draw() -> void:
 	var now: int = Time.get_ticks_msec()
-	var px: float = 1.0 / maxf(get_canvas_transform().get_scale().x, 0.05)
+	var px: float = IsoView.pixel(self)
 	var font: Font = HudStyle.body_font(700)
 	var size: int = maxi(int(round(16.0 * px)), 1)
 	for entry in _pings:
@@ -105,6 +106,4 @@ func _draw() -> void:
 		var alpha: float = minf(left * 4.0, 1.0)
 		var text: String = entry.text
 		var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-		var at: Vector2 = to_local(unit.global_position) + Vector2(-width * 0.5, -104.0 * px)
-		draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, maxi(int(5.0 * px), 1), Color(OUTLINE, alpha))
-		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(entry.color, alpha))
+		IsoView.draw_text(self, font, to_local(unit.global_position), Vector2(-width * 0.5, -104.0 * px), text, size, Color(entry.color, alpha), maxi(int(5.0 * px), 1), Color(OUTLINE, alpha))
