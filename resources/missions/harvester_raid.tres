@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="MissionDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/mission_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/campaign/objective_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="obj_approach"]
+script = ExtResource("2")
+id = &"approach"
+title = "Approach the spice operation"
+description = "Move down off the rocks and get eyes on the crawler."
+
+[sub_resource type="Resource" id="obj_comms"]
+script = ExtResource("2")
+id = &"comms"
+title = "Disable the communications beacon"
+description = "West of the crawler. Skipping it means a louder response."
+
+[sub_resource type="Resource" id="obj_sabotage"]
+script = ExtResource("2")
+id = &"sabotage"
+title = "Sabotage the harvester"
+description = "Both control points, anywhere on the crawler."
+primary = true
+
+[sub_resource type="Resource" id="obj_escape"]
+script = ExtResource("2")
+id = &"escape"
+title = "Reach safe rock"
+description = "North of the site. Sand is where it hunts."
+
+[sub_resource type="Resource" id="obj_survive"]
+script = ExtResource("2")
+id = &"survive"
+title = "Survive the worm"
+description = "Stay on stone until it has taken the crawler."
+
+[sub_resource type="Resource" id="obj_fremen"]
+script = ExtResource("2")
+id = &"fremen"
+title = "Keep both Fremen alive"
+description = "Optional."
+optional = true
+
+[resource]
+script = ExtResource("1")
+id = &"harvester_raid"
+title = "Harvester Raid"
+briefing = "A Harkonnen crawler is working the open sand below the ridge. Cripple it and let the desert finish the job, then get back onto rock before the worm comes. The sietch is watching how we fight."
+faction_at_stake = &"fremen"
+objectives = Array[ExtResource("2")]([SubResource("obj_approach"), SubResource("obj_comms"), SubResource("obj_sabotage"), SubResource("obj_escape"), SubResource("obj_survive"), SubResource("obj_fremen")])
+stakes = {
+"clean": {
+"heat": 1,
+"resources": {
+&"water": 10
+},
+"standings": {
+&"choam": -1,
+&"fremen": 1
+}
+},
+"failure": {
+"heat": 2,
+"standings": {
+&"fremen": -1
+}
+},
+"noisy": {
+"heat": 3,
+"resources": {
+&"water": 5
+},
+"standings": {
+&"choam": -1,
+&"fremen": 1
+}
+},
+"partial": {
+"heat": 3,
+"standings": {
+&"choam": -1
+}
+}
+}
+squad_scene = "res://scenes/missions/harvester_raid/harvester_raid.tscn"

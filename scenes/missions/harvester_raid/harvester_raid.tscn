@@ -1,5 +1,6 @@
-[gd_scene load_steps=41 format=3]
+[gd_scene load_steps=42 format=3]
 
+[ext_resource type="Resource" path="res://resources/missions/harvester_raid.tres" id="mission_def"]
 [ext_resource type="Script" path="res://scripts/environment/desert_ground.gd" id="ground"]
 [ext_resource type="Script" path="res://scripts/environment/arena_navigation.gd" id="nav"]
 [ext_resource type="Script" path="res://scripts/ai/disturbance_bus.gd" id="bus"]
@@ -682,6 +683,7 @@ player = NodePath("../Player")
 script = ExtResource("mission")
 mission_name = "HARVESTER RAID"
 player = NodePath("../Player")
+definition = ExtResource("mission_def")
 
 [node name="RaidController" type="Node" parent="." node_paths=PackedStringArray("mission", "player", "squad", "harvester", "beacon", "worm", "extraction", "approach_trigger", "reinforcement_root", "enemy_root")]
 script = ExtResource("raid")

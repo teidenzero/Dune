@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="CharacterArt" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/characters/character_art.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/portraits/paul.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_idle.png" id="s0"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_walk.png" id="s1"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_run.png" id="s2"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_crouch_walk.png" id="s3"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_crouch_idle.png" id="s4"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_aim.png" id="s5"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_shoot.png" id="s6"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_crouch_shoot.png" id="s7"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_reload.png" id="s8"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_hit.png" id="s9"]
+[ext_resource type="Texture2D" path="res://assets/characters/paul/paul_death.png" id="s10"]
+
+[resource]
+script = ExtResource("1")
+portrait = ExtResource("2")
+sheets = {
+"idle": ExtResource("s0"),
+"walk": ExtResource("s1"),
+"run": ExtResource("s2"),
+"crouch_walk": ExtResource("s3"),
+"crouch_idle": ExtResource("s4"),
+"aim": ExtResource("s5"),
+"shoot": ExtResource("s6"),
+"crouch_shoot": ExtResource("s7"),
+"reload": ExtResource("s8"),
+"hit": ExtResource("s9"),
+"death": ExtResource("s10")
+}

@@ -25,3 +25,12 @@ DUNE_PROTOTYPE_PLAN.md
 tests/README.md
 M9_PLAYTEST.md
 M10_PLAYTEST.md
+
+# Generated character art: the game uses the packed strips copied to
+# assets/characters/<unit>/. Keep the manifests, prompts and reference image;
+# the review GIFs, source attempts, zips and duplicate strips stay local.
+assets/characters/*/generated/review/
+assets/characters/*/generated/source/
+assets/characters/*/generated/*.zip
+assets/characters/*/generated/*.png
+!assets/characters/*/generated/*_reference.png

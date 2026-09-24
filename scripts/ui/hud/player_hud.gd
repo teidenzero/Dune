@@ -59,6 +59,7 @@ var _follow_slot: HudSlot
 var _worm_box: Control
 var _worm_bar: HudBar
 var _pause_frame: Control
+var _prescience_veil: Control
 var _icon_standing: Texture2D
 var _icon_crouched: Texture2D
 
@@ -75,6 +76,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_icon_standing = HudStyle.icon("stance_standing")
 	_icon_crouched = HudStyle.icon("stance_crouched")
+	_build_prescience_veil()
 	_build_pause_frame()
 	_build_top()
 	_build_squad_box()
@@ -86,6 +88,23 @@ func _ready() -> void:
 # --------------------------------------------------------------------------
 # Construction
 # --------------------------------------------------------------------------
+
+## A spice-blue glow around the screen edge while Paul reads the future, so
+## the slowed world is obviously a different mode.
+func _build_prescience_veil() -> void:
+	_prescience_veil = Control.new()
+	_prescience_veil.name = "PrescienceVeil"
+	_prescience_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_prescience_veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_prescience_veil.draw.connect(func() -> void:
+		var rect: Rect2 = Rect2(Vector2.ZERO, _prescience_veil.size)
+		var bands: int = 28
+		for index in range(bands):
+			var fade: float = 1.0 - float(index) / bands
+			_prescience_veil.draw_rect(rect.grow(-index * 5.0 - 2.5), Color(0.25, 0.6, 0.95, 0.22 * fade * fade), false, 5.0))
+	_prescience_veil.hide()
+	add_child(_prescience_veil)
+
 
 func _build_pause_frame() -> void:
 	_pause_frame = Control.new()
@@ -376,6 +395,10 @@ func _primary_unit() -> Node2D:
 
 
 func _refresh_top() -> void:
+	var vision: bool = player.prescience != null and player.prescience.active
+	if _prescience_veil.visible != vision:
+		_prescience_veil.visible = vision
+		_prescience_veil.queue_redraw()
 	var is_paused: bool = is_instance_valid(squad) and squad.paused
 	pause_label.visible = is_paused
 	_pause_frame.visible = is_paused

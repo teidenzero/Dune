@@ -5,8 +5,8 @@ extends Node2D
 @export var melee: MeleeController
 @export var aim_pivot: Node2D
 
-const FAST_COLOR: Color = Color(0.85, 0.95, 1.0)
-const SLOW_COLOR: Color = Color(1.0, 0.78, 0.35)
+@export var fast_color: Color = Color(0.85, 0.95, 1.0)
+@export var slow_color: Color = Color(1.0, 0.78, 0.35)
 
 var _swing_until: int = 0
 var _swing_slow: bool = false
@@ -45,19 +45,24 @@ func _draw() -> void:
 func _draw_charge(angle: float, reach: float, half_arc: float) -> void:
 	var ratio: float = melee.charge_ratio()
 	if melee.slow_ready:
-		draw_arc(Vector2.ZERO, reach, angle - half_arc, angle + half_arc, 24, SLOW_COLOR, 3.0, true)
+		draw_arc(Vector2.ZERO, reach, angle - half_arc, angle + half_arc, 24, slow_color, 3.0, true)
 		for edge in [-1.0, 1.0]:
-			draw_line(Vector2.ZERO, Vector2.RIGHT.rotated(angle + edge * half_arc) * reach, SLOW_COLOR, 2.0)
-		draw_line(Vector2.RIGHT.rotated(angle) * 16.0, Vector2.RIGHT.rotated(angle) * (reach + 14.0), SLOW_COLOR, 4.0)
+			draw_line(Vector2.ZERO, Vector2.RIGHT.rotated(angle + edge * half_arc) * reach, slow_color, 2.0)
+		draw_line(Vector2.RIGHT.rotated(angle) * 16.0, Vector2.RIGHT.rotated(angle) * (reach + 14.0), slow_color, 4.0)
 		return
 	var tip: float = 18.0 + reach * 0.55 * ratio
-	draw_line(Vector2.RIGHT.rotated(angle) * 14.0, Vector2.RIGHT.rotated(angle) * tip, FAST_COLOR.lerp(SLOW_COLOR, ratio), 2.0 + ratio)
-	draw_arc(Vector2.ZERO, reach * 0.75, angle - half_arc * ratio, angle + half_arc * ratio, 16, SLOW_COLOR * Color(1, 1, 1, 0.5), 1.5, true)
+	draw_line(Vector2.RIGHT.rotated(angle) * 14.0, Vector2.RIGHT.rotated(angle) * tip, fast_color.lerp(slow_color, ratio), 2.0 + ratio)
+	draw_arc(Vector2.ZERO, reach * 0.75, angle - half_arc * ratio, angle + half_arc * ratio, 16, slow_color * Color(1, 1, 1, 0.5), 1.5, true)
 
 
 func _draw_swing(angle: float, reach: float, half_arc: float) -> void:
-	var color: Color = SLOW_COLOR if _swing_slow else FAST_COLOR
+	var color: Color = slow_color if _swing_slow else fast_color
 	var width: float = 5.0 if _swing_slow else 2.5
+	if melee.state == MeleeController.State.WINDUP:
+		# The tell: a thin arc that thickens as the blade comes back.
+		draw_arc(Vector2.ZERO, reach * 0.9, angle - half_arc, angle + half_arc, 24, Color(color, 0.55), 1.5, true)
+		draw_line(Vector2.ZERO, Vector2.RIGHT.rotated(angle + half_arc) * reach * 0.8, color, width)
+		return
 	draw_arc(Vector2.ZERO, reach * 0.9, angle - half_arc, angle + half_arc, 24, color, width, true)
 	draw_line(Vector2.ZERO, Vector2.RIGHT.rotated(angle) * (reach + 8.0), color, width)
 

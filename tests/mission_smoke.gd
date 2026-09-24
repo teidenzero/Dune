@@ -424,6 +424,10 @@ func _escape_and_completion() -> void:
 	_check(safety.is_safe(), "the extraction point is genuine safe rock")
 	var finished: Array[Dictionary] = []
 	mission.mission_completed.connect(func(data: Dictionary) -> void: finished.append(data))
+	var campaign: CampaignState = root.get_node("GameManager").campaign
+	var heat_before: int = campaign.heat
+	var fremen_before: int = campaign.standing(&"fremen")
+	var history_before: int = campaign.history.size()
 	worm.force_arrival()
 	await _frames(20)
 	_check(harvester.destroyed, "the worm takes the crippled crawler")
@@ -433,6 +437,17 @@ func _escape_and_completion() -> void:
 	_check(_state(&"survive") == MissionObjective.State.COMPLETE, "with the survival objective met")
 	_check(finished.size() == 1, "and reports its results exactly once")
 	_check(mission.checkpoint() == &"", "a finished mission clears its checkpoint")
+	# The shared outcome record, and the campaign applying it once.
+	var record: MissionOutcome = mission.outcome_record
+	_check(record != null and record.mission_id == &"harvester_raid" and record.scopes == [MissionOutcome.Scope.SQUAD], "the squad scope produces a shared outcome record")
+	_check(record.tier == MissionOutcome.Tier.NOISY and record.flags.has("comms_intact"), "leaving the mast up makes it a noisy success")
+	_check(record.objectives[&"sabotage"] == MissionObjective.State.COMPLETE and record.flags.has("harvester_destroyed"), "the record carries objectives and story flags")
+	_check(mission.outcome_committed and campaign.history.size() == history_before + 1, "a success is applied to the campaign at once")
+	_check(campaign.heat == mini(heat_before + 3, CampaignState.HEAT_MAX) and campaign.standing(&"fremen") == mini(fremen_before + 1, CampaignState.STANDING_MAX), "noisy stakes: Harkonnen heat +3, Fremen +1")
+	mission.commit_outcome()
+	_check(campaign.history.size() == history_before + 1, "committing again changes nothing")
+	await _frames(2)
+	_check(hud.get_node("Screen/Results/Margin/Rows/Body").text.contains("NOISY SUCCESS"), "the debrief names the outcome")
 	completed += 1
 
 
@@ -579,11 +594,21 @@ func _fremen_and_paul_down() -> void:
 	await _frames(320)
 	_check(mission.outcome == MissionManager.Outcome.COMPLETE, "the mission can be completed with a Fremen lost")
 	_check(mission.results["Both Fremen survived"] == "NO", "and the debrief still says what happened")
+	_check(mission.outcome_record.recruits_dead.has(scout.data.display_name), "the outcome lists the fallen Fremen")
 	# Paul is not optional.
 	await _load()
+	var campaign: CampaignState = root.get_node("GameManager").campaign
+	var heat_before: int = campaign.heat
+	var history_before: int = campaign.history.size()
 	player.health.die()
 	await _frames(10)
 	_check(mission.outcome == MissionManager.Outcome.FAILED, "losing Paul fails the mission")
+	var record: MissionOutcome = mission.outcome_record
+	_check(record != null and record.tier == MissionOutcome.Tier.FAILURE, "a failure before sabotage is a plain failure")
+	_check(record.heroes_wounded.has("Paul"), "Paul is recorded wounded, not dead")
+	_check(not mission.outcome_committed and campaign.history.size() == history_before, "a failure does not count until the player accepts it")
+	mission.commit_outcome()
+	_check(campaign.history.size() == history_before + 1 and campaign.heat == mini(heat_before + 2, CampaignState.HEAT_MAX), "accepting it applies the failure stakes")
 	completed += 1
 
 

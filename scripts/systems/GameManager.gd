@@ -10,6 +10,10 @@ var tutorial_checkpoint: StringName = &""
 ## Same idea for missions: the phase a restart resumes from.
 var mission_checkpoint: StringName = &""
 
+## Resources, faction standings and Harkonnen heat between missions.
+## Session-only until the campaign loop brings a save game.
+var campaign: CampaignState = CampaignState.new()
+
 var debug_visible: bool = false:
 	set(value):
 		if debug_visible == value:

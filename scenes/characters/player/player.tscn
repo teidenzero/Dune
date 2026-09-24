@@ -1,5 +1,6 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=20 format=3]
 
+[ext_resource type="Resource" path="res://resources/characters/paul_art.tres" id="96_art"]
 [ext_resource type="Script" path="res://scripts/characters/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/systems/tactical_camera.gd" id="2_camera"]
 [ext_resource type="Script" path="res://scripts/combat/weapon_controller.gd" id="3_weapon"]
@@ -27,6 +28,7 @@ collision_layer = 2
 collision_mask = 3
 motion_mode = 1
 script = ExtResource("1_player")
+art = ExtResource("96_art")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Circle_body")

@@ -20,6 +20,17 @@ enum State { PATROL, SUSPICIOUS, INVESTIGATE, COMBAT, SEARCH, RETURN, DEAD }
 @export var investigation_timeout: float = 12.0
 @export var arrival_distance: float = 20.0
 
+@export_group("Blade duelist")
+## A duelist closes to blade range and cuts instead of shooting. His rifle is
+## put away, so prescience never predicts a firing line for him either.
+@export var melee_only: bool = false
+@export var melee: MeleeController
+## Starts a swing once the target is this close.
+@export var melee_engage_range: float = 62.0
+## Extra pause after a swing's recovery before the next one: the opening a
+## patient opponent answers with the slow blade.
+@export var melee_cooldown: float = 0.6
+
 var state: State = State.PATROL
 var last_known_target_position: Vector2
 var has_last_known_position: bool = false
@@ -37,6 +48,7 @@ var _wait: float = 0.0
 var _search_index: int = 0
 var _search_points: PackedVector2Array
 var _route: PackedVector2Array
+var _melee_wait: float = 0.0
 
 
 func setup(character: EnemyCharacter) -> void:
@@ -48,6 +60,8 @@ func setup(character: EnemyCharacter) -> void:
 	actor.perception.noise_heard.connect(_on_noise_heard)
 	actor.perception.perception_state_changed.connect(_on_perception_state_changed)
 	actor.perception.target_spotted.connect(_on_target_spotted)
+	if melee_only:
+		actor.weapon.disable()
 
 
 func _physics_process(delta: float) -> void:
@@ -60,7 +74,12 @@ func _physics_process(delta: float) -> void:
 	if _decision_timer <= 0.0:
 		_decision_timer = decision_interval
 		_decide()
-	if state == State.COMBAT and _has_target_sight() and is_instance_valid(target):
+	_melee_wait = maxf(0.0, _melee_wait - delta)
+	if melee_only:
+		if state == State.COMBAT and _has_target_sight() and is_instance_valid(target):
+			_combat_melee()
+			_duel(target)
+	elif state == State.COMBAT and _has_target_sight() and is_instance_valid(target):
 		actor.face_position(actor.perception.observed_position)
 		if actor.weapon.current_ammo == 0:
 			actor.weapon.start_reload()
@@ -176,8 +195,27 @@ func _patrol() -> void:
 		_wait = patrol_wait_time
 
 
+## Close, face, cut. A swing is committed once started: its wind-up is the tell
+## and its recovery the opening.
+func _duel(foe: Node2D) -> void:
+	if melee == null:
+		return
+	var busy: bool = melee.state != MeleeController.State.IDLE
+	if not busy:
+		actor.face_position(foe.global_position)
+	if busy or _melee_wait > 0.0:
+		return
+	if actor.global_position.distance_to(foe.global_position) <= melee_engage_range:
+		melee.begin_input()
+		melee.release_input()
+		_melee_wait = melee_cooldown + (melee.current_attack.total_duration() if melee.current_attack != null else 0.0)
+
+
 func _combat() -> void:
 	actor.face_travel = false
+	if melee_only:
+		_combat_melee()
+		return
 	actor.face_position(last_known_target_position)
 	if not _has_target_sight():
 		actor.navigate_to(last_known_target_position, combat_speed)
@@ -191,6 +229,24 @@ func _combat() -> void:
 		var away: Vector2 = last_known_target_position.direction_to(actor.global_position)
 		var desired: Vector2 = last_known_target_position + away * preferred_combat_range
 		actor.navigate_to(NavigationServer2D.map_get_closest_point(actor.agent.get_navigation_map(), desired), combat_speed)
+	else:
+		actor.stop_moving()
+
+
+## A duelist walks straight in and stands his ground at blade range.
+func _combat_melee() -> void:
+	var goal: Vector2 = target.global_position if _has_target_sight() and is_instance_valid(target) else last_known_target_position
+	if not _has_target_sight():
+		actor.navigate_to(goal, combat_speed)
+		if _unseen_time >= lost_sight_grace_time:
+			_begin_search(last_known_target_position)
+		return
+	# While a swing is committed he plants his feet.
+	if melee != null and melee.state != MeleeController.State.IDLE:
+		actor.stop_moving()
+		return
+	if actor.global_position.distance_to(goal) > melee_engage_range * 0.85:
+		actor.navigate_to(goal, combat_speed)
 	else:
 		actor.stop_moving()
 

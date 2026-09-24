@@ -31,8 +31,10 @@ func setup(target: Node2D, manager: SquadManager, key: String, glyph: String, ti
 	key_text = key
 	portrait = HudStyle.icon(glyph)
 	display_name = title
-	if target is AllyCharacter and target.data != null:
-		painting = target.data.portrait
+	if target is AllyCharacter and target.data != null and target.data.art != null:
+		painting = target.data.art.portrait
+	elif target is PlayerController and target.art != null:
+		painting = target.art.portrait
 
 
 func _ready() -> void:

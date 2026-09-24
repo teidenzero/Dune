@@ -49,7 +49,8 @@ func _run() -> void:
 	await _elite_death_and_ally_fire()
 	await _crysknife_targeting()
 	await _hud_and_diagnostics()
-	_check(completed == 8, "all melee scenarios completed")
+	await _elite_duel()
+	_check(completed == 9, "all melee scenarios completed")
 	_check(Engine.time_scale == 1.0, "suite leaves normal game speed")
 	print("MELEE SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
@@ -150,8 +151,8 @@ func _attack_shapes_and_timing() -> void:
 	player.melee_release()
 	await _frames(2)
 	_check(melee.current_attack == SLOW and melee.state == State.WINDUP, "releasing a charged hold swings the slow attack")
-	await _frames(30)
-	_check(melee.state == State.WINDUP, "the slow wind-up is still running half a second later")
+	await _frames(20)
+	_check(melee.state == State.WINDUP, "the slow wind-up is still running a third of a second later")
 	await _frames(40)
 	_check(melee.state != State.IDLE, "the slow attack is still committed after the fast attack would have finished")
 	await _frames(100)
@@ -413,7 +414,7 @@ func _crysknife_targeting() -> void:
 	# Holding the button charges: the HUD ring fills and the prompt changes.
 	_mouse(MOUSE_BUTTON_LEFT, guard.global_position, true)
 	await _frames(2)
-	_check(squad.blade_charging and player.order == PlayerController.Order.IDLE, "pressing on a hostile starts a charge, not an order")
+	_check(squad.blade_charging and player.order == PlayerController.Order.MELEE and melee.state == State.CHARGING, "pressing on a hostile raises the blade at once")
 	_check(hud.notice_label.text.contains("QUICK STRIKE"), "while short of the threshold the HUD offers the quick strike")
 	await _real_wait(squad.slow_hold_seconds() + 0.1)
 	await _frames(2)
@@ -423,7 +424,8 @@ func _crysknife_targeting() -> void:
 	await _right_click(player.global_position + Vector2(0, -200))
 	_mouse(MOUSE_BUTTON_LEFT, guard.global_position, false)
 	await _frames(10)
-	_check(not squad.blade_charging and player.order == PlayerController.Order.IDLE and player.global_position.distance_to(standing) < 2.0, "right-click cancels a charge without a move order")
+	_check(not squad.blade_charging and player.order == PlayerController.Order.IDLE and melee.state == State.IDLE, "right-click lowers the blade and cancels the strike")
+	_check(player.global_position.distance_to(standing) < 20.0, "and is not also a move order")
 	# E arms the blade; a click on open ground keeps it armed and explains.
 	await _tap(KEY_E)
 	_check(squad.targeting == Targeting.STRIKE, "E arms the crysknife")
@@ -499,20 +501,74 @@ func _crysknife_targeting() -> void:
 	player.teleport_to(elite.global_position + Vector2(-150, 0))
 	camera.snap_to(player.global_position + Vector2(75, 0))
 	await _frames(4)
-	await _hold_click(elite.global_position, squad.slow_hold_seconds() + 0.1)
-	_check(player.order == PlayerController.Order.MELEE, "a held left-click issues the slow strike order")
-	var saw_charge: bool = false
+	# The blade comes up while the button is held, not after it is released.
+	_mouse(MOUSE_BUTTON_LEFT, elite.global_position, true)
+	await _frames(2)
+	var saw_charge: bool = melee.state == State.CHARGING and hud.melee_label.text.begins_with("Slow Attack")
+	await _real_wait(squad.slow_hold_seconds() + 0.1)
+	await _frames(2)
+	_check(saw_charge, "the blade is charging while the button is held, and the HUD shows it")
+	_check(melee.slow_ready and player.order == PlayerController.Order.MELEE, "held past the threshold, the slow stroke is ready before release")
+	_mouse(MOUSE_BUTTON_LEFT, elite.global_position, false)
+	await _frames(1)
 	for index in range(400):
 		await _frames(1)
-		if melee.state == State.CHARGING and hud.melee_label.text.begins_with("Slow Attack"):
-			saw_charge = true
 		if player.order == PlayerController.Order.IDLE and melee.state == State.IDLE:
 			break
-	_check(saw_charge, "Paul charges the slow strike in reach, and the HUD shows it")
 	_check(shielded == [FAST, SLOW], "a held click delivers exactly one slow strike")
 	_check(results.has("PENETRATED MELEE"), "the slow strike penetrates the shield")
 	_check(elite.health.current_health == elite_before - SLOW.damage, "the slow strike damages the Elite")
 	_check(elite.shield.enabled, "the shield stays up after penetration")
+	completed += 1
+
+
+## The Elite is a blade duelist: no rifle, he closes and cuts. Quick strikes
+## bounce off his shield; slow strikes, ordered the normal way, win.
+func _elite_duel() -> void:
+	await _load(true)
+	player.scripted_aim = false
+	player.retaliate = false
+	guard.process_mode = Node.PROCESS_MODE_DISABLED
+	guard.collision_layer = 0
+	player.teleport_to(elite.global_position + Vector2(-280, 0))
+	await _frames(3)
+	var shots: Array[int] = [0]
+	elite.weapon.weapon_fired.connect(func() -> void: shots[0] += 1)
+	var blocked: Array[int] = [0]
+	elite.shield.shield_blocked.connect(func(_hit: HitContext) -> void: blocked[0] += 1)
+	_check(not elite.weapon.enabled, "the Elite has put his rifle away")
+	elite.face_position(player.global_position)
+	elite.ai.target = player
+	elite.ai.last_known_target_position = player.global_position
+	elite.ai.has_last_known_position = true
+	elite.ai.change_state(EnemyAIController.State.COMBAT)
+	var closed: bool = false
+	for index in range(300):
+		await _frames(1)
+		if elite.global_position.distance_to(player.global_position) <= elite.ai.melee_engage_range + 4.0:
+			closed = true
+			break
+	_check(closed, "he charges to blade range")
+	var hurt: bool = false
+	for index in range(240):
+		await _frames(1)
+		if player.health.current_health < player.health.max_health:
+			hurt = true
+			break
+	_check(hurt, "his blade hurts Paul")
+	_check(shots[0] == 0 and get_nodes_in_group("projectiles").is_empty(), "and he never fires a shot")
+	var elite_health: float = elite.health.current_health
+	player.melee_strike(elite, false)
+	await _await_strike()
+	_check(blocked[0] >= 1 and elite.health.current_health == elite_health, "a quick strike bounces off his shield")
+	for attempt in range(4):
+		if elite.health.is_dead or player.health.is_dead:
+			break
+		player.melee_strike(elite, true)
+		await _await_strike()
+	_check(elite.health.is_dead, "slow strikes, ordered the normal way, cut him down")
+	_check(not player.health.is_dead, "and Paul survives a straight duel (%.0f HP left)" % player.health.current_health)
+	_check(not elite.get_node("MeleeController").enabled, "a dead duelist's blade goes still")
 	completed += 1
 
 

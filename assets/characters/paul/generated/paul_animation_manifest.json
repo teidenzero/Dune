@@ -1,0 +1,947 @@
+{
+  "character_name": "paul",
+  "canonical_reference": "paul_reference.png",
+  "frame_size": [
+    400,
+    336
+  ],
+  "reference_ground_anchor": [
+    200,
+    312
+  ],
+  "standing_reference_height": 280,
+  "generation_mode": "built-in image_gen",
+  "animations": [
+    {
+      "name": "idle",
+      "filename": "paul_idle.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 6,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_idle_attempt1.png",
+      "source_dimensions": [
+        2164,
+        727
+      ],
+      "source_grid": [
+        4,
+        1
+      ],
+      "packing_scale": 0.4601479046836483,
+      "source_ground_y": [
+        677.0
+      ],
+      "low_alpha_noise_pixels_cleared": 32411,
+      "frame_bounds": [
+        [
+          86,
+          32,
+          315,
+          312
+        ],
+        [
+          90,
+          32,
+          313,
+          312
+        ],
+        [
+          76,
+          32,
+          315,
+          312
+        ],
+        [
+          85,
+          32,
+          310,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "0393e52a9744a5c8fb8d380780d31cd70bbfbe1c7cae3867fe01439e736fb686"
+    },
+    {
+      "name": "walk",
+      "filename": "paul_walk.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 12,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_walk_attempt1.png",
+      "source_dimensions": [
+        1536,
+        1024
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.6771463119709794,
+      "source_ground_y": [
+        477.0,
+        470.0
+      ],
+      "low_alpha_noise_pixels_cleared": 62288,
+      "frame_bounds": [
+        [
+          92,
+          32,
+          313,
+          312
+        ],
+        [
+          87,
+          28,
+          307,
+          312
+        ],
+        [
+          86,
+          29,
+          306,
+          314
+        ],
+        [
+          82,
+          28,
+          306,
+          309
+        ],
+        [
+          89,
+          35,
+          313,
+          312
+        ],
+        [
+          87,
+          35,
+          309,
+          315
+        ],
+        [
+          85,
+          35,
+          307,
+          309
+        ],
+        [
+          80,
+          34,
+          311,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Review alternating foot contacts and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "fa154541983a50baa48832fa5d6a71d10cf21514b5e2c6f92e63614d7b770f4c"
+    },
+    {
+      "name": "run",
+      "filename": "paul_run.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 14,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_run_attempt1.png",
+      "source_dimensions": [
+        1774,
+        887
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.6961325966850829,
+      "source_ground_y": [
+        422.5,
+        405.0
+      ],
+      "low_alpha_noise_pixels_cleared": 63424,
+      "frame_bounds": [
+        [
+          63,
+          56,
+          343,
+          313
+        ],
+        [
+          69,
+          63,
+          345,
+          313
+        ],
+        [
+          55,
+          54,
+          343,
+          311
+        ],
+        [
+          62,
+          56,
+          339,
+          311
+        ],
+        [
+          64,
+          65,
+          345,
+          310
+        ],
+        [
+          64,
+          69,
+          337,
+          315
+        ],
+        [
+          66,
+          66,
+          340,
+          308
+        ],
+        [
+          53,
+          62,
+          342,
+          317
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Review alternating foot contacts and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "8e329f702634cac52db95aa5473cbeb07a5c490fa83061733c401a99de302ade"
+    },
+    {
+      "name": "crouch_walk",
+      "filename": "paul_crouch_walk.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 10,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_crouch_walk_attempt1.png",
+      "source_dimensions": [
+        1536,
+        1024
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.5986394557823129,
+      "source_ground_y": [
+        491.0,
+        449.0
+      ],
+      "low_alpha_noise_pixels_cleared": 73387,
+      "frame_bounds": [
+        [
+          101,
+          89,
+          321,
+          309
+        ],
+        [
+          98,
+          92,
+          315,
+          312
+        ],
+        [
+          93,
+          91,
+          309,
+          314
+        ],
+        [
+          87,
+          90,
+          303,
+          311
+        ],
+        [
+          103,
+          94,
+          317,
+          312
+        ],
+        [
+          93,
+          91,
+          317,
+          312
+        ],
+        [
+          91,
+          94,
+          311,
+          312
+        ],
+        [
+          92,
+          93,
+          311,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Review alternating foot contacts and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "91326e853e8e72d5b20412020e5506415acd8da406b615665c49daa48b42f8c1"
+    },
+    {
+      "name": "crouch_idle",
+      "filename": "paul_crouch_idle.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 5,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 2,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_crouch_idle_attempt2.png",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "source_grid": [
+        2,
+        2
+      ],
+      "packing_scale": 0.5736636245110821,
+      "source_ground_y": [
+        552.0,
+        526.0
+      ],
+      "low_alpha_noise_pixels_cleared": 26073,
+      "frame_bounds": [
+        [
+          62,
+          92,
+          351,
+          313
+        ],
+        [
+          64,
+          92,
+          361,
+          312
+        ],
+        [
+          62,
+          96,
+          361,
+          312
+        ],
+        [
+          72,
+          91,
+          363,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "0b117975027afd66ce1b7deba30b93cb2f749a7a87ebd0482e3db5007788d3c4"
+    },
+    {
+      "name": "aim",
+      "filename": "paul_aim.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 6,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_aim_attempt1.png",
+      "source_dimensions": [
+        1933,
+        814
+      ],
+      "source_grid": [
+        4,
+        1
+      ],
+      "packing_scale": 0.46357615894039733,
+      "source_ground_y": [
+        712.0
+      ],
+      "low_alpha_noise_pixels_cleared": 33090,
+      "frame_bounds": [
+        [
+          95,
+          30,
+          320,
+          313
+        ],
+        [
+          94,
+          30,
+          310,
+          312
+        ],
+        [
+          96,
+          34,
+          310,
+          312
+        ],
+        [
+          78,
+          33,
+          310,
+          311
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "3c953abb6a483dbfd1dfedfd9d061f30ebb4b76890a28f82f14c69338f934cf4"
+    },
+    {
+      "name": "shoot",
+      "filename": "paul_shoot.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 16,
+      "loop": false,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 2,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_shoot_attempt2.png",
+      "source_dimensions": [
+        1246,
+        1262
+      ],
+      "source_grid": [
+        2,
+        2
+      ],
+      "packing_scale": 0.5458089668615984,
+      "source_ground_y": [
+        604.0,
+        564.0
+      ],
+      "low_alpha_noise_pixels_cleared": 32170,
+      "frame_bounds": [
+        [
+          95,
+          30,
+          342,
+          312
+        ],
+        [
+          53,
+          35,
+          290,
+          312
+        ],
+        [
+          92,
+          32,
+          343,
+          312
+        ],
+        [
+          55,
+          32,
+          309,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "799a088ea296862fe24ffe8bee7c8232446e6a55a6df4b15f8d5e77477f4bf4a"
+    },
+    {
+      "name": "reload",
+      "filename": "paul_reload.png",
+      "requested_frame_count": 10,
+      "actual_frame_count": 10,
+      "fps": 7,
+      "loop": false,
+      "dimensions": [
+        4000,
+        336
+      ],
+      "generation_attempt_count": 2,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_reload_attempt2.png",
+      "source_dimensions": [
+        979,
+        1606
+      ],
+      "source_grid": [
+        2,
+        5
+      ],
+      "packing_scale": 0.9165302782324058,
+      "source_ground_y": [
+        336.0,
+        319.0,
+        316.0,
+        306.5,
+        304.0
+      ],
+      "source_row_edges": [
+        0,
+        337,
+        657,
+        976,
+        1285,
+        1606
+      ],
+      "source_column_offsets": [
+        0.0,
+        -36.0
+      ],
+      "low_alpha_noise_pixels_cleared": 48260,
+      "frame_bounds": [
+        [
+          68,
+          32,
+          331,
+          312
+        ],
+        [
+          73,
+          29,
+          333,
+          312
+        ],
+        [
+          67,
+          27,
+          314,
+          312
+        ],
+        [
+          70,
+          27,
+          322,
+          312
+        ],
+        [
+          67,
+          29,
+          310,
+          311
+        ],
+        [
+          75,
+          28,
+          312,
+          314
+        ],
+        [
+          66,
+          34,
+          319,
+          312
+        ],
+        [
+          72,
+          34,
+          327,
+          313
+        ],
+        [
+          66,
+          35,
+          327,
+          312
+        ],
+        [
+          71,
+          36,
+          338,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Review hand and magazine continuity; internal loading mechanics are not fully visible in the reference."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "fedb468a70ec83e6483f1517e894b2bf8ba86bc193516f1fc5b8d15bdabc9aaf"
+    },
+    {
+      "name": "crouch_shoot",
+      "filename": "paul_crouch_shoot.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 16,
+      "loop": false,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_crouch_shoot_attempt1.png",
+      "source_dimensions": [
+        1536,
+        1024
+      ],
+      "source_grid": [
+        2,
+        2
+      ],
+      "packing_scale": 0.5562579013906448,
+      "source_ground_y": [
+        484.0,
+        453.5
+      ],
+      "source_row_edges": [
+        0,
+        512,
+        1024
+      ],
+      "source_column_offsets": [
+        0.0,
+        -60.0
+      ],
+      "low_alpha_noise_pixels_cleared": 35915,
+      "frame_bounds": [
+        [
+          44,
+          91,
+          358,
+          312
+        ],
+        [
+          32,
+          88,
+          327,
+          312
+        ],
+        [
+          42,
+          93,
+          357,
+          312
+        ],
+        [
+          53,
+          93,
+          368,
+          313
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "9b4af0de9e048c85dd21c0fa734e7e56119b4b299a686f017900af72f2ea4215"
+    },
+    {
+      "name": "hit",
+      "filename": "paul_hit.png",
+      "requested_frame_count": 3,
+      "actual_frame_count": 3,
+      "fps": 12,
+      "loop": false,
+      "dimensions": [
+        1200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_hit_attempt1.png",
+      "source_dimensions": [
+        1920,
+        819
+      ],
+      "source_grid": [
+        3,
+        1
+      ],
+      "packing_scale": 0.4582651391162029,
+      "source_ground_y": [
+        744.0
+      ],
+      "source_row_edges": [
+        0,
+        819
+      ],
+      "source_column_offsets": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "low_alpha_noise_pixels_cleared": 27363,
+      "frame_bounds": [
+        [
+          90,
+          24,
+          341,
+          312
+        ],
+        [
+          78,
+          51,
+          332,
+          312
+        ],
+        [
+          55,
+          32,
+          303,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "c1107bb5b8d1531a90b2a3d46d373f5ec1ac036df4402d48895122ae8994b95a"
+    },
+    {
+      "name": "death",
+      "filename": "paul_death.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 10,
+      "loop": false,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\paul_death_attempt1.png",
+      "source_dimensions": [
+        1536,
+        1024
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.6100217864923747,
+      "source_ground_y": [
+        582.5,
+        348.5
+      ],
+      "source_row_edges": [
+        0,
+        585,
+        1024
+      ],
+      "source_column_offsets": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "low_alpha_noise_pixels_cleared": 46741,
+      "frame_bounds": [
+        [
+          95,
+          32,
+          312,
+          312
+        ],
+        [
+          105,
+          52,
+          315,
+          312
+        ],
+        [
+          81,
+          100,
+          292,
+          313
+        ],
+        [
+          53,
+          161,
+          305,
+          313
+        ],
+        [
+          92,
+          197,
+          320,
+          312
+        ],
+        [
+          92,
+          222,
+          308,
+          312
+        ],
+        [
+          87,
+          232,
+          307,
+          312
+        ],
+        [
+          87,
+          238,
+          308,
+          313
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "04a579b2c845bd03b08212cea69e152dc7f86bf637972d18cc829bda59a27744"
+    }
+  ],
+  "overall_result": "complete",
+  "total_animations": 11,
+  "total_frames": 65,
+  "review_status": "manual_playback_review_required",
+  "preview": "review/index.html",
+  "integration_status": "staged; no gameplay resources or runtime scripts changed",
+  "scope": "Shared 11-animation ranged set; additional weapon variants and melee/prescience animations are outside this specification.",
+  "reference_design_authorized": true,
+  "review_notes": [
+    "Generated detail can vary between frames; inspect cloth, facial proportions, and state transitions before runtime integration.",
+    "Technical checks do not establish perfect artistic or temporal consistency."
+  ]
+}

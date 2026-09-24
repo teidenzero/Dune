@@ -64,9 +64,11 @@ Shift-click to add, double-click to jump the camera to that unit.
 
 ## Three things worth knowing
 
-**Shields.** Harkonnen elites wear Holtzman shields. Bullets and fast blades
-bounce off them. Only a *slow* blade gets through: hold left-click on the target until the ring fills.
-Shooting one forever will never work; that is deliberate.
+**Shields.** Harkonnen elites wear Holtzman shields and fight with the blade:
+they charge you and cut. Bullets and fast blades bounce off the shield. Only
+a *slow* blade gets through: hold left-click on him until the ring fills.
+Watch his swing (the red arc builds before he cuts) and strike while he
+recovers from it, or catch him from behind before he knows you are there.
 
 **Sand and rock.** Movement on open sand makes vibration, and vibration brings
 a sandworm. Rock is silent and rock is safe. Safe rock is drawn as grey stone;

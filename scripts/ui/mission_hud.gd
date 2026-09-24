@@ -89,6 +89,15 @@ func _on_failed(reason: String) -> void:
 ## Factual outcomes only - no score, no grade.
 func _show_results(data: Dictionary) -> void:
 	var lines: PackedStringArray = []
+	var record: MissionOutcome = mission.outcome_record if is_instance_valid(mission) else null
+	if record != null:
+		lines.append("OUTCOME:  %s" % record.tier_title())
+		var consequences: PackedStringArray = record.consequence_lines()
+		if not consequences.is_empty():
+			lines.append("CONSEQUENCES:  " + "  ·  ".join(consequences))
+		if not mission.outcome_committed:
+			lines.append("(They stand when you leave. Retrying discards them.)")
+		lines.append("")
 	for key in data:
 		lines.append("%s:  %s" % [key, str(data[key])])
 	# There are two ways out of a failed mission and they do different things.
@@ -109,5 +118,7 @@ func _on_retry() -> void:
 
 func _on_launcher() -> void:
 	if is_instance_valid(mission):
+		# Leaving accepts the result, failure included.
+		mission.commit_outcome()
 		mission.clear_checkpoint()
 	get_tree().change_scene_to_file("res://scenes/missions/mission_select.tscn")

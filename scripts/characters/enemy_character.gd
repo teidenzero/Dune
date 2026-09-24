@@ -100,6 +100,9 @@ func _on_died() -> void:
 	velocity = Vector2.ZERO
 	perception.stop()
 	weapon.disable()
+	var blade: MeleeController = get_node_or_null("MeleeController") as MeleeController
+	if blade != null:
+		blade.disable()
 	if _flash != null:
 		_flash.kill()
 	$Visuals.modulate = Color(0.4, 0.4, 0.4)

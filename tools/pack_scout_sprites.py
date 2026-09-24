@@ -14,8 +14,14 @@ import numpy as np
 from PIL import Image
 
 ROOT = r'E:\Dune'
-OUT = os.path.join(ROOT, 'assets', 'characters', 'fremen_scout')
-SRC = os.path.join(OUT, 'source')
+# Superseded: the runtime Scout art now comes from the generated set
+# (assets/characters/fremen_scout/generated, packed by
+# tools/pack_character_sprites.py). This script only re-packs the first,
+# hand-delivered strips, into their own folder so it can never overwrite the
+# art the game uses.
+SRC = os.path.join(ROOT, 'assets', 'characters', 'fremen_scout', 'source')
+OUT = os.path.join(SRC, 'packed_first_delivery')
+os.makedirs(OUT, exist_ok=True)
 COUNTS = {'idle': 4, 'walk': 8, 'run': 8, 'crouch_walk': 8, 'crouch_idle': 4, 'aim': 4,
           'shoot': 4, 'reload': 10, 'crouch_shoot': 4, 'hit': 3, 'death': 8}
 CELL_W, CELL_H, FEET = 400, 336, 312

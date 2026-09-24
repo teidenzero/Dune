@@ -17,11 +17,16 @@ signal phase_changed(phase: StringName, previous: StringName)
 signal checkpoint_reached(id: StringName)
 signal mission_completed(results: Dictionary)
 signal mission_failed(reason: String)
+## The shared outcome record exists; `committed` says whether the campaign has
+## applied it yet.
+signal outcome_recorded(outcome: MissionOutcome)
 
 enum Outcome { RUNNING, COMPLETE, FAILED }
 
 @export var mission_name: String = "MISSION"
 @export var player: PlayerController
+## The campaign's description of this mission, shared by every scope.
+@export var definition: MissionDefinition
 
 var outcome: Outcome = Outcome.RUNNING
 var phase: StringName = &"INTRO"
@@ -29,6 +34,11 @@ var elapsed: float = 0.0
 var failure_reason: String = ""
 ## Free-form factual outcomes for the results screen; no score, no grade.
 var results: Dictionary = {}
+## (success: bool, reason: String) -> MissionOutcome. Set by the mission
+## controller, which is the only thing that knows how this mission went.
+var outcome_builder: Callable = Callable()
+var outcome_record: MissionOutcome
+var outcome_committed: bool = false
 
 var _objectives: Dictionary = {}
 var _order: Array[StringName] = []
@@ -41,6 +51,14 @@ func _ready() -> void:
 # --------------------------------------------------------------------------
 # Objectives
 # --------------------------------------------------------------------------
+
+## Objectives straight from the shared definition, in authored order.
+func add_objectives_from_definition() -> void:
+	if definition == null:
+		return
+	for item in definition.objectives:
+		add_objective(item.to_objective())
+
 
 func add_objective(objective: MissionObjective) -> MissionObjective:
 	if objective == null or _objectives.has(objective.id):
@@ -144,6 +162,9 @@ func succeed() -> void:
 	outcome = Outcome.COMPLETE
 	set_phase(&"COMPLETE")
 	results["Mission time"] = time_text()
+	_record_outcome(true, "")
+	# A success stands the moment it happens.
+	commit_outcome()
 	mission_completed.emit(results)
 
 
@@ -153,11 +174,36 @@ func fail(reason: String) -> void:
 	outcome = Outcome.FAILED
 	failure_reason = reason
 	set_phase(&"FAILED")
+	# A failure only counts once the player accepts it (commit_outcome);
+	# retrying from a checkpoint throws it away.
+	_record_outcome(false, reason)
 	mission_failed.emit(reason)
 
 
 func running() -> bool:
 	return outcome == Outcome.RUNNING
+
+
+func _record_outcome(success: bool, reason: String) -> void:
+	if not outcome_builder.is_valid():
+		return
+	var record: MissionOutcome = outcome_builder.call(success, reason) as MissionOutcome
+	if record == null:
+		return
+	record.time_seconds = elapsed
+	record.stats = results.duplicate()
+	outcome_record = record
+	outcome_recorded.emit(record)
+
+
+## Hands the outcome to the campaign, once.
+func commit_outcome() -> void:
+	if outcome_record == null or outcome_committed:
+		return
+	outcome_committed = true
+	var game: Node = get_node_or_null("/root/GameManager")
+	if game != null and game.get("campaign") != null:
+		game.campaign.apply(outcome_record)
 
 
 # --------------------------------------------------------------------------

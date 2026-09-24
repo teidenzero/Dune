@@ -341,6 +341,10 @@ func slow_hold_seconds() -> float:
 func blade_charge_ratio() -> float:
 	if not blade_charging:
 		return 0.0
+	# Paul's own raised blade is the truth; the clock only covers a press
+	# that landed while his last stroke was still recovering.
+	if player.melee.state == MeleeController.State.CHARGING:
+		return 1.0 if player.melee.slow_ready else player.melee.charge_ratio()
 	var held: float = (Time.get_ticks_msec() - _charge_start) / 1000.0
 	return clampf(held / maxf(slow_hold_seconds(), 0.01), 0.0, 1.0)
 
@@ -352,26 +356,29 @@ func _begin_blade_charge(target: Node2D) -> void:
 	blade_charging = true
 	_charge_target = target
 	_charge_start = Time.get_ticks_msec()
+	# The blade comes up now, not on release.
+	player.melee_hold(target)
+	marker_position = target.global_position
+	marker_attack = true
+	_marker_until = Time.get_ticks_msec() + 850
 
 
 ## Button released: a quick click cuts fast, a held one commits the slow stroke.
 func _release_blade_charge() -> void:
 	var slow: bool = blade_charge_ratio() >= 1.0
 	blade_charging = false
-	var target: Node2D = _charge_target
 	_charge_target = null
-	if not is_instance_valid(target) or not _paul_alive():
-		return
-	player.melee_strike(target, slow)
-	marker_position = target.global_position
-	marker_attack = true
-	_marker_until = Time.get_ticks_msec() + 850
+	if _paul_alive():
+		player.melee_let_go(slow)
 	set_targeting(Targeting.NONE)
 
 
 func cancel_blade_charge() -> void:
+	var was_charging: bool = blade_charging
 	blade_charging = false
 	_charge_target = null
+	if was_charging and _paul_alive() and player.order == PlayerController.Order.MELEE:
+		player.stop()
 
 
 func flash_notice(text: String, seconds: float = 1.8) -> void:

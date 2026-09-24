@@ -72,12 +72,17 @@ func _begin() -> void:
 
 
 func _build_objectives() -> void:
-	mission.add_objective(MissionObjective.create(OBJ_APPROACH, "Approach the spice operation", "Move down off the rocks and get eyes on the crawler."))
-	mission.add_objective(MissionObjective.create(OBJ_COMMS, "Disable the communications beacon", "West of the crawler. Skipping it means a louder response."))
-	mission.add_objective(MissionObjective.create(OBJ_SABOTAGE, "Sabotage the harvester", "Both control points, anywhere on the crawler."))
-	mission.add_objective(MissionObjective.create(OBJ_ESCAPE, "Reach safe rock", "North of the site. Sand is where it hunts."))
-	mission.add_objective(MissionObjective.create(OBJ_SURVIVE, "Survive the worm", "Stay on stone until it has taken the crawler."))
-	mission.add_objective(MissionObjective.create(OBJ_FREMEN, "Keep both Fremen alive", "Optional.", true))
+	mission.outcome_builder = build_outcome
+	# The shared definition is the source of the objectives; the ids below are
+	# what this controller means by each of them.
+	mission.add_objectives_from_definition()
+	if mission.all_objectives().is_empty():
+		mission.add_objective(MissionObjective.create(OBJ_APPROACH, "Approach the spice operation", "Move down off the rocks and get eyes on the crawler."))
+		mission.add_objective(MissionObjective.create(OBJ_COMMS, "Disable the communications beacon", "West of the crawler. Skipping it means a louder response."))
+		mission.add_objective(MissionObjective.create(OBJ_SABOTAGE, "Sabotage the harvester", "Both control points, anywhere on the crawler."))
+		mission.add_objective(MissionObjective.create(OBJ_ESCAPE, "Reach safe rock", "North of the site. Sand is where it hunts."))
+		mission.add_objective(MissionObjective.create(OBJ_SURVIVE, "Survive the worm", "Stay on stone until it has taken the crawler."))
+		mission.add_objective(MissionObjective.create(OBJ_FREMEN, "Keep both Fremen alive", "Optional.", true))
 	mission.activate(OBJ_APPROACH)
 	mission.activate(OBJ_COMMS)
 	mission.activate(OBJ_FREMEN)
@@ -315,6 +320,48 @@ func _on_enemy_state(_previous: EnemyAIController.State, current: EnemyAIControl
 func _on_ally_died() -> void:
 	mission.fail_objective(OBJ_FREMEN)
 	mission.record("Both Fremen survived", "NO")
+
+
+# --------------------------------------------------------------------------
+# Outcome for the campaign
+# --------------------------------------------------------------------------
+
+## How this raid went, in the shape every scope reports. Clean means the
+## purpose was achieved quietly: the mast cut and no firefight before the
+## crawler was open. A failure after the crawler was already sabotaged still
+## hurt the Harkonnen, so it counts as partial.
+func build_outcome(success: bool, reason: String) -> MissionOutcome:
+	var record: MissionOutcome = MissionOutcome.new()
+	var definition: MissionDefinition = mission.definition
+	record.mission_id = definition.id if definition != null else &"harvester_raid"
+	record.scopes.append(MissionOutcome.Scope.SQUAD)
+	for item in mission.all_objectives():
+		record.objectives[item.id] = item.state
+	var comms_cut: bool = is_instance_valid(beacon) and not beacon.active
+	var sabotaged: bool = is_instance_valid(harvester) and harvester.is_sabotaged
+	if success:
+		record.tier = MissionOutcome.Tier.CLEAN if comms_cut and not combat_before_sabotage else MissionOutcome.Tier.NOISY
+	else:
+		record.tier = MissionOutcome.Tier.PARTIAL if sabotaged else MissionOutcome.Tier.FAILURE
+	record.failure_reason = reason
+	for ally: Node in get_tree().get_nodes_in_group("allies"):
+		var health: HealthComponent = HealthComponent.find_on(ally)
+		if health != null and health.is_dead:
+			record.recruits_dead.append(ally.data.display_name if ally is AllyCharacter and ally.data != null else str(ally.name))
+	# Heroes are never killed outright: Paul going down means Paul wounded.
+	if is_instance_valid(player) and player.health.is_dead or reason == "TAKEN BY THE WORM":
+		record.heroes_wounded.append("Paul")
+	if not comms_cut:
+		record.add_flag(&"comms_intact")
+	if alarm_active:
+		record.add_flag(&"alarm_raised")
+	if combat_before_sabotage:
+		record.add_flag(&"firefight")
+	if is_instance_valid(harvester) and harvester.destroyed:
+		record.add_flag(&"harvester_destroyed")
+	if definition != null:
+		record.apply_stakes(definition)
+	return record
 
 
 # --------------------------------------------------------------------------

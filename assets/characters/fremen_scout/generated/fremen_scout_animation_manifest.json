@@ -1,0 +1,1033 @@
+{
+  "character_name": "fremen_scout",
+  "canonical_reference": "../fremen_scout_idle.png, first 400x336 cell",
+  "frame_size": [
+    400,
+    336
+  ],
+  "reference_ground_anchor": [
+    200,
+    312
+  ],
+  "standing_reference_height": 280,
+  "generation_mode": "built-in image_gen",
+  "animations": [
+    {
+      "name": "idle",
+      "filename": "fremen_scout_idle.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 6,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_idle_attempt1.png",
+      "source_dimensions": [
+        2172,
+        724
+      ],
+      "packing_scale": 0.7,
+      "source_ground_y": 576.0,
+      "low_alpha_noise_pixels_cleared": 24328,
+      "frame_bounds": [
+        [
+          71,
+          32,
+          388,
+          312
+        ],
+        [
+          73,
+          29,
+          386,
+          312
+        ],
+        [
+          76,
+          32,
+          386,
+          312
+        ],
+        [
+          71,
+          32,
+          385,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7486,
+          0.7499,
+          0.7522,
+          0.7497
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "walk",
+      "filename": "fremen_scout_walk.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 12,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 2,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_walk_attempt2.png",
+      "source_dimensions": [
+        1774,
+        887
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.8446455505279035,
+      "source_ground_y": 396.0,
+      "low_alpha_noise_pixels_cleared": 51118,
+      "frame_bounds": [
+        [
+          53,
+          32,
+          369,
+          312
+        ],
+        [
+          58,
+          32,
+          369,
+          308
+        ],
+        [
+          50,
+          31,
+          368,
+          312
+        ],
+        [
+          47,
+          32,
+          369,
+          309
+        ],
+        [
+          48,
+          31,
+          369,
+          308
+        ],
+        [
+          48,
+          31,
+          369,
+          312
+        ],
+        [
+          48,
+          31,
+          368,
+          312
+        ],
+        [
+          52,
+          31,
+          369,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available.",
+        "Review alternating foot contacts, stride cadence, and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7421,
+          0.7477,
+          0.7574,
+          0.7375,
+          0.7436,
+          0.7527,
+          0.7549,
+          0.7422
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "run",
+      "filename": "fremen_scout_run.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 14,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_run_attempt1.png",
+      "source_dimensions": [
+        1774,
+        887
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.8303130148270181,
+      "source_ground_y": [
+        427.0,
+        395.0
+      ],
+      "low_alpha_noise_pixels_cleared": 50022,
+      "frame_bounds": [
+        [
+          48,
+          61,
+          364,
+          312
+        ],
+        [
+          48,
+          60,
+          370,
+          312
+        ],
+        [
+          44,
+          60,
+          374,
+          297
+        ],
+        [
+          47,
+          61,
+          371,
+          316
+        ],
+        [
+          62,
+          59,
+          377,
+          316
+        ],
+        [
+          50,
+          58,
+          385,
+          312
+        ],
+        [
+          47,
+          58,
+          392,
+          292
+        ],
+        [
+          47,
+          58,
+          372,
+          313
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available.",
+        "Review alternating foot contacts, stride cadence, and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7792,
+          0.7806,
+          0.7754,
+          0.7794,
+          0.7975,
+          0.78,
+          0.7739,
+          0.7766
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "crouch_walk",
+      "filename": "fremen_scout_crouch_walk.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 10,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_crouch_walk_attempt1.png",
+      "source_dimensions": [
+        1774,
+        887
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.7913669064748201,
+      "source_ground_y": [
+        414.5,
+        394.5
+      ],
+      "low_alpha_noise_pixels_cleared": 36293,
+      "frame_bounds": [
+        [
+          63,
+          92,
+          364,
+          310
+        ],
+        [
+          68,
+          91,
+          363,
+          312
+        ],
+        [
+          61,
+          93,
+          362,
+          312
+        ],
+        [
+          64,
+          92,
+          359,
+          312
+        ],
+        [
+          66,
+          90,
+          364,
+          311
+        ],
+        [
+          60,
+          90,
+          363,
+          315
+        ],
+        [
+          69,
+          93,
+          361,
+          312
+        ],
+        [
+          64,
+          90,
+          359,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available.",
+        "Review alternating foot contacts, stride cadence, and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7912,
+          0.8022,
+          0.8028,
+          0.8027,
+          0.8005,
+          0.8015,
+          0.7994,
+          0.7932
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "crouch_idle",
+      "filename": "fremen_scout_crouch_idle.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 5,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_crouch_idle_attempt1.png",
+      "source_dimensions": [
+        2172,
+        724
+      ],
+      "source_grid": [
+        4,
+        1
+      ],
+      "packing_scale": 0.7003257328990228,
+      "source_ground_y": [
+        548.0
+      ],
+      "low_alpha_noise_pixels_cleared": 17211,
+      "frame_bounds": [
+        [
+          55,
+          97,
+          371,
+          312
+        ],
+        [
+          59,
+          97,
+          369,
+          312
+        ],
+        [
+          60,
+          97,
+          364,
+          312
+        ],
+        [
+          49,
+          97,
+          358,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7857,
+          0.7926,
+          0.7943,
+          0.7898
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "aim",
+      "filename": "fremen_scout_aim.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 6,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_aim_attempt1.png",
+      "source_dimensions": [
+        2172,
+        724
+      ],
+      "source_grid": [
+        4,
+        1
+      ],
+      "packing_scale": 0.6862745098039216,
+      "source_ground_y": [
+        577.0
+      ],
+      "low_alpha_noise_pixels_cleared": 21871,
+      "frame_bounds": [
+        [
+          54,
+          32,
+          374,
+          312
+        ],
+        [
+          54,
+          32,
+          372,
+          312
+        ],
+        [
+          56,
+          32,
+          370,
+          312
+        ],
+        [
+          52,
+          32,
+          370,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7474,
+          0.7497,
+          0.7515,
+          0.7493
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "shoot",
+      "filename": "fremen_scout_shoot.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 16,
+      "loop": false,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_shoot_attempt1.png",
+      "source_dimensions": [
+        2167,
+        726
+      ],
+      "source_grid": [
+        4,
+        1
+      ],
+      "packing_scale": 0.7407407407407407,
+      "source_ground_y": [
+        556.0
+      ],
+      "low_alpha_noise_pixels_cleared": 21286,
+      "frame_bounds": [
+        [
+          46,
+          32,
+          366,
+          312
+        ],
+        [
+          52,
+          38,
+          365,
+          312
+        ],
+        [
+          49,
+          32,
+          367,
+          312
+        ],
+        [
+          50,
+          32,
+          366,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7411,
+          0.7398,
+          0.7431,
+          0.7422
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "reload",
+      "filename": "fremen_scout_reload.png",
+      "requested_frame_count": 10,
+      "actual_frame_count": 10,
+      "fps": 7,
+      "loop": false,
+      "dimensions": [
+        4000,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_reload_attempt1.png",
+      "source_dimensions": [
+        1983,
+        793
+      ],
+      "source_grid": [
+        5,
+        2
+      ],
+      "packing_scale": 0.8562691131498471,
+      "source_ground_y": [
+        367.5,
+        367.5
+      ],
+      "low_alpha_noise_pixels_cleared": 56466,
+      "frame_bounds": [
+        [
+          61,
+          32,
+          367,
+          314
+        ],
+        [
+          53,
+          33,
+          362,
+          314
+        ],
+        [
+          51,
+          32,
+          367,
+          314
+        ],
+        [
+          65,
+          35,
+          383,
+          315
+        ],
+        [
+          50,
+          35,
+          361,
+          315
+        ],
+        [
+          53,
+          29,
+          367,
+          310
+        ],
+        [
+          55,
+          30,
+          361,
+          310
+        ],
+        [
+          49,
+          30,
+          359,
+          311
+        ],
+        [
+          57,
+          31,
+          370,
+          311
+        ],
+        [
+          54,
+          31,
+          362,
+          311
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available.",
+        "The reference does not establish loading mechanics; ammunition handling is partly occluded by the hand and remains unverified."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7561,
+          0.7499,
+          0.7455,
+          0.7501,
+          0.7535,
+          0.7506,
+          0.7514,
+          0.751,
+          0.7501,
+          0.7498
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "crouch_shoot",
+      "filename": "fremen_scout_crouch_shoot.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 16,
+      "loop": false,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_crouch_shoot_attempt1.png",
+      "source_dimensions": [
+        2172,
+        724
+      ],
+      "source_grid": [
+        4,
+        1
+      ],
+      "packing_scale": 0.6875,
+      "source_ground_y": [
+        545.0
+      ],
+      "low_alpha_noise_pixels_cleared": 21825,
+      "frame_bounds": [
+        [
+          46,
+          92,
+          368,
+          312
+        ],
+        [
+          52,
+          87,
+          364,
+          312
+        ],
+        [
+          48,
+          92,
+          367,
+          312
+        ],
+        [
+          44,
+          92,
+          366,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7733,
+          0.7794,
+          0.7787,
+          0.7729
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "hit",
+      "filename": "fremen_scout_hit.png",
+      "requested_frame_count": 3,
+      "actual_frame_count": 3,
+      "fps": 12,
+      "loop": false,
+      "dimensions": [
+        1200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_hit_attempt1.png",
+      "source_dimensions": [
+        2020,
+        779
+      ],
+      "source_grid": [
+        3,
+        1
+      ],
+      "packing_scale": 0.5679513184584178,
+      "source_ground_y": [
+        636.0
+      ],
+      "low_alpha_noise_pixels_cleared": 26050,
+      "frame_bounds": [
+        [
+          52,
+          32,
+          361,
+          312
+        ],
+        [
+          62,
+          51,
+          360,
+          312
+        ],
+        [
+          67,
+          32,
+          365,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7388,
+          0.7683,
+          0.7609
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    },
+    {
+      "name": "death",
+      "filename": "fremen_scout_death.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 10,
+      "loop": false,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_static_visual_checks_passed_manual_playback_pending",
+      "source": "source\\fremen_scout_death_attempt1.png",
+      "source_dimensions": [
+        1774,
+        887
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.877742946708464,
+      "source_ground_y": [
+        436.0,
+        370.0
+      ],
+      "low_alpha_noise_pixels_cleared": 34224,
+      "frame_bounds": [
+        [
+          91,
+          32,
+          388,
+          312
+        ],
+        [
+          71,
+          61,
+          372,
+          312
+        ],
+        [
+          70,
+          86,
+          346,
+          312
+        ],
+        [
+          72,
+          124,
+          357,
+          311
+        ],
+        [
+          78,
+          160,
+          381,
+          321
+        ],
+        [
+          62,
+          184,
+          390,
+          320
+        ],
+        [
+          56,
+          202,
+          372,
+          314
+        ],
+        [
+          55,
+          219,
+          366,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game state transitions need manual review; no browser was available.",
+        "Source row 2 was registered to the final corpse ground line; review collapse timing and the hand-to-ground transition."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_alpha": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_fps_and_loop_match": true,
+        "transparent_pixel_fraction_per_frame": [
+          0.7639,
+          0.7662,
+          0.7785,
+          0.7963,
+          0.7976,
+          0.7992,
+          0.8196,
+          0.8415
+        ]
+      },
+      "visual_checks": {
+        "all_frames_inspected": true,
+        "reference_comparison_inspected": true,
+        "live_playback_reviewed": false,
+        "in_game_transitions_reviewed": false
+      }
+    }
+  ],
+  "overall_result": "complete",
+  "total_animations": 11,
+  "total_frames": 65,
+  "review_status": "manual_playback_review_required",
+  "integration_status": "staged; existing runtime assets unchanged",
+  "review_notes": [
+    "All generated frames inspected statically. Exact artistic identity cannot be guaranteed by automated checks.",
+    "Browser discovery returned no available browser; no claim of live visual playback validation.",
+    "Inspect gait cadence, cloth continuity, and reload mechanics before replacing current sprites."
+  ],
+  "preview": "review/index.html"
+}

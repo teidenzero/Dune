@@ -20,6 +20,8 @@ enum Order { IDLE, MOVE, ATTACK, MELEE, INTERACT }
 @export var loadout: Array[WeaponData] = []
 ## An idle Paul who is shot at shoots back. Orders always take priority.
 @export var retaliate: bool = true
+## Drawn look; without it the placeholder shapes draw.
+@export var art: CharacterArt
 
 var order: Order = Order.IDLE
 var order_target: Node2D
@@ -38,6 +40,8 @@ var equipped_slot: int = 0
 
 var _melee_slow: bool = false
 var _melee_committed: bool = false
+## The player's button is still down: the blade is up and nothing is decided.
+var _melee_holding: bool = false
 var _interacting: InteractionPoint
 var _stuck_anchor: Vector2
 var _stuck_time: float = 0.0
@@ -63,6 +67,20 @@ func _ready() -> void:
 		weapon_controller.equip(loadout[0])
 	aim_direction = Vector2.RIGHT.rotated(aim_pivot.rotation)
 	_stuck_anchor = global_position
+	if art != null and art.has_sprites():
+		_use_drawn_art()
+
+
+## Swap the placeholder body for the character art; the shadow stays.
+func _use_drawn_art() -> void:
+	var sprite: UnitSprite = art.make_sprite(self, walk_speed)
+	add_child(sprite)
+	# Above the shadow, under the aim marker and the blade arc.
+	move_child(sprite, $Shadow.get_index() + 1)
+	art.apply_to(sprite, self)
+	$Body.hide()
+	$Hood.hide()
+	$NameLabel.raise(art.world_height * 0.75)
 
 
 # --------------------------------------------------------------------------
@@ -95,6 +113,48 @@ func attack(target: Node2D) -> void:
 		return
 	_set_order(Order.ATTACK, target)
 	running = false
+
+
+## Left button down on a target: the blade comes up at once and Paul closes
+## while it charges. What the stroke becomes is decided on melee_let_go().
+func melee_hold(target: Node2D) -> bool:
+	if health.is_dead or not _valid_target(target) or not melee.enabled:
+		return false
+	_set_order(Order.MELEE, target)
+	_melee_holding = true
+	_melee_slow = false
+	_melee_committed = false
+	running = false
+	_try_raise_blade()
+	return true
+
+
+## Button up. A charged blade (held past the threshold) becomes the slow
+## stroke; anything shorter is the quick one. In reach it lands now, otherwise
+## on arrival - a slow stroke arrives with the blade still raised. `slow_hint`
+## decides when the blade could not come up yet (mid-recovery).
+func melee_let_go(slow_hint: bool = false) -> void:
+	if order != Order.MELEE or not _melee_holding:
+		return
+	_melee_holding = false
+	if _melee_committed and melee.state == MeleeController.State.CHARGING:
+		_melee_slow = melee.slow_ready
+		if not _melee_slow and not _in_reach():
+			# A quick cut from out of reach: lower the blade, run in, cut.
+			melee.cancel()
+			_melee_committed = false
+	else:
+		_melee_slow = slow_hint
+
+
+func _try_raise_blade() -> void:
+	if melee.can_attack() and not prescience.blocks_combat():
+		melee.begin_input()
+		_melee_committed = melee.state == MeleeController.State.CHARGING
+
+
+func _in_reach() -> bool:
+	return _valid_target(order_target) and global_position.distance_to(order_target.global_position) <= melee.hitbox_base_range * 0.8
 
 
 ## Walk into reach and cut. `slow` commits to the shield-penetrating stroke.
@@ -179,6 +239,7 @@ func _set_order(value: Order, target: Node2D = null) -> void:
 	_interacting = null
 	if melee.state == MeleeController.State.CHARGING:
 		melee.cancel()
+	_melee_holding = false
 	order = value
 	order_target = target
 	_stuck_time = 0.0
@@ -282,25 +343,50 @@ func _run_attack() -> Vector2:
 
 
 func _run_melee() -> Vector2:
+	var target_alive: bool = _valid_target(order_target)
+	if target_alive:
+		aim_direction = global_position.direction_to(order_target.global_position)
+	var reach: float = melee.hitbox_base_range * 0.8
+	var distance: float = global_position.distance_to(order_target.global_position) if target_alive else INF
+	if _melee_holding and not _melee_committed:
+		# The button went down mid-recovery: raise the blade the moment it can.
+		_try_raise_blade()
 	if _melee_committed:
-		# The stroke is in the air; Paul finishes it before doing anything else.
-		if melee.state == MeleeController.State.CHARGING and (not _melee_slow or melee.slow_ready):
+		if melee.state != MeleeController.State.CHARGING:
+			# The stroke is in the air; Paul finishes it before anything else.
+			return Vector2.ZERO
+		if not target_alive:
+			melee.cancel()
+			_set_order(Order.IDLE)
+			return Vector2.ZERO
+		if _melee_holding:
+			# Still deciding: blade up, closing, never cutting on his own.
+			return _approach(order_target.global_position) if distance > reach else Vector2.ZERO
+		if distance <= reach and (not _melee_slow or melee.slow_ready):
 			melee.release_input()
-		return Vector2.ZERO
-	if not _valid_target(order_target):
+			return Vector2.ZERO
+		# Blade raised: keep after him, slowly, until he is in reach.
+		return _approach(order_target.global_position) if distance > reach else Vector2.ZERO
+	if not target_alive:
 		_set_order(Order.IDLE)
 		return Vector2.ZERO
-	var target_position: Vector2 = order_target.global_position
-	aim_direction = global_position.direction_to(target_position)
-	if global_position.distance_to(target_position) <= melee.hitbox_base_range * 0.8:
-		if melee.can_attack() and not prescience.blocks_combat():
+	if melee.can_attack() and not prescience.blocks_combat():
+		# The slow stroke is raised on the way in, so it lands on arrival
+		# instead of giving a moving target a second to step away.
+		var raise_at: float = reach + (walk_speed * melee.slow_charge_threshold if _melee_slow else 0.0)
+		if distance <= raise_at:
 			melee.begin_input()
 			_melee_committed = melee.state == MeleeController.State.CHARGING
-			if _melee_committed and not _melee_slow:
+			if _melee_committed and not _melee_slow and distance <= reach:
 				melee.release_input()
-		return Vector2.ZERO
-	if destination.distance_to(target_position) > 12.0:
-		_go(target_position)
+			if distance <= reach:
+				return Vector2.ZERO
+	return _approach(order_target.global_position)
+
+
+func _approach(point: Vector2) -> Vector2:
+	if destination.distance_to(point) > 12.0:
+		_go(point)
 	return _steer()
 
 

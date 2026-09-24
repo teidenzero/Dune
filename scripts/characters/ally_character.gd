@@ -46,7 +46,7 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player") as PlayerController
 	$Visuals/Body.color = data.body_color
-	if data.sprite_sheets.has("idle"):
+	if data.art != null and data.art.has_sprites():
 		_use_drawn_art()
 	$NameLabel.text = data.display_name
 	health.died.connect(_on_died)
@@ -105,15 +105,13 @@ func _check_stuck(delta: float) -> void:
 
 ## Swap the placeholder body for the character art; the shadow stays.
 func _use_drawn_art() -> void:
-	var sprite: UnitSprite = UnitSprite.new()
-	sprite.name = "Sprite"
+	var sprite: UnitSprite = data.art.make_sprite(self, data.move_speed)
 	$Visuals.add_child(sprite)
-	sprite.setup(self, data.sprite_sheets, data.sprite_frame_size, data.sprite_world_height, data.sprite_feet_y)
-	sprite.walk_speed = data.move_speed
+	data.art.apply_to(sprite, self)
 	$Visuals/Body.hide()
 	$Visuals/Hood.hide()
 	# The figure stands taller than the placeholder disc; keep the name above it.
-	$NameLabel.position.y -= data.sprite_world_height * 0.85
+	$NameLabel.raise(data.art.world_height * 0.75)
 
 
 func navigation_ready() -> bool:

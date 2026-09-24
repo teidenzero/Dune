@@ -42,6 +42,16 @@ func _process(_delta: float) -> void:
 	_apply()
 
 
+## Moves the label's anchor up by `amount` world pixels - for a unit whose
+## drawn figure stands taller than its placeholder. Position changes alone are
+## undone by the next zoom-driven resize.
+func raise(amount: float) -> void:
+	_capture_anchor()
+	_anchor_y -= amount
+	_applied = -1
+	_apply()
+
+
 func _apply() -> void:
 	_capture_anchor()
 	var want: int = maxi(int(round(screen_font_size / WorldLabel.camera_zoom(self))), 1)

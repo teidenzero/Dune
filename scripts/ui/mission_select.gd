@@ -12,6 +12,11 @@ func _ready() -> void:
 	$Rows/Buttons/Raid.pressed.connect(_open.bind(RAID))
 	$Rows/Buttons/Arena.pressed.connect(_open.bind(ARENA))
 	$Rows/Buttons/Tutorial.grab_focus()
+	var game: Node = get_node("/root/GameManager")
+	var campaign: CampaignState = game.campaign
+	if campaign != null and not campaign.history.is_empty():
+		var last: MissionOutcome = campaign.history[campaign.history.size() - 1]
+		$Rows/Footer.text = "CAMPAIGN  ·  %s\nLast: %s - %s" % [campaign.summary(), last.mission_id, last.tier_title()]
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
