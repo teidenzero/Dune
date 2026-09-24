@@ -19,9 +19,9 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var main_path: String = ProjectSettings.get_setting("application/run/main_scene")
-	# Milestone 6.1 boots on the developer launcher; this suite still exercises
-	# the technical test arena, which the launcher keeps one keypress away.
-	_check(main_path == "res://scenes/missions/mission_select.tscn", "developer launcher is the configured main scene")
+	# The game boots on the main menu; this suite still exercises the technical
+	# test arena, which the developer launcher (MISSIONS) keeps reachable.
+	_check(main_path == "res://scenes/menu/main_menu.tscn", "the main menu is the configured main scene")
 	_check(load(main_path) != null, "launcher scene loads")
 	_check(ResourceLoader.exists(ARENA) and ResourceLoader.exists(TUTORIAL), "both missions remain reachable")
 	var packed: PackedScene = load(ARENA) as PackedScene

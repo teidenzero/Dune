@@ -32,7 +32,7 @@ func _definition() -> void:
 	_check(definition.objectives.size() == 6, "it defines the raid's six objectives")
 	_check(definition.primary_ids() == [&"sabotage"], "sabotage is the one primary objective")
 	_check(definition.objective(&"fremen").optional, "keeping the Fremen alive is optional")
-	_check(definition.available_scopes() == [MissionOutcome.Scope.POLITICAL, MissionOutcome.Scope.SQUAD], "the raid can be played politically or as a squad")
+	_check(definition.available_scopes() == [MissionOutcome.Scope.POLITICAL, MissionOutcome.Scope.SQUAD, MissionOutcome.Scope.SOLO], "the raid can be played politically, as a squad, or solo inside the crawler")
 	_check(definition.political_approaches.size() == 3, "it offers three political approaches")
 	var clean: Dictionary = definition.stakes_for(MissionOutcome.Tier.CLEAN)
 	var noisy: Dictionary = definition.stakes_for(MissionOutcome.Tier.NOISY)
@@ -85,7 +85,7 @@ func _operation_rules() -> void:
 	var heroes: Array[HeroDefinition] = HeroRoster.all()
 	var thufir: HeroDefinition = heroes[3]
 	var gurney: HeroDefinition = heroes[2]
-	_check(heroes.size() == 6, "six heroes can act as agents")
+	_check(heroes.size() == 7, "seven heroes can act as agents (Chani joined)")
 	var plain: float = OperationResolver.chance(bribe, gurney, campaign, 0)
 	_check(is_equal_approx(plain, bribe.base_chance), "an agent without the right ties adds nothing")
 	_check(OperationResolver.chance(bribe, thufir, campaign, 0) > plain, "a mentat improves any operation")

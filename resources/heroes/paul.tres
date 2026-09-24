@@ -12,5 +12,6 @@ portrait = ExtResource("2")
 glyph = "paul"
 affinity = &"fremen"
 affinity_bonus = 0.15
+prescience = 3
 general_bonus = 0.0
 political_trait = "The sietch is starting to listen to him. Operations through the Fremen go better."

@@ -32,7 +32,16 @@ func _ready() -> void:
 	mission.mission_failed.connect(_on_failed)
 	$Screen/Results/Margin/Rows/Buttons/Retry.pressed.connect(_on_retry)
 	$Screen/Results/Margin/Rows/Buttons/Launcher.pressed.connect(_on_launcher)
+	# Played as a chapter of the campaign: leaving carries the story on.
+	if _flow_scene():
+		$Screen/Results/Margin/Rows/Buttons/Launcher.text = "Continue"
 	_refresh()
+
+
+func _flow_scene() -> bool:
+	var game: Node = get_node_or_null("/root/GameManager")
+	var scene: Node = get_tree().current_scene if is_inside_tree() else null
+	return game != null and game.get("flow") != null and scene != null and game.flow.playing(scene.scene_file_path)
 
 
 func _refresh() -> void:
@@ -100,6 +109,7 @@ func _show_results(data: Dictionary) -> void:
 		lines.append("")
 	for key in data:
 		lines.append("%s:  %s" % [key, str(data[key])])
+	lines.append_array(GrowthReport.lines(Progression.campaign_of(self)))
 	# There are two ways out of a failed mission and they do different things.
 	# Say so, rather than leaving the player to find out by pressing one.
 	if is_instance_valid(mission) and mission.checkpoint() != &"":
@@ -122,5 +132,8 @@ func _on_launcher() -> void:
 		mission.commit_outcome()
 		mission.clear_checkpoint()
 	var game: Node = get_node_or_null("/root/GameManager")
+	if _flow_scene():
+		game.flow.advance(get_tree())
+		return
 	var target: String = game.return_scene if game != null and game.return_scene != "" else "res://scenes/missions/mission_select.tscn"
 	get_tree().change_scene_to_file(target)

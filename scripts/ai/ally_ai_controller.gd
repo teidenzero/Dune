@@ -93,6 +93,9 @@ func _decide() -> void:
 			_resume_previous()
 		else:
 			combat_target = order_target
+	elif hold_fire:
+		# Watching: whatever they had locked onto, they let it go.
+		combat_target = null
 	elif not _valid_hostile(combat_target) or _unseen > 2.0 or _combat_origin.distance_to(combat_target.global_position) > _combat_leash:
 		combat_target = null
 		_acquire_nearby()
@@ -110,9 +113,8 @@ func _execute_order() -> void:
 			if not is_instance_valid(actor.player) or actor.player.health.is_dead:
 				actor.stop_moving()
 				return
-			var crouched: bool = actor.player.is_crouching or actor.sneaking
-			# Match Paul's stance, so crouching is a squad decision rather than
-			# something only Paul benefits from.
+			# The squad's stance (SquadManager keeps it the same for everyone).
+			var crouched: bool = actor.sneaking
 			actor.is_crouching = crouched
 			var offset: Vector2 = actor.follow_offset * (0.65 if crouched else 1.0)
 			var desired: Vector2 = actor.player.global_position + offset
@@ -140,9 +142,7 @@ func _execute_order() -> void:
 		Order.HOLD:
 			behavior = Behavior.HOLD
 			var settled: bool = actor.global_position.distance_to(hold_position) <= 22
-			# A Fremen told to hold goes to ground. Holding is how the player
-			# makes the squad quiet.
-			actor.is_crouching = settled or actor.sneaking
+			actor.is_crouching = actor.sneaking
 			if not settled:
 				actor.navigate_to(hold_position, _order_speed())
 			else:
@@ -152,7 +152,7 @@ func _execute_order() -> void:
 func _fight() -> void:
 	behavior = Behavior.COMBAT
 	actor.face_travel = false
-	actor.is_crouching = false
+	actor.is_crouching = actor.sneaking
 	_visible = actor.has_line_of_sight(combat_target)
 	if _visible:
 		_last_seen = combat_target.global_position
@@ -167,7 +167,15 @@ func _fight() -> void:
 	actor.face_position(_last_seen)
 
 
+## Watch, do not engage: no fights started on their own initiative, not even
+## in answer to fire (the training yard uses this while Paul is drilled). An
+## explicit ATTACK order still goes through.
+var hold_fire: bool = false
+
+
 func _acquire_nearby() -> void:
+	if hold_fire:
+		return
 	var closest: float = actor.data.aggression_radius
 	for enemy: Node2D in get_tree().get_nodes_in_group("enemies"):
 		if not _valid_hostile(enemy):
@@ -190,7 +198,7 @@ func _acquire_nearby() -> void:
 
 
 func defend_against(source: Node2D) -> void:
-	if current_order == Order.ATTACK or not _valid_hostile(source):
+	if hold_fire or current_order == Order.ATTACK or not _valid_hostile(source):
 		return
 	if actor.global_position.distance_to(source.global_position) > actor.data.attack_leash:
 		return

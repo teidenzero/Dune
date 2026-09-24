@@ -1,0 +1,115 @@
+[gd_resource type="Resource" script_class="MissionDefinition" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/mission_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/campaign/objective_definition.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/campaign/political_approach.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/campaign/political_choice.gd" id="4"]
+
+[sub_resource type="Resource" id="obj_petition"]
+script = ExtResource("2")
+id = &"petition"
+title = "Settle the water-sellers' petition"
+description = "Every eye in Arrakeen is on what the new Duke does about water."
+primary = true
+
+[sub_resource type="Resource" id="charter_as_is"]
+script = ExtResource("4")
+text = "Confirm it as it stands. Contracts are contracts."
+chance_bonus = 0.05
+effects = {
+"resources": {
+&"solari": 10
+},
+"standings": {
+&"fremen": -1
+}
+}
+
+[sub_resource type="Resource" id="charter_capped"]
+script = ExtResource("4")
+text = "Confirm it, but cap the price of water."
+chance_bonus = -0.15
+effects = {
+"standings": {
+&"fremen": 1
+}
+}
+
+[sub_resource type="Resource" id="confirm_charter"]
+script = ExtResource("3")
+id = &"confirm_charter"
+title = "Confirm their charter"
+description = "Keep the old arrangement. The water flows, the sellers are content, and CHOAM sees a Duke who honours contracts."
+faction = &"choam"
+min_standing = -1
+base_chance = 0.8
+costs = {
+&"influence": 1
+}
+effects = {
+"standings": {
+&"choam": 1
+}
+}
+dilemma = "The sellers will keep their Harkonnen prices, and the poor of Arrakeen will keep paying them. The Fremen are watching to see what kind of Duke has come."
+choices = [SubResource("charter_as_is"), SubResource("charter_capped")]
+
+[sub_resource type="Resource" id="stations_angry"]
+script = ExtResource("4")
+text = "Open them, and let the sellers be angry."
+chance_bonus = 0.0
+effects = {
+"heat": 1
+}
+
+[sub_resource type="Resource" id="stations_bought"]
+script = ExtResource("4")
+text = "Open them, and pay the sellers for their loss."
+chance_bonus = 0.05
+effects = {
+"resources": {
+&"solari": -10
+}
+}
+
+[sub_resource type="Resource" id="public_stations"]
+script = ExtResource("3")
+id = &"public_stations"
+title = "Open public water stations"
+description = "The Duke's own way: water from the Residency's stores, for anyone who asks, at a fair price."
+faction = &"fremen"
+min_standing = -1
+base_chance = 0.65
+costs = {
+&"water": 4,
+&"solari": 10
+}
+effects = {
+"standings": {
+&"fremen": 1,
+&"choam": -1
+}
+}
+dilemma = "The water-sellers will not forgive this, and some of them still take Harkonnen money."
+choices = [SubResource("stations_angry"), SubResource("stations_bought")]
+
+[resource]
+script = ExtResource("1")
+id = &"prologue_water_sellers"
+title = "The Water-Sellers' Petition"
+briefing = "Under the Harkonnen, the Water-Sellers' Guild ran Arrakeen's water at Harkonnen prices. Tonight they ask the new Duke to confirm their charter. The town, and the Fremen who watch it, want to see what kind of Duke has come."
+faction_at_stake = &"fremen"
+objectives = Array[ExtResource("2")]([SubResource("obj_petition")])
+stakes = {
+"clean": {
+"resources": {
+&"influence": 1
+}
+},
+"failure": {
+"standings": {
+&"fremen": -1
+}
+}
+}
+political_approaches = Array[ExtResource("3")]([SubResource("confirm_charter"), SubResource("public_stations")])

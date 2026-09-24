@@ -62,6 +62,12 @@ var _pause_frame: Control
 var _prescience_veil: Control
 var _icon_standing: Texture2D
 var _icon_crouched: Texture2D
+## Solo scope: one hero on direct control.
+var solo: bool = false
+var solo_clicks: bool = false
+var _solo_group: Control
+var _dodge_slot: HudSlot
+var _shield_slot: HudSlot
 
 
 func setup(paul: PlayerController, manager: SquadManager) -> void:
@@ -72,6 +78,7 @@ func setup(paul: PlayerController, manager: SquadManager) -> void:
 
 
 func _ready() -> void:
+	add_to_group("player_hud")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_icon_standing = HudStyle.icon("stance_standing")
@@ -243,6 +250,14 @@ func _build_action_bar() -> void:
 	stealth_label.name = "Stealth"
 	_stance_slot = _slot("C", _icon_standing)
 	stance[1].add_child(_stance_slot)
+	var solo_tools: Array = _group("SoloTools", "DODGE · SHIELD")
+	_solo_group = solo_tools[0]
+	_dodge_slot = _slot("SPC", HudStyle.icon("dodge"))
+	_shield_slot = _slot("T", HudStyle.icon("shield"))
+	_shield_slot.accent = HudStyle.SPICE_BLUE
+	solo_tools[1].add_child(_dodge_slot)
+	solo_tools[1].add_child(_shield_slot)
+	_solo_group.hide()
 	var orders: Array = _group("Orders", "HOLD · FOLLOW")
 	_order_group = orders[0]
 	_hold_slot = _slot("H", HudStyle.icon("hold"))
@@ -330,6 +345,24 @@ func _build_weapon_card() -> void:
 	_bar.add_child(_weapon_card)
 
 
+## Solo scope: the bar shows the hero's own tools. `clicks` is the interiors'
+## click-order scheme; without it the direct (WASD) controls are shown.
+func set_solo(value: bool, clicks: bool = false) -> void:
+	solo = value
+	solo_clicks = value and clicks
+	_solo_group.visible = solo
+	var direct: bool = solo and not solo_clicks
+	melee_label.get_parent().get_child(2).text = "CRYSKNIFE · TAP / HOLD" if direct else "CRYSKNIFE · CLICK / HOLD"
+	if solo_clicks:
+		hints_label.text = "CLICK a tile to move (twice: run)  ·  RIGHT-CLICK enemy: fire  ·  LEFT-CLICK enemy: knife (hold: slow)  ·  RIGHT-CLICK console or find: use  ·  SPACE dodge  ·  T shield  ·  C crouch  ·  V spice  ·  P pause"
+	else:
+		hints_label.text = "WASD move  ·  MOUSE aim  ·  LEFT-CLICK fire  ·  E knife (hold: slow)  ·  SPACE dodge  ·  T shield  ·  SHIFT run  ·  C crouch  ·  F use  ·  P pause" if solo else _squad_hints()
+
+
+func _squad_hints() -> String:
+	return "LEFT-CLICK select / knife an enemy (hold: slow strike)  ·  DRAG box  ·  RIGHT-CLICK move / fire / use  ·  DOUBLE RIGHT-CLICK run  ·  SHIFT queue  ·  WASD pan  ·  SPACE pause"
+
+
 func _build_bottom_line() -> void:
 	hints_label = HudStyle.label("LEFT-CLICK select / knife an enemy (hold: slow strike)  ·  DRAG box  ·  RIGHT-CLICK move / fire / use  ·  DOUBLE RIGHT-CLICK run  ·  SHIFT queue  ·  WASD pan  ·  SPACE pause", 14, HudStyle.MUTED)
 	hints_label.name = "Hints"
@@ -377,7 +410,9 @@ func _process(_delta: float) -> void:
 	_weapon_group.visible = paul_view
 	_blade_group.visible = paul_view
 	_ability_group.visible = paul_view and player.prescience != null
-	_order_group.visible = is_instance_valid(squad) and not squad.selected_members.is_empty()
+	_order_group.visible = not solo and is_instance_valid(squad) and not squad.selected_members.is_empty()
+	if solo:
+		_refresh_solo_tools()
 	if paul_view:
 		_refresh_weapon_slots()
 		_refresh_melee()
@@ -452,7 +487,7 @@ func _refresh_weapon(unit: Node2D) -> void:
 		status_label.text = "EMPTY  ·  R TO RELOAD"
 		status_label.add_theme_color_override("font_color", HudStyle.DANGER)
 	else:
-		status_label.text = "R RELOAD  ·  RIGHT-CLICK AN ENEMY TO FIRE"
+		status_label.text = "R RELOAD  ·  LEFT-CLICK TO FIRE" if solo and not solo_clicks else "R RELOAD  ·  RIGHT-CLICK AN ENEMY TO FIRE"
 		status_label.add_theme_color_override("font_color", HudStyle.MUTED)
 
 
@@ -580,9 +615,18 @@ func _refresh_worm() -> void:
 	_worm_bar.fill_color = color
 
 
+func _refresh_solo_tools() -> void:
+	_dodge_slot.sweep = 1.0 - player.dodge_ready_ratio()
+	_dodge_slot.state = HudSlot.State.ACTIVE if player.dodging else HudSlot.State.NORMAL
+	if player.shield == null:
+		_shield_slot.state = HudSlot.State.UNAVAILABLE
+		return
+	_shield_slot.state = HudSlot.State.ACTIVE if player.shield_active() else HudSlot.State.NORMAL
+
+
 ## A word beside the pointer saying what a click there will do.
 func _refresh_cursor() -> void:
-	if not is_instance_valid(squad) or player.health.is_dead or get_viewport().gui_get_hovered_control() != null:
+	if (solo and not solo_clicks) or not is_instance_valid(squad) or player.health.is_dead or get_viewport().gui_get_hovered_control() != null:
 		cursor_label.hide()
 		return
 	var mouse: Vector2 = get_viewport().get_mouse_position()

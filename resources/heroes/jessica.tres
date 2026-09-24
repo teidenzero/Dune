@@ -1,14 +1,17 @@
-[gd_resource type="Resource" script_class="HeroDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="HeroDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/campaign/hero_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/portraits/jessica.png" id="2"]
 
 [resource]
 script = ExtResource("1")
+portrait = ExtResource("2")
 id = &"jessica"
 display_name = "Lady Jessica"
 title = "Bene Gesserit"
 glyph = "prescience"
 affinity = &"bene_gesserit"
 affinity_bonus = 0.15
+prescience = 1
 general_bonus = 0.05
 political_trait = "Trained in the Voice and in reading people. A little better at everything; far better with the Sisterhood."

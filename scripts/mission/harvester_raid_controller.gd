@@ -45,6 +45,9 @@ var combat_before_sabotage: bool = false
 var _reinforcement_wait: float = 0.0
 var _pending_groups: int = 0
 var _worm_events_before_sabotage: int = 0
+## The scope the outcome is recorded in. This map is the squad scope; the
+## solo scope has its own interior maps.
+var scope: MissionOutcome.Scope = MissionOutcome.Scope.SQUAD
 
 
 func _ready() -> void:
@@ -85,7 +88,8 @@ func _build_objectives() -> void:
 		mission.add_objective(MissionObjective.create(OBJ_FREMEN, "Keep both Fremen alive", "Optional.", true))
 	mission.activate(OBJ_APPROACH)
 	mission.activate(OBJ_COMMS)
-	mission.activate(OBJ_FREMEN)
+	if scope == MissionOutcome.Scope.SQUAD:
+		mission.activate(OBJ_FREMEN)
 	mission.set_phase(&"APPROACH")
 
 
@@ -334,9 +338,10 @@ func build_outcome(success: bool, reason: String) -> MissionOutcome:
 	var record: MissionOutcome = MissionOutcome.new()
 	var definition: MissionDefinition = mission.definition
 	record.mission_id = definition.id if definition != null else &"harvester_raid"
-	record.scopes.append(MissionOutcome.Scope.SQUAD)
+	record.scopes.append(scope)
 	for item in mission.all_objectives():
-		record.objectives[item.id] = item.state
+		if item.state != MissionObjective.State.INACTIVE:
+			record.objectives[item.id] = item.state
 	var comms_cut: bool = is_instance_valid(beacon) and not beacon.active
 	var sabotaged: bool = is_instance_valid(harvester) and harvester.is_sabotaged
 	if success:

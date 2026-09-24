@@ -32,12 +32,19 @@ extends Camera2D
 
 var anchor: Vector2
 var pan_active: bool = false
+## Solo scope: follow the hero, leaning toward the mouse, instead of panning.
+var follow: bool = false
+@export var follow_smoothing: float = 8.0
+@export var look_ahead: float = 160.0
 
 var _player: Node2D
 var _center_target: Vector2
 var _centering: bool = false
 var _player_zoom: float = 1.0
 var _player_zoom_target: float = 1.0
+## Turn-based combat's framing: a zoom that overrides the player's while > 0.
+var combat_zoom: float = 0.0
+var _combat_blend: float = 0.0
 var _trauma: float = 0.0
 var _shake_time: float = 0.0
 ## Edge scrolling follows the pointer through motion events rather than the
@@ -100,7 +107,17 @@ func _process(delta: float) -> void:
 	var unscaled: float = delta / maxf(Engine.time_scale, 0.01)
 	_player_zoom_target = clampf(_player_zoom_target, _minimum_player_zoom(), player_zoom_max)
 	_player_zoom = lerpf(_player_zoom, _player_zoom_target, 1.0 - exp(-player_zoom_smoothing * unscaled))
+	_combat_blend = move_toward(_combat_blend, 1.0 if combat_zoom > 0.0 else 0.0, unscaled * 2.5)
 	zoom = Vector2.ONE * effective_zoom()
+	if follow:
+		pan_active = false
+		_centering = false
+		var half: Vector2 = get_viewport_rect().size * 0.5
+		var lean: Vector2 = ((get_viewport().get_mouse_position() - half) / half).limit_length(1.0) * look_ahead / effective_zoom()
+		anchor = anchor.lerp(_player_position() + lean, 1.0 - exp(-follow_smoothing * unscaled))
+		anchor = _clamp_to_bounds(anchor)
+		position = anchor - _player_position() + _shake_offset(unscaled)
+		return
 	var direction: Vector2 = _pan_input()
 	pan_active = not direction.is_zero_approx()
 	if pan_active:
@@ -142,7 +159,26 @@ func _shake_offset(unscaled: float) -> Vector2:
 ## The zoom actually applied: the base view scaled by the player's preference,
 ## floored so the view never leaves the mission.
 func effective_zoom() -> float:
-	return maxf(maxf(gameplay_zoom * _player_zoom, _scene_minimum_zoom()), 0.01)
+	var normal: float = maxf(maxf(gameplay_zoom * _player_zoom, _scene_minimum_zoom()), 0.01)
+	if _combat_blend <= 0.0:
+		return normal
+	var framed: float = maxf(combat_zoom if combat_zoom > 0.0 else normal, _scene_minimum_zoom())
+	return lerpf(normal, framed, smoothstep(0.0, 1.0, _combat_blend))
+
+
+## Turn-based combat takes the view: framing on, following off. Pass zoom 0
+## to hand it back as it was.
+func set_combat_view(zoom_level: float) -> void:
+	if zoom_level > 0.0:
+		if combat_zoom <= 0.0:
+			_was_following = follow
+		follow = false
+	elif combat_zoom > 0.0:
+		follow = _was_following
+	combat_zoom = zoom_level
+
+
+var _was_following: bool = false
 
 
 ## The widest this mission can be shown without the view running past the camera
@@ -218,6 +254,8 @@ func _player_position() -> Vector2:
 
 
 func mode_name() -> String:
+	if follow:
+		return "FOLLOW"
 	return "CENTERING" if _centering else ("PANNING" if pan_active else "FREE")
 
 

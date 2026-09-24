@@ -56,6 +56,10 @@ func _travel(motion: Vector2) -> bool:
 	if collision == null:
 		return false
 	var actor: Node = collision.get_collider() as Node
+	if is_instance_valid(actor) and source_team != &"" and actor.get_meta("team_id", &"") == source_team and actor is PhysicsBody2D:
+		# A friend in the line of fire: the round goes past him, not into him.
+		add_collision_exception_with(actor)
+		return _travel(collision.get_remainder())
 	if is_instance_valid(actor) and actor != owner_actor:
 		var health: HealthComponent = HealthComponent.find_on(actor)
 		if health != null:

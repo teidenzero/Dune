@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="HeroDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/hero_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chani"
+display_name = "Chani"
+title = "Daughter of Liet"
+glyph = "scout"
+affinity = &"fremen"
+affinity_bonus = 0.15
+general_bonus = 0.0
+political_trait = "Born to the sietch and trusted in it. Scouting and water raids go better with her."
+action_points = 11

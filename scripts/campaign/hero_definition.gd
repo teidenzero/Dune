@@ -17,3 +17,10 @@ extends Resource
 ## Added to the success chance of every approach (a mentat's planning).
 @export_range(0.0, 0.5, 0.01) var general_bonus: float = 0.0
 @export_multiline var political_trait: String = ""
+
+@export_group("Combat")
+## Action points per turn in the interiors' turn-based combat.
+@export_range(4, 20) var action_points: int = 10
+## Visions per fight: each one plays a turn out and lets the hero take it
+## back. Grows as the hero develops; most heroes have none.
+@export_range(0, 9) var prescience: int = 0

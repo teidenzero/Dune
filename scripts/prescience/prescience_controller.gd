@@ -141,8 +141,12 @@ func remaining_ratio() -> float:
 # Runtime
 # --------------------------------------------------------------------------
 
+## Off where another system owns Q (the interiors' turn-based combat).
+var input_enabled: bool = true
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if not InputMap.has_action("prescience") or event.is_echo():
+	if not input_enabled or not InputMap.has_action("prescience") or event.is_echo():
 		return
 	if not event.is_action_pressed("prescience"):
 		return

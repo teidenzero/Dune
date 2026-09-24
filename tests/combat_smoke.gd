@@ -80,17 +80,19 @@ func _run() -> void:
 		player.fire_weapon()
 		if shot_index < 3:
 			await _frames(25)
-	# Checked in the same tick as the last shot: Paul auto-reloads on his next physics step.
 	_check(weapon.current_ammo == 0 and not weapon.can_fire, "magazine empties after eight shots")
 	var fired_before: int = counts.shots
 	_check(not player.fire_weapon() and counts.dry == 0, "empty weapon on cooldown refuses silently")
-	# Paul never sits empty off cooldown (he auto-reloads next tick), so expire
-	# the cooldown in this same tick to reach the weapon's dry-fire path.
 	weapon.cooldown_remaining = 0.0
 	_check(not player.fire_weapon(), "empty weapon refuses to fire")
 	_check(counts.shots == fired_before and counts.dry == 1, "empty trigger emits dry fire without spawning")
-	await _frames(2)
-	_check(weapon.is_reloading and counts.reloads == 1, "empty magazine auto-reloads")
+	await _frames(30)
+	_check(not weapon.is_reloading and weapon.current_ammo == 0 and counts.reloads == 0, "an empty magazine waits for R: reloading is the player's call")
+	_key(KEY_R, true)
+	await _frames(1)
+	_key(KEY_R, false)
+	await _frames(1)
+	_check(weapon.is_reloading and counts.reloads == 1, "R reloads the empty magazine")
 	_check(not weapon.start_reload() and not weapon.try_fire(), "reload cannot restart or fire")
 	_check(hud.status_label.visible and hud.status_label.text == "RELOADING", "HUD displays reload status")
 	_check(hud.ammo_label.text == "0 / 8", "HUD ammo shows the empty magazine while reloading")
@@ -246,19 +248,27 @@ func _test_attack_order() -> void:
 	await _frames(2)
 	_check(player.order == PlayerController.Order.ATTACK and player.order_target == dummy, "right-click on a hostile orders Paul to attack it")
 	_check(player.velocity.x > 0.0 and fired_from.is_empty(), "out of range, Paul closes in instead of firing")
+	# One click, one shot: after each round Paul holds fire until clicked again.
 	var died_at: int = -1
-	for index in range(600):
+	var clicks: int = 1
+	var held_fire: bool = false
+	for index in range(900):
 		await _frames(1)
 		if dummy_health.is_dead:
 			died_at = index
 			break
-	_check(died_at >= 0, "attack order kills the target")
+		if player.order == PlayerController.Order.IDLE and weapon.can_fire and clicks < 8:
+			held_fire = held_fire or fired_from.size() == clicks
+			await _right_click(dummy.global_position)
+			clicks += 1
+	_check(held_fire, "after a click's one shot, Paul holds fire")
+	_check(died_at >= 0, "clicking again and again kills the target")
 	_check(not fired_from.is_empty() and fired_from[0] <= range_limit + 1.0, "first shot is fired from inside effective range")
 	_check(player.global_position.distance_to(dummy.global_position) < start_distance - 50.0, "Paul moved toward the target to engage")
 	await _frames(3)
 	_check(player.order == PlayerController.Order.IDLE, "attack order ends when the target dies")
 	var shots_at_death: int = fired_from.size()
-	_check(shots_at_death >= 4 and shots_at_death <= 6, "attack spends only the shots it needs (%d)" % shots_at_death)
+	_check(shots_at_death == clicks, "one round per click (%d clicks, %d shots)" % [clicks, shots_at_death])
 	var resting: Vector2 = player.global_position
 	await _frames(60)
 	_check(fired_from.size() == shots_at_death, "Paul stops firing at the dead target")

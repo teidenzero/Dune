@@ -191,18 +191,23 @@ func _framework_and_movement() -> void:
 	_check(tutorial.steps.size() >= 20 and tutorial.sections.size() == 9, "step sequence and nine sections are built")
 	_check(_step_id() == &"move_marker" and tutorial.current_section() == &"movement", "the first movement step is active")
 	_check(tutorial.current_step().state == TutorialStep.State.ACTIVE, "the active step reports ACTIVE")
-	_check(squad.paul_selected, "Paul starts selected, ready for his first order")
+	_check(squad.paul_selected and squad.selected_members.size() == 2, "the whole squad starts selected: Paul and both Fremen")
+	var beside: bool = true
+	for member in squad.members:
+		beside = beside and member.global_position.distance_to(player.global_position) < 160.0
+	_check(beside, "the Fremen start right beside Paul, not across the yard")
 	# Abilities not yet taught are withheld, and the section gate is shut.
 	_check(not player.weapon_controller.enabled, "the pistol is withheld before the firing range")
 	_check(not player.melee.enabled, "the crysknife is withheld before the blade yard")
-	_check(not squad.commands_enabled, "squad commands are withheld before the squad yard")
+	_check(squad.commands_enabled, "the squad takes orders from the first step")
 	var gate: TutorialGate = tutorial.find(&"Gate_movement") as TutorialGate
 	_check(gate != null and not gate.is_open, "the next section is gated shut")
 	_check((tutorial.find(&"Marker_MoveA") as TutorialMarker).active, "the current step's marker is highlighted")
 	_check(not (tutorial.find(&"Marker_Overlook") as TutorialMarker).active, "later markers stay hidden")
-	# The Fremen are locked, Paul is not.
+	# The Fremen answer from the start.
 	await _tap(KEY_2)
-	_check(squad.selected_members.is_empty(), "the Fremen cannot be selected before the squad yard")
+	_check(squad.selected_members.size() == 1 and not squad.paul_selected, "2 selects the Scout alone, from the first yard")
+	await _tap(KEY_4)
 	await _tap(KEY_1)
 	_check(squad.paul_selected, "1 selects Paul")
 	# Hints appear only after the configured delay.
@@ -248,6 +253,19 @@ func _ranged_section() -> void:
 	_check(player.order == PlayerController.Order.ATTACK and player.order_target == target, "right-clicking the target gives Paul an attack order")
 	_check(await _await_step(&"reload_weapon", 900), "damaging the target completes the shooting step")
 	_check(HealthComponent.find_on(target).current_health < 100.0, "the training target actually took damage")
+	# One click, one shot: Paul fires what he was told to and no more.
+	await _frames(90)
+	var shots: Array[int] = [0]
+	var count_shot: Callable = func() -> void: shots[0] += 1
+	player.weapon_controller.weapon_fired.connect(count_shot)
+	await _frames(90)
+	_check(shots[0] == 0 and player.order == PlayerController.Order.IDLE, "one click fired one shot: Paul holds fire after it")
+	for click in range(3):
+		await _right_click(target.global_position)
+		await _frames(2)
+	await _frames(150)
+	_check(shots[0] == 3, "three clicks, three shots")
+	player.weapon_controller.weapon_fired.disconnect(count_shot)
 	await _tap(KEY_H)
 	_check(player.order == PlayerController.Order.IDLE, "H stops Paul")
 	await _tap(KEY_R)
@@ -266,7 +284,14 @@ func _ranged_section() -> void:
 	await _tap(KEY_1)
 	await _right_click(covered.global_position)
 	_check(player.order == PlayerController.Order.ATTACK, "right-clicking the covered target orders an attack")
-	_check(await _await_step(&"melee_fast", 1200), "Paul finding a clear angle completes the cover step")
+	# He walks for a clean line and fires once; a miss wants another click.
+	var covered_hit: bool = false
+	for attempt in range(6):
+		covered_hit = await _await_step(&"melee_fast", 300)
+		if covered_hit:
+			break
+		await _right_click(covered.global_position)
+	_check(covered_hit, "Paul finding a clear angle completes the cover step")
 	_check(player.has_line_of_sight(covered), "Paul fired from a position with a clean line")
 	_check(tutorial.current_section() == &"melee" and player.melee.enabled, "the crysknife is issued for the blade yard")
 	await _tap(KEY_H)
@@ -526,6 +551,8 @@ func _prescience_section() -> void:
 	var scout: AllyCharacter = tutorial.ally(2)
 	var exit: Vector2 = tutorial.actor(&"Marker_PrescienceExit").global_position
 	await _await_sentry(sentry, false, 120.0)
+	# A standing Scout, badly timed: the crossing the lesson warns against.
+	squad.set_stance(false)
 	await _tap(KEY_2)
 	await _right_click(exit)
 	_check(scout.ai.current_order == AllyAIController.Order.MOVE_TO, "the Scout takes the crossing order")
@@ -614,7 +641,7 @@ func _desert_section() -> void:
 	# A player standing on the far rock right-clicks the target as instructed.
 	var target: Node2D = tutorial.actor(&"Target_Desert")
 	await _right_click(target.global_position)
-	_check(player.order == PlayerController.Order.ATTACK, "right-clicking the desert target orders Paul to fire")
+	_check(player.order == PlayerController.Order.ATTACK or tutorial.count(&"weapon_fired") > 0, "right-clicking the desert target orders Paul to fire")
 	await _frames(120)
 	_check(tutorial.count(&"weapon_fired") > 0 and TerrainSafetyComponent.find_on(player).is_safe(), "Paul opened fire from the rock")
 	_check(_step_id() == &"desert_fire", "a shot from the rock does not teach the lesson: the step waits")

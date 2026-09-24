@@ -121,7 +121,8 @@ func _draw() -> void:
 		draw_arc(Vector2.ZERO, 42.0, -PI * 0.5, -PI * 0.5 + TAU * ratio(), 32, Color(1.0, 0.85, 0.4), 5.0, true)
 	if not near:
 		return
-	var text: String = "RIGHT-CLICK: %s" % label
+	var direct: bool = _player.control_mode == PlayerController.ControlMode.DIRECT
+	var text: String = ("HOLD F: %s" if direct else "RIGHT-CLICK: %s") % label
 	var size: int = WorldLabel.font_size(self, 14)
 	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var point: Vector2 = Vector2(-width * 0.5, -52.0 - (size - 14) * 0.5)

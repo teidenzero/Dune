@@ -4,6 +4,11 @@ extends Control
 
 const TUTORIAL: String = "res://scenes/missions/tutorial/tutorial_arrakeen.tscn"
 const RAID: String = "res://scenes/missions/harvester_raid/harvester_raid.tscn"
+const INTERIOR: String = "res://scenes/missions/harvester_raid/harvester_interior.tscn"
+const SOLO_TRAINING: String = "res://scenes/missions/tutorial/solo_training.tscn"
+const MAP_ROOM: String = "res://scenes/campaign/map_room.tscn"
+const HUNTER_SEEKER: String = "res://scenes/missions/act1/hunter_seeker.tscn"
+const MAIN_MENU: String = "res://scenes/menu/main_menu.tscn"
 const ARENA: String = "res://scenes/missions/harvester_raid_test.tscn"
 const COUNCIL: String = "res://scenes/campaign/council.tscn"
 
@@ -11,6 +16,11 @@ const COUNCIL: String = "res://scenes/campaign/council.tscn"
 func _ready() -> void:
 	$Rows/Buttons/Tutorial.pressed.connect(_open.bind(TUTORIAL))
 	$Rows/Buttons/Raid.pressed.connect(_open.bind(RAID))
+	$Rows/Buttons/Interior.pressed.connect(_open.bind(INTERIOR))
+	$Rows/Buttons/SoloTraining.pressed.connect(_open.bind(SOLO_TRAINING))
+	$Rows/Buttons/MapRoom.pressed.connect(_open.bind(MAP_ROOM))
+	$Rows/Buttons/HunterSeeker.pressed.connect(_open.bind(HUNTER_SEEKER))
+	$Rows/Buttons/MainMenu.pressed.connect(func() -> void: get_tree().change_scene_to_file(MAIN_MENU))
 	$Rows/Buttons/Arena.pressed.connect(_open.bind(ARENA))
 	$Rows/Buttons/Council.pressed.connect(_open.bind(COUNCIL))
 	$Rows/Buttons/Tutorial.grab_focus()
@@ -32,6 +42,17 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_open(ARENA)
 	elif event.physical_keycode == KEY_4:
 		_open(COUNCIL)
+	elif event.physical_keycode == KEY_5:
+		_open(INTERIOR)
+	elif event.physical_keycode == KEY_6:
+		_open(SOLO_TRAINING)
+	elif event.physical_keycode == KEY_7:
+		_open(MAP_ROOM)
+	elif event.physical_keycode == KEY_8:
+		_open(HUNTER_SEEKER)
+	elif event.physical_keycode == KEY_ESCAPE:
+		get_tree().change_scene_to_file(MAIN_MENU)
+
 
 
 ## Launching anything starts it clean; checkpoints are for retrying in place.

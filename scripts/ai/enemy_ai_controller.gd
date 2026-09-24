@@ -49,6 +49,8 @@ var _search_index: int = 0
 var _search_points: PackedVector2Array
 var _route: PackedVector2Array
 var _melee_wait: float = 0.0
+## Charging the slow stroke against a shielded target.
+var _slow_stroke: bool = false
 
 
 func setup(character: EnemyCharacter) -> void:
@@ -200,13 +202,25 @@ func _patrol() -> void:
 func _duel(foe: Node2D) -> void:
 	if melee == null:
 		return
+	# A shielded opponent only takes the slow blade: raise it, then drive it in.
+	if _slow_stroke and melee.state == MeleeController.State.CHARGING:
+		actor.face_position(foe.global_position)
+		if melee.slow_ready:
+			melee.release_input()
+			_slow_stroke = false
+		return
 	var busy: bool = melee.state != MeleeController.State.IDLE
 	if not busy:
 		actor.face_position(foe.global_position)
 	if busy or _melee_wait > 0.0:
 		return
 	if actor.global_position.distance_to(foe.global_position) <= melee_engage_range:
+		var guarded: ShieldComponent = ShieldComponent.find_on(foe)
 		melee.begin_input()
+		if guarded != null and guarded.enabled and melee.slow_attack != null:
+			_slow_stroke = true
+			_melee_wait = melee_cooldown + melee.slow_charge_threshold + melee.slow_attack.total_duration()
+			return
 		melee.release_input()
 		_melee_wait = melee_cooldown + (melee.current_attack.total_duration() if melee.current_attack != null else 0.0)
 

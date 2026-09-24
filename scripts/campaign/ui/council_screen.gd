@@ -31,6 +31,15 @@ var approach: PoliticalApproach
 var agent: HeroDefinition
 var intel_spent: int = 0
 var last_outcome: MissionOutcome
+## Opened from the map room for a single operation: straight to it, and back
+## to the map afterwards.
+var home_scene: String = ""
+## The prologue's lesson: one matter, the Duke talking Paul through it, and
+## the campaign carrying on afterwards.
+var lesson_mission: MissionDefinition
+var _return_button: Button
+
+signal view_shown(key: String)
 ## Tests set this to decide the roll; negative means random.
 var forced_roll: float = -1.0
 
@@ -82,6 +91,23 @@ func _ready() -> void:
 		view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		stack.add_child(view)
 	show_view("council")
+	if game != null and game.get("flow") != null and game.flow.is_lesson():
+		lesson_mission = load(game.flow.current().mission) as MissionDefinition
+		var lesson: CouncilLesson = CouncilLesson.new()
+		lesson.name = "Lesson"
+		lesson.council = self
+		add_child(lesson)
+		_rebuild_council()
+	if game != null and game.get("council_focus") != null and game.council_focus != "":
+		home_scene = game.council_home
+		definition = load(game.council_focus) as MissionDefinition
+		game.council_focus = ""
+		if definition != null:
+			open_operation()
+
+
+func go_home() -> void:
+	get_tree().change_scene_to_file(home_scene)
 
 
 # --------------------------------------------------------------------------
@@ -99,6 +125,7 @@ func show_view(key: String) -> void:
 			_rebuild_briefing()
 		"operation":
 			_refresh_operation()
+	view_shown.emit(key)
 
 
 func _header() -> Control:
@@ -157,7 +184,8 @@ func _rebuild_council() -> void:
 	for faction in CampaignState.FACTIONS:
 		left.add_child(_faction_row(faction))
 	right.add_child(HudStyle.caption("OPERATIONS"))
-	for path in MISSIONS:
+	var paths: Array = [lesson_mission.resource_path] if lesson_mission != null else MISSIONS
+	for path in paths:
 		var mission: MissionDefinition = load(path) as MissionDefinition
 		if mission != null:
 			right.add_child(_mission_card(mission))
@@ -167,8 +195,9 @@ func _rebuild_council() -> void:
 			var record: MissionOutcome = campaign.history[index]
 			var scope: String = MissionOutcome.Scope.keys()[record.scopes[0]] if not record.scopes.is_empty() else "?"
 			right.add_child(HudStyle.label("%s  ·  %s  ·  %s" % [String(record.mission_id).capitalize(), record.tier_title(), scope.to_lower()], 16, TIER_COLORS[record.tier]))
-	var back: Button = _button("BACK TO LAUNCHER", _on_back_to_launcher)
-	right.add_child(back)
+	if lesson_mission == null:
+		var back: Button = _button("BACK TO LAUNCHER", _on_back_to_launcher)
+		right.add_child(back)
 
 
 func _faction_row(faction: StringName) -> Control:
@@ -176,6 +205,15 @@ func _faction_row(faction: StringName) -> Control:
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
 	panel.add_child(row)
+	var standing_now: int = campaign.standing(faction)
+	var emblem: TextureRect = TextureRect.new()
+	emblem.texture = ArtLibrary.emblem(String(faction))
+	emblem.custom_minimum_size = Vector2(48, 48)
+	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	emblem.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	emblem.self_modulate = HudStyle.OK if standing_now > 0 else (HudStyle.DANGER if standing_now < 0 else HudStyle.SAND)
+	row.add_child(emblem)
 	var names: VBoxContainer = VBoxContainer.new()
 	names.custom_minimum_size = Vector2(250, 0)
 	names.add_child(HudStyle.label(CampaignState.faction_name(faction).to_upper(), 20, HudStyle.TEXT, HudStyle.body_font(700)))
@@ -266,18 +304,28 @@ func _rebuild_briefing() -> void:
 	var political: Button = _button("POLITICAL  ·  work the Council", open_operation)
 	political.disabled = not scopes.has(MissionOutcome.Scope.POLITICAL)
 	buttons.add_child(political)
-	var solo: Button = _button("SOLO  ·  one hero alone  (not yet)", func() -> void: pass)
+	var solo: Button = _button("SOLO  ·  one hero, alone" if scopes.has(MissionOutcome.Scope.SOLO) else "SOLO  ·  one hero, alone  (interior coming)", start_solo)
 	solo.disabled = not scopes.has(MissionOutcome.Scope.SOLO)
 	buttons.add_child(solo)
 	rows.add_child(_button("BACK", func() -> void: show_view("council")))
 
 
 func start_squad() -> void:
+	_launch(definition.squad_scene)
+
+
+func start_solo() -> void:
+	_launch(definition.solo_scene)
+
+
+func _launch(scene: String) -> void:
+	if scene == "":
+		return
 	var game: Node = get_node_or_null("/root/GameManager")
 	if game != null:
 		game.return_scene = SCENE_PATH
 		game.mission_checkpoint = &""
-	get_tree().change_scene_to_file(definition.squad_scene)
+	get_tree().change_scene_to_file(scene)
 
 
 # --- Operation ---------------------------------------------------------------
@@ -339,7 +387,11 @@ func _rebuild_operation() -> void:
 	rows.add_child(buttons)
 	_commit_button = _button("COMMIT THE OPERATION", commit_operation)
 	buttons.add_child(_commit_button)
-	buttons.add_child(_button("BACK", func() -> void: show_view("briefing")))
+	buttons.add_child(_button("BACK", func() -> void:
+		if home_scene != "":
+			go_home()
+		else:
+			show_view("briefing")))
 	_refresh_operation()
 
 
@@ -460,7 +512,14 @@ func _result_view() -> Control:
 	_result_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_result_body.custom_minimum_size = Vector2(1100, 0)
 	rows.add_child(_result_body)
-	rows.add_child(_button("RETURN TO THE COUNCIL", func() -> void: show_view("council")))
+	_return_button = _button("RETURN", func() -> void:
+		if lesson_mission != null:
+			get_node("/root/GameManager").flow.advance(get_tree())
+		elif home_scene != "":
+			go_home()
+		else:
+			show_view("council"))
+	rows.add_child(_return_button)
 	return rows
 
 
@@ -476,6 +535,8 @@ func _show_result() -> void:
 		lines.append("")
 		lines.append("The operation was exposed. The Harkonnen know someone tried.")
 	_result_body.text = "\n".join(lines)
+	if lesson_mission != null:
+		_return_button.text = "CONTINUE"
 	show_view("result")
 
 

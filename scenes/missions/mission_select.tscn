@@ -67,6 +67,31 @@ custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 text = "2  -  Play Mission: Harvester Raid"
 
+[node name="Interior" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+text = "5  -  Solo: Inside the Harvester (isometric)"
+
+[node name="SoloTraining" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+text = "6  -  Solo Training (how the Solo scope plays)"
+
+[node name="MapRoom" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+text = "7  -  Arrakis: the strategic map (Act II)"
+
+[node name="HunterSeeker" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+text = "8  -  Act I, 1.1: The Hunter-Seeker"
+
+[node name="MainMenu" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+text = "ESC  -  Back to the main menu"
+
 [node name="Arena" type="Button" parent="Rows/Buttons"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2

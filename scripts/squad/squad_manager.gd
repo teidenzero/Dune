@@ -50,11 +50,27 @@ var notice: String = ""
 ## register a named multiplier here instead of rewriting command_range users.
 var command_range_modifiers: Dictionary = {}
 var dragging: bool = false
+## Solo scope: the hero is steered directly; this manager only pauses (P).
+var solo_mode: bool = false
+## The squad's stance: low or standing, the same for everyone. Paul's stance
+## is the truth; the Fremen follow it, whatever their orders.
+var squad_low: bool = false
+## Solo scope on click orders (the isometric interiors): one hero, always
+## selected. A click on the floor walks him to that tile, right-click on an
+## enemy fires, left-click on one draws the crysknife; Space dodges, T raises
+## the shield and P pauses.
+var hero_mode: bool = false:
+	set(value):
+		hero_mode = value
+		if hero_mode:
+			select_slot(1)
 ## Left button held on a target: the blade is being charged. How long it is
 ## held decides the stroke, in real time so it works while paused.
 var blade_charging: bool = false
 var _charge_target: Node2D
 var _charge_start: int = 0
+## The held blade will open a turn-based fight on release, not cut in real time.
+var _charge_opens_fight: bool = false
 var _drag_start: Vector2
 var _marker_until: int = 0
 var _rejection_until: int = 0
@@ -186,7 +202,7 @@ func select_units(units: Array, additive: bool = false) -> void:
 
 func clear_selection() -> void:
 	selected_members.clear()
-	paul_selected = false
+	paul_selected = hero_mode and _paul_alive()
 	_refresh_selection()
 
 
@@ -253,18 +269,25 @@ func issue_hold() -> void:
 func issue_context(point: Vector2, queue: bool = false, run: bool = false) -> void:
 	if not point.is_finite() or not has_selection():
 		return
-	var enemy: Node2D = hostile_at(point)
+	var enemy: Node2D = _click_target(point)
+	if hero_mode and enemy != null and _open_fight(enemy, TurnRules.Attack.FIRE):
+		return
 	var usable: Node2D = interactable_at(point) if enemy == null else null
 	var paul_ordered: bool = false
 	if paul_selected and _paul_alive():
 		paul_ordered = true
 		if enemy != null:
+			# A guard or a fuel tank: Paul shoots it, once per click.
 			player.attack(enemy)
+			var weapon: WeaponController = player.weapon_controller
+			if weapon.current_ammo <= 0 and not weapon.is_reloading:
+				flash_notice("EMPTY - PRESS R TO RELOAD")
 		elif usable != null:
 			player.interact_with(usable)
 		elif queue:
-			player.queue_move(point)
+			player.queue_move(_tile_point(point))
 		else:
+			point = _tile_point(point)
 			player.move_to(point, run)
 	var recipients: Array[AllyCharacter] = _resolve_recipients()
 	var index: int = 0
@@ -290,22 +313,31 @@ func issue_context(point: Vector2, queue: bool = false, run: bool = false) -> vo
 	order_issued.emit(AllyAIController.Order.ATTACK if marker_attack else AllyAIController.Order.MOVE_TO)
 
 
-## C: every selected unit goes low - or stands, if they all already were.
+## In an isometric interior a move goes to the centre of the clicked tile.
+func _tile_point(point: Vector2) -> Vector2:
+	if not player.isometric:
+		return point
+	var level: IsoLevel = get_tree().get_first_node_in_group("iso_level") as IsoLevel
+	var cell: Vector2i = IsoMath.world_to_cell(point)
+	if level != null and level.is_wall(cell):
+		return point
+	return IsoMath.cell_to_world(cell)
+
+
+## C: the whole squad goes low, or stands - never half and half.
 func toggle_sneak() -> void:
-	var units: Array[Node2D] = selected_units()
-	if units.is_empty():
-		return
-	var all_low: bool = true
-	for unit in units:
-		if unit == player:
-			all_low = all_low and player.is_crouching
-		elif unit is AllyCharacter:
-			all_low = all_low and unit.sneaking
-	for unit in units:
-		if unit == player:
-			player.set_crouching(not all_low)
-		elif unit is AllyCharacter:
-			unit.sneaking = not all_low
+	set_stance(not squad_low)
+
+
+func set_stance(low: bool) -> void:
+	squad_low = low
+	if _paul_alive():
+		player.set_crouching(low)
+	for member in members:
+		if is_instance_valid(member):
+			member.sneaking = low
+			if not member.health.is_dead:
+				member.is_crouching = low
 
 
 func reload_selected() -> void:
@@ -356,8 +388,13 @@ func _begin_blade_charge(target: Node2D) -> void:
 	blade_charging = true
 	_charge_target = target
 	_charge_start = Time.get_ticks_msec()
-	# The blade comes up now, not on release.
-	player.melee_hold(target)
+	# In an interior the cut opens the fight: Paul holds still while the
+	# player decides quick or slow, and strikes first on release.
+	var combat: TurnCombat = _turn_combat()
+	_charge_opens_fight = combat != null and combat.can_open_with(target, TurnRules.Attack.QUICK_KNIFE)
+	if not _charge_opens_fight:
+		# The blade comes up now, not on release.
+		player.melee_hold(target)
 	marker_position = target.global_position
 	marker_attack = true
 	_marker_until = Time.get_ticks_msec() + 850
@@ -366,19 +403,46 @@ func _begin_blade_charge(target: Node2D) -> void:
 ## Button released: a quick click cuts fast, a held one commits the slow stroke.
 func _release_blade_charge() -> void:
 	var slow: bool = blade_charge_ratio() >= 1.0
+	var target: Node2D = _charge_target
+	var opens: bool = _charge_opens_fight
 	blade_charging = false
 	_charge_target = null
-	if _paul_alive():
-		player.melee_let_go(slow)
+	_charge_opens_fight = false
 	set_targeting(Targeting.NONE)
+	if not _paul_alive():
+		return
+	if opens:
+		var kind: TurnRules.Attack = TurnRules.Attack.SLOW_KNIFE if slow else TurnRules.Attack.QUICK_KNIFE
+		if _open_fight(target, kind):
+			return
+		# Out of reach for one turn: the real-time order walks him up.
+		player.melee_strike(target, slow)
+		return
+	player.melee_let_go(slow)
 
 
 func cancel_blade_charge() -> void:
 	var was_charging: bool = blade_charging
 	blade_charging = false
 	_charge_target = null
+	_charge_opens_fight = false
 	if was_charging and _paul_alive() and player.order == PlayerController.Order.MELEE:
 		player.stop()
+
+
+## An interior's turn-based fights, if this level has them.
+func _turn_combat() -> TurnCombat:
+	return get_tree().get_first_node_in_group("turn_combat") as TurnCombat
+
+
+## Whoever attacks first acts first: in an interior, an attack Paul could make
+## on his first turn opens the fight with it. False leaves it to real time.
+func _open_fight(target: Node2D, kind: TurnRules.Attack) -> bool:
+	var combat: TurnCombat = _turn_combat()
+	if combat == null or not combat.can_open_with(target, kind):
+		return false
+	combat.open_with_attack(target, kind)
+	return true
 
 
 func flash_notice(text: String, seconds: float = 1.8) -> void:
@@ -431,6 +495,9 @@ func actor_at(point: Vector2, group: String, radius: float = PICK_RADIUS) -> Nod
 	for actor: Node2D in get_tree().get_nodes_in_group(group):
 		if not actor.can_process() and not get_tree().paused:
 			continue
+		# Behind a door the level has not opened yet: not in play.
+		if actor.get_meta("dormant", false):
+			continue
 		var health: HealthComponent = HealthComponent.find_on(actor)
 		if health == null or health.is_dead:
 			continue
@@ -444,10 +511,42 @@ func actor_at(point: Vector2, group: String, radius: float = PICK_RADIUS) -> Nod
 ## Anything Paul may attack: Harkonnen, and the tutorial's training targets.
 func hostile_at(point: Vector2) -> Node2D:
 	var enemy: Node2D = actor_at(point, "enemies")
+	if enemy == null and hero_mode:
+		# Close up, the player clicks a guard's body, not his feet.
+		enemy = actor_at(point + Vector2(0, 40), "enemies", PICK_RADIUS + 6.0)
 	return enemy if enemy != null else actor_at(point, "training_targets")
 
 
+## A fuel tank under the cursor that a shot could set off.
+func tank_at(point: Vector2) -> FuelTank:
+	var best: FuelTank
+	var distance: float = 34.0
+	for node: Node in get_tree().get_nodes_in_group("fuel_tanks"):
+		var tank: FuelTank = node as FuelTank
+		if tank == null or tank.detonated or tank.get_meta("dormant", false):
+			continue
+		var gap: float = point.distance_to(tank.global_position)
+		if gap < distance:
+			distance = gap
+			best = tank
+	return best
+
+
+## What a click here is aimed at: a tank right under the cursor beats a
+## guard caught only by the lenient body probe.
+func _click_target(point: Vector2) -> Node2D:
+	var enemy: Node2D = hostile_at(point)
+	var tank: FuelTank = tank_at(point)
+	if tank == null:
+		return enemy
+	if enemy == null or point.distance_to(tank.global_position) < point.distance_to(enemy.global_position):
+		return tank
+	return enemy
+
+
 func unit_at(point: Vector2) -> Node2D:
+	if hero_mode:
+		return null
 	var ally: Node2D = actor_at(point, "allies")
 	if ally != null and commands_enabled:
 		return ally
@@ -459,7 +558,8 @@ func unit_at(point: Vector2) -> Node2D:
 ## Spice machines and hold-to-use points (beacons, sabotage panels).
 func interactable_at(point: Vector2) -> Node2D:
 	var best: Node2D
-	var distance: float = 70.0
+	# Interior consoles stand up off the floor: a click on the box counts.
+	var distance: float = 110.0 if hero_mode else 70.0
 	for node: Node in get_tree().get_nodes_in_group("interaction_points") + get_tree().get_nodes_in_group("worm_machines"):
 		var candidate: Node2D = node as Node2D
 		if candidate == null or not (candidate is InteractionPoint or candidate is SpiceMachine):
@@ -483,7 +583,10 @@ func context_kind(point: Vector2) -> String:
 		return "SELECT"
 	if not has_selection():
 		return ""
-	if hostile_at(point) != null:
+	var aimed: Node2D = _click_target(point)
+	if aimed is FuelTank:
+		return "FIRE" if paul_selected else "MOVE"
+	if aimed != null:
 		return "LEFT: KNIFE · RIGHT: FIRE" if paul_selected and player.melee.enabled else "ATTACK"
 	if paul_selected and interactable_at(point) != null:
 		return "USE"
@@ -502,6 +605,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			queue_redraw()
 		return
 	if player.health.is_dead:
+		return
+	if solo_mode:
+		if event.is_action_pressed("solo_pause") and not event.is_echo():
+			set_paused(not paused)
+			get_viewport().set_input_as_handled()
+		return
+	if hero_mode and _hero_key(event):
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton:
 		_handle_mouse(event as InputEventMouseButton)
@@ -540,6 +651,28 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
+## The hero's own keys, and the squad keys that mean nothing with one hero.
+func _hero_key(event: InputEvent) -> bool:
+	if event is InputEventMouseButton or event.is_echo() or not event.is_pressed():
+		return false
+	if event.is_action_pressed("solo_pause"):
+		set_paused(not paused)
+	elif event.is_action_pressed("dodge"):
+		if not paused:
+			player.try_dodge()
+	elif event.is_action_pressed("shield_toggle"):
+		player.set_shield(not player.shield_active())
+	elif event.is_action_pressed("squad_paul") or event.is_action_pressed("squad_scout") or event.is_action_pressed("squad_warrior") or event.is_action_pressed("squad_all"):
+		var camera: TacticalCamera = player.get_node_or_null("TacticalCamera") as TacticalCamera
+		if camera != null:
+			camera.center_on(player.global_position)
+	elif event.is_action_pressed("squad_hold") or event.is_action_pressed("squad_follow"):
+		pass
+	else:
+		return false
+	return true
+
+
 func _handle_mouse(event: InputEventMouseButton) -> void:
 	var point: Vector2 = get_canvas_transform().affine_inverse() * event.position
 	if event.button_index == MOUSE_BUTTON_LEFT:
@@ -552,6 +685,9 @@ func _handle_mouse(event: InputEventMouseButton) -> void:
 					flash_notice("LEFT-CLICK A TARGET · RIGHT-CLICK CANCELS")
 			elif hostile != null and paul_selected and _paul_alive():
 				_begin_blade_charge(hostile)
+			elif hero_mode:
+				# One hero: a left click on the floor is a move, as in Crusader.
+				_context_click(point, event.shift_pressed)
 			else:
 				dragging = true
 				_drag_start = point
@@ -567,12 +703,17 @@ func _handle_mouse(event: InputEventMouseButton) -> void:
 			cancel_blade_charge()
 			set_targeting(Targeting.NONE)
 		else:
-			var now: int = Time.get_ticks_msec()
-			var run: bool = now - _last_context_time <= DOUBLE_TAP_MS and point.distance_to(_last_context_point) <= 60.0
-			_last_context_time = now
-			_last_context_point = point
-			issue_context(point, event.shift_pressed, run)
+			_context_click(point, event.shift_pressed)
 		get_viewport().set_input_as_handled()
+
+
+## A second click on the same spot in quick succession runs.
+func _context_click(point: Vector2, queue: bool) -> void:
+	var now: int = Time.get_ticks_msec()
+	var run: bool = now - _last_context_time <= DOUBLE_TAP_MS and point.distance_to(_last_context_point) <= 60.0
+	_last_context_time = now
+	_last_context_point = point
+	issue_context(point, queue, run)
 
 
 func _finish_drag(point: Vector2, additive: bool) -> void:
@@ -613,6 +754,9 @@ func _select_key(slot: int) -> void:
 # --------------------------------------------------------------------------
 
 func _process(_delta: float) -> void:
+	# Anything that stands Paul up (a run order, a tutorial) stands everyone.
+	if _paul_alive() and player.is_crouching != squad_low:
+		set_stance(player.is_crouching)
 	_update_links()
 	queue_redraw()
 
@@ -627,6 +771,8 @@ func _update_links() -> void:
 
 
 func _draw() -> void:
+	if solo_mode:
+		return
 	_draw_command_range()
 	_draw_links()
 	_draw_marker()

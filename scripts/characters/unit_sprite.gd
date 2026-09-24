@@ -89,6 +89,18 @@ func _trigger(animation: StringName) -> void:
 	_play(animation, true)
 
 
+## A one-shot action played on demand (turn-based combat's shots and cuts).
+func play_action(animation: StringName) -> void:
+	_trigger(animation)
+
+
+## Back on his feet: a rewound vision.
+func revive() -> void:
+	_dead = false
+	_one_shot = &""
+	_play(&"idle", true)
+
+
 func _on_animation_finished() -> void:
 	if not _dead:
 		_one_shot = &""
@@ -169,6 +181,8 @@ func _crouching() -> bool:
 
 
 func _in_combat() -> bool:
+	if actor.get("turn_based") == true:
+		return true
 	var ai: Node = actor.get("ai") as Node
 	if ai != null and ai.get("behavior") != null:
 		return ai.get("behavior") == AllyAIController.Behavior.COMBAT

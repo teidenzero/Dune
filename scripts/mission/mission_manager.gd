@@ -145,6 +145,9 @@ func required_remaining() -> int:
 func begin() -> void:
 	outcome = Outcome.RUNNING
 	elapsed = 0.0
+	var game: Node = get_node_or_null("/root/GameManager")
+	if game != null and game.get("campaign") != null:
+		game.campaign.begin_mission()
 	mission_started.emit()
 
 
@@ -204,6 +207,27 @@ func commit_outcome() -> void:
 	var game: Node = get_node_or_null("/root/GameManager")
 	if game != null and game.get("campaign") != null:
 		game.campaign.apply(outcome_record)
+
+
+## Everything a prescient vision could change, for taking it back.
+func snapshot() -> Dictionary:
+	var states: Dictionary = {}
+	for id in _order:
+		var item: MissionObjective = _objectives[id]
+		states[id] = [item.state, item.progress]
+	return {"objectives": states, "phase": phase, "results": results.duplicate(true)}
+
+
+func restore(data: Dictionary) -> void:
+	var states: Dictionary = data.get("objectives", {})
+	for id in states:
+		var item: MissionObjective = objective(id)
+		if item != null:
+			item.state = states[id][0]
+			item.progress = states[id][1]
+	results = (data.get("results", {}) as Dictionary).duplicate(true)
+	set_phase(data.get("phase", phase))
+	objectives_changed.emit()
 
 
 # --------------------------------------------------------------------------

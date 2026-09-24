@@ -1,5 +1,7 @@
-[gd_scene load_steps=42 format=3]
+[gd_scene load_steps=44 format=3]
 
+[ext_resource type="Script" path="res://scripts/worm/spice_field.gd" id="spicefield"]
+[ext_resource type="PackedScene" path="res://scenes/environment/fuel_tank.tscn" id="fueltank"]
 [ext_resource type="Resource" path="res://resources/missions/harvester_raid.tres" id="mission_def"]
 [ext_resource type="Script" path="res://scripts/environment/desert_ground.gd" id="ground"]
 [ext_resource type="Script" path="res://scripts/environment/arena_navigation.gd" id="nav"]
@@ -630,6 +632,16 @@ position = Vector2(-140.0, 220.0)
 [node name="Checkpoint_escape" type="Marker2D" parent="Checkpoints"]
 position = Vector2(0.0, -640.0)
 
+[node name="SpiceField_North" type="Node2D" parent="."]
+position = Vector2(420, -760)
+script = ExtResource("spicefield")
+radius = 170.0
+
+[node name="SpiceField_South" type="Node2D" parent="."]
+position = Vector2(-420, 380)
+script = ExtResource("spicefield")
+radius = 150.0
+
 [node name="Player" parent="." instance=ExtResource("player")]
 position = Vector2(0, 1560)
 
@@ -710,3 +722,20 @@ text = "HARVESTER RAID - cripple the crawler, then reach the rock"
 mission = NodePath("../Mission")
 
 [editable path="Player"]
+
+[node name="FuelTanks" type="Node2D" parent="."]
+
+[node name="Tank_Engine" parent="FuelTanks" instance=ExtResource("fueltank")]
+position = Vector2(-60, -560)
+
+[node name="Tank_Deck" parent="FuelTanks" instance=ExtResource("fueltank")]
+position = Vector2(720, -470)
+
+[node name="Tank_Intake" parent="FuelTanks" instance=ExtResource("fueltank")]
+position = Vector2(-30, 70)
+
+[node name="Tank_Beacon" parent="FuelTanks" instance=ExtResource("fueltank")]
+position = Vector2(-1000, -40)
+
+[node name="Tank_South" parent="FuelTanks" instance=ExtResource("fueltank")]
+position = Vector2(560, 90)

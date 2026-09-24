@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MeleeAttackData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/combat/melee_attack_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+attack_name = "Harkonnen Blade (slow)"
+damage = 34.0
+attack_range = 72.0
+windup_time = 0.5
+active_time = 0.16
+recovery_time = 0.8
+attack_velocity = 90.0
+move_speed_multiplier = 0.4
+noise_radius = 160.0

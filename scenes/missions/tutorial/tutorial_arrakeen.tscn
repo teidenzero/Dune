@@ -1,5 +1,6 @@
-[gd_scene load_steps=41 format=3]
+[gd_scene load_steps=42 format=3]
 
+[ext_resource type="Script" path="res://scripts/worm/spice_field.gd" id="spicefield"]
 [ext_resource type="Script" path="res://scripts/environment/tutorial_ground.gd" id="ground"]
 [ext_resource type="Script" path="res://scripts/environment/arena_navigation.gd" id="nav"]
 [ext_resource type="Script" path="res://scripts/ai/disturbance_bus.gd" id="bus"]
@@ -753,6 +754,7 @@ shape = SubResource("Shape_presc_exit")
 [node name="Movement" type="Node2D" parent="Sections"]
 
 [node name="SandBed" type="Polygon2D" parent="Sections/Movement"]
+z_index = -5
 polygon = PackedVector2Array(-1080, 210, -640, 210, -640, 450, -1080, 450)
 color = Color(0.62, 0.53, 0.37, 1)
 
@@ -1233,21 +1235,25 @@ kind = 2
 shape = SubResource("Terrain_havenrock")
 
 [node name="StartSlab" type="Polygon2D" parent="Sections/Desert"]
+z_index = -5
 position = Vector2(6980.0, 0.0)
 polygon = PackedVector2Array(-120.0, -150.0, 120.0, -150.0, 120.0, 150.0, -120.0, 150.0)
 color = Color(0.4, 0.37, 0.33, 1)
 
 [node name="MidSlab" type="Polygon2D" parent="Sections/Desert"]
+z_index = -5
 position = Vector2(7520.0, -200.0)
 polygon = PackedVector2Array(-120.0, -140.0, 120.0, -140.0, 120.0, 140.0, -120.0, 140.0)
 color = Color(0.4, 0.37, 0.33, 1)
 
 [node name="FarSlab" type="Polygon2D" parent="Sections/Desert"]
+z_index = -5
 position = Vector2(8040.0, 200.0)
 polygon = PackedVector2Array(-120.0, -140.0, 120.0, -140.0, 120.0, 140.0, -120.0, 140.0)
 color = Color(0.4, 0.37, 0.33, 1)
 
 [node name="HavenSlab" type="Polygon2D" parent="Sections/Desert"]
+z_index = -5
 position = Vector2(8460.0, -140.0)
 polygon = PackedVector2Array(-130.0, -160.0, 130.0, -160.0, 130.0, 160.0, -130.0, 160.0)
 color = Color(0.4, 0.37, 0.33, 1)
@@ -1382,6 +1388,7 @@ kind = 2
 shape = SubResource("Terrain_combinedrock")
 
 [node name="CombinedSlab" type="Polygon2D" parent="Sections/Combined"]
+z_index = -5
 position = Vector2(9240, 0)
 polygon = PackedVector2Array(-350.0, -550.0, 350.0, -550.0, 350.0, 550.0, -350.0, 550.0)
 color = Color(0.62, 0.52, 0.34, 1)
@@ -1396,6 +1403,11 @@ theme_override_colors/font_color = Color(0.86, 0.82, 0.72, 0.8)
 theme_override_font_sizes/font_size = 17
 text = "COMBINED EXERCISE"
 
+[node name="SpiceField_Desert" type="Node2D" parent="."]
+position = Vector2(7700, 330)
+script = ExtResource("spicefield")
+radius = 130.0
+
 [node name="Player" parent="." instance=ExtResource("player")]
 position = Vector2(-1520, 0)
 
@@ -1408,7 +1420,7 @@ limit_bottom = 660
 [node name="Allies" type="Node2D" parent="."]
 
 [node name="Scout" parent="Allies" instance=ExtResource("ally")]
-position = Vector2(2780, 140)
+position = Vector2(-1590, 90)
 
 [node name="Highlight_Scout" type="Node2D" parent="Allies/Scout"]
 script = ExtResource("marker")
@@ -1416,7 +1428,7 @@ radius = 34.0
 color = Color(0.6, 0.95, 1, 1)
 
 [node name="Warrior" parent="Allies" instance=ExtResource("ally")]
-position = Vector2(2780, -140)
+position = Vector2(-1450, 90)
 data = ExtResource("warrior")
 follow_offset = Vector2(60, 70)
 selection_slot = 3

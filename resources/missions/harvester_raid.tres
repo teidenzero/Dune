@@ -202,4 +202,5 @@ stakes = {
 }
 }
 squad_scene = "res://scenes/missions/harvester_raid/harvester_raid.tscn"
+solo_scene = "res://scenes/missions/harvester_raid/harvester_interior.tscn"
 political_approaches = Array[ExtResource("3")]([SubResource("choam_bribe"), SubResource("guild_delay"), SubResource("smugglers_strip")])

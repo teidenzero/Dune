@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/characters/enemies/harkonnen_guard.tscn" id="1_base"]
 [ext_resource type="Script" path="res://scripts/components/shield_component.gd" id="2_shield"]
 [ext_resource type="Script" path="res://scripts/ui/shield_visuals.gd" id="3_shieldvis"]
 [ext_resource type="Script" path="res://scripts/combat/melee_controller.gd" id="4_melee"]
 [ext_resource type="Resource" path="res://resources/weapons/harkonnen_blade.tres" id="5_blade"]
+[ext_resource type="Resource" path="res://resources/weapons/harkonnen_blade_slow.tres" id="7_slowblade"]
 [ext_resource type="Script" path="res://scripts/ui/melee_visuals.gd" id="6_meleevis"]
 
 [node name="HarkonnenElite" instance=ExtResource("1_base")]
@@ -56,6 +57,7 @@ polygon = PackedVector2Array(0, 0, 45.0, -53.6, 55.5, -42.6, 63.4, -29.6, 68.3, 
 [node name="MeleeController" type="Node" parent="." node_paths=PackedStringArray("owner_actor", "hitbox")]
 script = ExtResource("4_melee")
 fast_attack = ExtResource("5_blade")
+slow_attack = ExtResource("7_slowblade")
 owner_actor = NodePath("..")
 hitbox = NodePath("../AimPivot/MeleeHitbox")
 hitbox_base_range = 70.0

@@ -16,6 +16,17 @@ var face_travel: bool = true
 ## Optional; only the Elite composes one.
 var shield: ShieldComponent
 var _flash: Tween
+## Turn-based combat drives him: his AI, perception and movement stand still.
+var turn_based: bool = false:
+	set(value):
+		turn_based = value
+		var live: bool = not value and not health.is_dead
+		set_physics_process(live)
+		ai.set_physics_process(live)
+		perception.set_physics_process(live)
+		if value:
+			stop_moving()
+			velocity = Vector2.ZERO
 
 @onready var health: HealthComponent = $HealthComponent
 @onready var weapon: WeaponController = $WeaponController
@@ -25,7 +36,11 @@ var _flash: Tween
 @onready var aim_pivot: Node2D = $AimPivot
 
 
+var _alive_layer: int = 0
+
+
 func _ready() -> void:
+	_alive_layer = collision_layer
 	shield = ShieldComponent.find_on(self)
 	aim_pivot.rotation = deg_to_rad(initial_facing_degrees)
 	navigation_destination = global_position
@@ -73,6 +88,32 @@ func reached_destination() -> bool:
 func face_position(position: Vector2) -> void:
 	if global_position.distance_squared_to(position) > 1.0:
 		aim_pivot.global_rotation = (position - global_position).angle()
+
+
+## Undo a death: a prescient vision that is taken back never happened.
+func revive(health_value: float) -> void:
+	health.is_dead = false
+	health.current_health = clampf(health_value, 1.0, health.max_health)
+	health.health_changed.emit(health.current_health, health.max_health)
+	ai.state = EnemyAIController.State.PATROL
+	ai.set_physics_process(not turn_based)
+	set_physics_process(not turn_based)
+	perception.set_physics_process(not turn_based)
+	weapon.enabled = not ai.melee_only
+	var blade: MeleeController = get_node_or_null("MeleeController") as MeleeController
+	if blade != null:
+		blade.enabled = true
+	$Visuals.modulate = Color.WHITE
+	$Visuals.scale = Vector2.ONE
+	$AimPivot.show()
+	$NameLabel.text = display_name
+	if shield != null:
+		shield.enabled = true
+	collision_layer = _alive_layer
+	$CollisionShape2D.disabled = false
+	var sprite: UnitSprite = get_node_or_null("Sprite") as UnitSprite
+	if sprite != null:
+		sprite.revive()
 
 
 func _on_damage_received(_amount: float, source: Node) -> void:

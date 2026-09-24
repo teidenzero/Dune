@@ -1,0 +1,73 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/environment/arena_navigation.gd" id="nav"]
+[ext_resource type="Script" path="res://scripts/ai/disturbance_bus.gd" id="bus"]
+[ext_resource type="Script" path="res://scripts/environment/iso/iso_level.gd" id="level"]
+[ext_resource type="Script" path="res://scripts/recon/recon_manager.gd" id="recon"]
+[ext_resource type="Script" path="res://scripts/squad/squad_manager.gd" id="squad"]
+[ext_resource type="Script" path="res://scripts/tutorial/solo_tutorial.gd" id="tutorial"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/tutorial_prompt.tscn" id="prompt"]
+
+[node name="SoloTraining" type="Node2D"]
+
+[node name="Backdrop" type="CanvasLayer" parent="."]
+layer = -10
+
+[node name="Dark" type="ColorRect" parent="Backdrop"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.07, 0.06, 0.05, 1)
+
+[node name="Disturbances" type="Node" parent="." groups=["disturbance_bus"]]
+script = ExtResource("bus")
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]
+script = ExtResource("nav")
+clearance = 16.0
+
+[node name="World" type="Node2D" parent="." node_paths=PackedStringArray("player", "navigation")]
+y_sort_enabled = true
+script = ExtResource("level")
+player = NodePath("Player")
+navigation = NodePath("../NavigationRegion2D")
+
+[node name="Player" parent="World" instance=ExtResource("player")]
+
+[node name="Enemies" type="Node2D" parent="World"]
+y_sort_enabled = true
+
+[node name="SquadManager" type="Node2D" parent="." groups=["squad_manager"] node_paths=PackedStringArray("player")]
+z_index = 5
+script = ExtResource("squad")
+player = NodePath("../World/Player")
+
+[node name="ReconManager" type="Node2D" parent="." groups=["recon_manager"]]
+z_index = 4
+script = ExtResource("recon")
+
+[node name="Tutorial" type="Node" parent="." node_paths=PackedStringArray("player", "squad", "level", "enemy_root", "prompt")]
+script = ExtResource("tutorial")
+player = NodePath("../World/Player")
+squad = NodePath("../SquadManager")
+level = NodePath("../World")
+enemy_root = NodePath("../World/Enemies")
+prompt = NodePath("../TutorialPrompt")
+
+[node name="UI" parent="." node_paths=PackedStringArray("player", "squad", "recon") instance=ExtResource("ui")]
+player = NodePath("../World/Player")
+squad = NodePath("../SquadManager")
+recon = NodePath("../ReconManager")
+
+[node name="Title" parent="UI/Screen" index="0"]
+text = "SOLO TRAINING - the lower levels of the Arrakeen Residency"
+
+[node name="TutorialPrompt" parent="." node_paths=PackedStringArray("manager") instance=ExtResource("prompt")]
+manager = NodePath("../Tutorial")
+next_scene = "res://scenes/missions/harvester_raid/harvester_interior.tscn"
+next_label = "Inside the Harvester"

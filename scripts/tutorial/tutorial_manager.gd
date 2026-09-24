@@ -180,7 +180,13 @@ func _begin() -> void:
 				start = i
 				break
 	running = true
+	var game: Node = get_node_or_null("/root/GameManager")
+	if game != null and game.get("campaign") != null:
+		game.campaign.begin_mission()
 	_enter_step(start, true)
+	# The whole squad starts selected: the first right-click moves all three.
+	if is_instance_valid(squad):
+		squad.call_deferred("select_slot", 4)
 
 
 func current_step() -> TutorialStep:
@@ -287,10 +293,15 @@ func _apply_section(section: StringName, reposition: bool) -> void:
 	if is_instance_valid(player):
 		player.weapon_controller.enabled = reached >= sections.find("ranged")
 		player.melee.set_enabled(reached >= sections.find("melee"))
+	# The yard is a squad lesson from the first step: Paul and his two Fremen
+	# guides move together, and every order reaches them.
 	if is_instance_valid(squad):
-		squad.commands_enabled = reached >= sections.find("squad")
-		if not squad.commands_enabled and not squad.selected_members.is_empty():
-			squad.select_slot(1)
+		squad.commands_enabled = true
+		# While Paul himself is drilled, the Fremen watch and hold their fire.
+		var drilling: bool = reached < sections.find("squad")
+		for member in squad.members:
+			if is_instance_valid(member):
+				member.ai.hold_fire = drilling
 	if reposition:
 		_prepare_section(section)
 
@@ -315,13 +326,7 @@ func _prepare_section(section: StringName) -> void:
 		return
 	if section == &"squad":
 		set_actor_armed(&"Target_SquadEnemy", false)
-	if sections.find(String(section)) < sections.find("squad"):
-		# The Fremen wait in their own yard until they are introduced.
-		for member in squad.members:
-			if is_instance_valid(member) and not member.health.is_dead:
-				member.ai.issue_order(AllyAIController.Order.HOLD, member.global_position)
-	else:
-		regroup_allies()
+	regroup_allies()
 
 
 ## Holds a training opponent inert until its lesson begins, then gives it its
@@ -355,9 +360,7 @@ func station_allies(points: Array) -> void:
 	for member in squad.members:
 		if not is_instance_valid(member) or member.health.is_dead or slot >= points.size():
 			continue
-		var point: Vector2 = points[slot]
-		if member.navigation_ready():
-			point = NavigationServer2D.map_get_closest_point(member.agent.get_navigation_map(), point)
+		var point: Vector2 = _on_navmesh(member, points[slot])
 		member.ai.issue_order(AllyAIController.Order.MOVE_TO, point)
 		slot += 1
 
@@ -368,18 +371,28 @@ func regroup_allies() -> void:
 	if not is_instance_valid(squad) or not is_instance_valid(player):
 		return
 	var index_offset: int = 0
-	for member in squad.members:
+	# At the very start the squad may not have registered its Fremen yet.
+	var fremen: Array = squad.members if not squad.members.is_empty() else get_tree().get_nodes_in_group("allies")
+	for member: AllyCharacter in fremen:
 		if not is_instance_valid(member) or member.health.is_dead:
 			continue
 		var offset: Vector2 = Vector2(-70.0 if index_offset == 0 else 70.0, 90.0)
-		var point: Vector2 = player.global_position + offset
-		if member.navigation_ready():
-			point = NavigationServer2D.map_get_closest_point(member.agent.get_navigation_map(), point)
+		var point: Vector2 = _on_navmesh(member, player.global_position + offset)
 		member.global_position = point
 		member.velocity = Vector2.ZERO
 		member.stop_moving()
 		member.ai.issue_order(AllyAIController.Order.FOLLOW)
 		index_offset += 1
+
+
+## The nearest walkable point to `point`. Right after a scene change the
+## navigation map can report itself ready before this scene's mesh is in it,
+## and answer (0, 0) - across the yard. A snap that far is not trusted.
+func _on_navmesh(member: AllyCharacter, point: Vector2) -> Vector2:
+	if not member.navigation_ready():
+		return point
+	var snapped: Vector2 = NavigationServer2D.map_get_closest_point(member.agent.get_navigation_map(), point)
+	return snapped if snapped.distance_to(point) <= 120.0 else point
 
 
 func _on_pause_changed(active: bool) -> void:

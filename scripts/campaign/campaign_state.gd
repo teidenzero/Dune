@@ -29,6 +29,16 @@ var resources: Dictionary = {}
 var standings: Dictionary = {}
 var heat: int = 0
 var history: Array[MissionOutcome] = []
+## Hero id -> HeroProgress: skills, ranks, spice saturation.
+var progress: Dictionary = {}
+## Lore found: entry id -> true. The Codex.
+var codex: Dictionary = {}
+## Carried items, by id: spice doses and whatever comes later.
+var items: Dictionary = {}
+## This mission's growth: gains per hero/skill (for the per-mission cap) and
+## the lines the results screen shows.
+var mission_gains: Dictionary = {}
+var growth_log: PackedStringArray = []
 
 
 func _init() -> void:
@@ -44,12 +54,17 @@ func reset() -> void:
 		standings[key] = 0
 	heat = 0
 	history.clear()
+	progress.clear()
+	codex.clear()
+	items = {&"spice_dose": 1}
+	begin_mission()
 	changed.emit()
 
 
 ## Applies a finished mission. Standings and heat clamp to their scales;
-## resources never go below zero.
-func apply(outcome: MissionOutcome) -> void:
+## resources never go below zero. `record` false is routine bookkeeping (a
+## week's water) that changes the numbers but does not enter the chronicle.
+func apply(outcome: MissionOutcome, record: bool = true) -> void:
 	if outcome == null or history.has(outcome):
 		return
 	for key in outcome.resources:
@@ -57,7 +72,29 @@ func apply(outcome: MissionOutcome) -> void:
 	for key in outcome.standings:
 		standings[key] = clampi(int(standings.get(key, 0)) + int(outcome.standings[key]), STANDING_MIN, STANDING_MAX)
 	heat = clampi(heat + outcome.heat, 0, HEAT_MAX)
-	history.append(outcome)
+	if record:
+		history.append(outcome)
+	changed.emit()
+
+
+## A new mission (or tutorial) starts: its growth is counted afresh.
+func begin_mission() -> void:
+	mission_gains.clear()
+	growth_log = PackedStringArray()
+
+
+func hero_progress(hero: StringName) -> HeroProgress:
+	if not progress.has(hero):
+		progress[hero] = HeroProgress.create(hero)
+	return progress[hero]
+
+
+func item_count(id: StringName) -> int:
+	return int(items.get(id, 0))
+
+
+func add_item(id: StringName, amount: int = 1) -> void:
+	items[id] = maxi(item_count(id) + amount, 0)
 	changed.emit()
 
 

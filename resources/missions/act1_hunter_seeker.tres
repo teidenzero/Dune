@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="MissionDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/mission_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/campaign/objective_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="obj_needle"]
+script = ExtResource("2")
+id = &"needle"
+title = "Survive the hunter-seeker"
+description = "It homes on movement. Be still; seize it when it is within reach."
+primary = true
+
+[sub_resource type="Resource" id="obj_operator"]
+script = ExtResource("2")
+id = &"operator"
+title = "Find the operator"
+description = "Someone guided it from inside the house."
+
+[resource]
+script = ExtResource("1")
+id = &"act1_hunter_seeker"
+title = "The Hunter-Seeker"
+briefing = "The first night in the Arrakeen Residency. The Harkonnen left more than dust behind them: something small and patient is moving through the house, and someone is guiding it."
+faction_at_stake = &"fremen"
+objectives = Array[ExtResource("2")]([SubResource("obj_needle"), SubResource("obj_operator")])
+stakes = {
+"clean": {
+"resources": {
+&"intel": 2,
+&"influence": 1
+}
+},
+"noisy": {
+"resources": {
+&"intel": 1
+}
+},
+"partial": {
+"heat": 1
+},
+"failure": {
+"heat": 1
+}
+}
+solo_scene = "res://scenes/missions/act1/hunter_seeker.tscn"

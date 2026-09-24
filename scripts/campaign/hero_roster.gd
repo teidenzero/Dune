@@ -10,6 +10,7 @@ const PATHS: Array[String] = [
 	"res://resources/heroes/thufir.tres",
 	"res://resources/heroes/duncan.tres",
 	"res://resources/heroes/stilgar.tres",
+	"res://resources/heroes/chani.tres",
 ]
 
 

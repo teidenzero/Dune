@@ -28,15 +28,15 @@ static func _movement(t: TutorialManager) -> Array:
 	return [
 		{
 			"id": &"move_marker", "section": &"movement", "title": "Movement",
-			"speaker": "GURNEY",
-			"instruction": "Right-click the marked stone. Paul walks there.",
-			"hint": "Paul is selected - see his card, bottom left. Right-click ground to move. WASD or the screen edge moves the camera.",
+			"speaker": "DUKE LETO",
+			"instruction": "Your squad is yours to command: you, and two Fremen guides. Right-click the marked stone and all three go.",
+			"hint": "All three are selected - see their cards, bottom left. Right-click ground to move. WASD or the screen edge moves the camera.",
 			"markers": ["Marker_MoveA"],
 			"completion": func() -> bool: return t.happened(&"enter_move_a") or t.at_trigger(&"move_a"),
 		},
 		{
 			"id": &"move_sprint", "section": &"movement", "title": "Sprint",
-			"speaker": "GURNEY",
+			"speaker": "DUKE LETO",
 			"instruction": "Double right-click the far marker to run there.",
 			"hint": "Two quick right-clicks on the same spot. Running is faster, and far louder.",
 			"markers": ["Marker_MoveB"],
@@ -47,11 +47,11 @@ static func _movement(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"move_crouch", "section": &"movement", "title": "Crouch",
-			"speaker": "GURNEY",
-			"instruction": "Press C to sneak, then right-click across the sand bed.",
-			"hint": "C toggles sneaking for whoever is selected. Move while low to feel the difference.",
+			"speaker": "DUKE LETO",
+			"instruction": "Press C: the whole squad goes low. Then right-click across the sand bed.",
+			"hint": "C crouches everyone at once, and C again stands everyone up. Move while low to feel the difference.",
 			"markers": ["Marker_MoveC"],
-			"note": "Crouched you are slower, quieter, and harder to see.",
+			"note": "Low, the squad is slower, quieter, and harder to see.",
 			"completion": func() -> bool:
 				if t.player.is_crouching and t.player.current_speed > 5.0:
 					t.add_counter(&"crouch", t.get_process_delta_time())
@@ -68,7 +68,7 @@ static func _ranged(t: TutorialManager) -> Array:
 	return [
 		{
 			"id": &"fire_target", "section": &"ranged", "title": "Ranged combat",
-			"speaker": "GURNEY",
+			"speaker": "DUKE LETO",
 			"instruction": "The maula pistol is yours. Right-click the target to open fire.",
 			"hint": "Right-click an enemy: Paul closes to pistol range and shoots until it drops or you give a new order.",
 			"markers": ["Highlight_AimTarget"],
@@ -78,7 +78,7 @@ static func _ranged(t: TutorialManager) -> Array:
 			"id": &"reload_weapon", "section": &"ranged", "title": "Reload",
 			"speaker": "GURNEY",
 			"instruction": "Press R to reload. Do it before you need to, not after.",
-			"hint": "R reloads. An empty magazine reloads itself, but that is the worst moment for it.",
+			"hint": "R reloads. Count your shots: an empty gun only clicks, and that is the worst moment to find out.",
 			"completion": func() -> bool: return t.happened(&"reload_finished"),
 		},
 		{
@@ -120,7 +120,7 @@ static func _melee(t: TutorialManager) -> Array:
 			"id": &"shield_shot", "section": &"melee", "title": "Shields: gunfire",
 			"speaker": "DUNCAN",
 			"instruction": "This one wears a body shield. Right-click it to shoot.",
-			"hint": "Go ahead and empty the magazine into it. Learn this the cheap way.",
+			"hint": "Go ahead, click again and again - empty the magazine into it. Learn this the cheap way.",
 			"markers": ["Highlight_ShieldDummy"],
 			"note": "Fast attacks cannot penetrate an active personal shield.",
 			"completion": func() -> bool: return t.happened(&"shield_blocked_ranged"),
@@ -175,7 +175,7 @@ static func _squad(t: TutorialManager) -> Array:
 	return [
 		{
 			"id": &"squad_select_scout", "section": &"squad", "title": "Squad",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Two of my people will train with you. Click the Scout, or press 2.",
 			"hint": "1 is Paul, 2 the Scout, 3 the Warrior, 4 everyone. The cards bottom-left work too.",
 			"markers": ["Highlight_Scout"],
@@ -184,21 +184,21 @@ static func _squad(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"squad_select_both", "section": &"squad", "title": "Squad",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Take everyone at once. Press 4, or drag a box around the three of you.",
 			"hint": "Hold left-click and drag to draw a selection box.",
 			"completion": func() -> bool: return t.squad.selected_members.size() == 2 and t.squad.paul_selected,
 		},
 		{
 			"id": &"squad_pause", "section": &"squad", "title": "Pause",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Press SPACE to stop the world, then SPACE again to let it run.",
 			"hint": "While paused you can still select and give orders. They start the moment you resume.",
 			"completion": func() -> bool: return t.happened(&"paused") and not t.squad.paused,
 		},
 		{
 			"id": &"squad_move", "section": &"squad", "title": "Move order",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Select only the Scout and right-click the marked ground to send him there.",
 			"hint": "Click the Scout or press 2, then right-click the marker.",
 			"markers": ["Marker_SquadMove"],
@@ -211,7 +211,7 @@ static func _squad(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"squad_hold", "section": &"squad", "title": "Hold order",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Select the Warrior with 3 and press H. He holds where he stands.",
 			"hint": "H holds the selected Fremen in place. They will still defend themselves.",
 			"markers": ["Highlight_Warrior"],
@@ -221,7 +221,7 @@ static func _squad(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"squad_follow", "section": &"squad", "title": "Recall",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Press G to call the Warrior back to you.",
 			"hint": "G returns the selected Fremen to following you.",
 			"completion": func() -> bool:
@@ -232,7 +232,7 @@ static func _squad(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"squad_attack", "section": &"squad", "title": "Attack order",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "A target stands at the end of the yard. Order the Scout to kill it.",
 			"hint": "Select the Scout, then right-click directly on the hostile.",
 			"markers": ["Highlight_SquadEnemy"],
@@ -254,7 +254,7 @@ static func _recon(t: TutorialManager) -> Array:
 	return [
 		{
 			"id": &"recon_send", "section": &"recon", "title": "Reconnaissance",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Stay behind this wall. Send the Scout to the far overlook.",
 			"hint": "Select the Scout with 2 and right-click the distant marker. Paul stays put.",
 			"markers": ["Marker_Overlook", "Highlight_Scout"],
@@ -269,7 +269,7 @@ static func _recon(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"recon_camera", "section": &"recon", "title": "Camera",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Watch him go. Pan after him with WASD or the screen edge.",
 			"hint": "Press 2 twice quickly to jump the camera to the Scout. 1 twice brings it back to Paul.",
 			"note": "The camera goes wherever you look. Your people stay where you put them.",
@@ -280,7 +280,7 @@ static func _recon(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"recon_weak", "section": &"recon", "title": "Weak link",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Keep watching his link on the squad panel.",
 			"hint": "The bars on his card drop from three, to two, to a red cross as he gets further out.",
 			"note": "A weak link still carries orders. It is a warning, not a wall.",
@@ -290,7 +290,7 @@ static func _recon(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"recon_lost", "section": &"recon", "title": "Command range",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "There. He is past your range now.",
 			"hint": "He keeps walking. He simply cannot hear anything new from you.",
 			"note": "Units outside Paul's command range continue their current orders but cannot receive new commands.",
@@ -301,7 +301,7 @@ static func _recon(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"recon_rejected", "section": &"recon", "title": "Link lost",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Try it. Select the Scout and give him a new order.",
 			"hint": "Press 2 and right-click somewhere. Watch the order bounce.",
 			"note": "Move Paul closer to restore the command link.",
@@ -310,7 +310,7 @@ static func _recon(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"recon_restore", "section": &"recon", "title": "Restore the link",
-			"speaker": "STILGAR",
+			"speaker": "DUKE LETO",
 			"instruction": "Select Paul and walk him toward the Scout until he can hear you again.",
 			"hint": "Press 1, then right-click toward the Scout. The link repairs itself the moment you are close enough.",
 			"note": "COMMAND LINK RESTORED",
@@ -426,7 +426,7 @@ static func _desert(t: TutorialManager) -> Array:
 	return [
 		{
 			"id": &"desert_cross", "section": &"desert", "title": "Open sand",
-			"speaker": "STILGAR",
+			"speaker": "KYNES",
 			"instruction": "Open sand carries vibration. Cross to the next rock.",
 			"hint": "Right-click the rock and just walk it. Watch the worm readout, top right.",
 			"markers": ["Marker_MidRock"],
@@ -436,7 +436,7 @@ static func _desert(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"desert_sprint", "section": &"desert", "title": "Rhythm",
-			"speaker": "STILGAR",
+			"speaker": "KYNES",
 			"instruction": "Now run to the far rock. Double right-click it.",
 			"hint": "Run the whole way. You will feel the difference in the readout.",
 			"markers": ["Marker_FarRock"],
@@ -449,7 +449,7 @@ static func _desert(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"desert_fire", "section": &"desert", "title": "Gunfire",
-			"speaker": "STILGAR",
+			"speaker": "KYNES",
 			"instruction": "Step off the rock onto the sand, then right-click the target to fire.",
 			"hint": "Rock swallows the shock of a shot; sand carries it. Fire from the sand and watch the readout jump.",
 			"markers": ["Highlight_DesertTarget"],
@@ -470,7 +470,7 @@ static func _desert(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"desert_machine", "section": &"desert", "title": "Vibration",
-			"speaker": "STILGAR",
+			"speaker": "KYNES",
 			"instruction": "Right-click the training rig to start it, then stand back and watch.",
 			"hint": "Paul walks to the rig and throws the switch. Then let it run.",
 			"markers": ["Highlight_Rig"],
@@ -481,7 +481,7 @@ static func _desert(t: TutorialManager) -> Array:
 		},
 		{
 			"id": &"desert_shelter", "section": &"desert", "title": "Shelter",
-			"speaker": "STILGAR",
+			"speaker": "KYNES",
 			"instruction": "It is coming for the rig. Get onto the far rock and stay there.",
 			"hint": "Double right-click the marked rock. Sand is where it hunts; stone is not.",
 			"hint_delay": 8.0,
@@ -507,7 +507,7 @@ static func _combined(t: TutorialManager) -> Array:
 		{
 			"id": &"combined_clear", "section": &"combined", "title": "Final exercise",
 			"speaker": "GURNEY",
-			"instruction": "Live opposition ahead, one patrolling and one shielded. Clear the yard.",
+			"instruction": "Live opposition ahead: three guards, one on patrol, and a shielded elite. Clear the yard - with the whole squad.",
 			"hint": "Pause with SPACE, read the patrol with Q, place your Fremen, and save a held left-click - the slow blade - for the shielded one.",
 			"hint_delay": 14.0,
 			"completion": func() -> bool:
