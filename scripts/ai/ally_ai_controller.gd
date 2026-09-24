@@ -9,13 +9,15 @@ enum Behavior { FOLLOW, MOVE_TO, HOLD, COMBAT, DEAD }
 @export var decision_interval: float = 0.2
 @export var unreachable_timeout: float = 8.0
 var actor: AllyCharacter
-var current_order: Order = Order.FOLLOW
-var behavior: Behavior = Behavior.FOLLOW
+## A Fremen stands where he is until told otherwise: only the units the
+## player selects move with an order, and G is how he follows Paul.
+var current_order: Order = Order.HOLD
+var behavior: Behavior = Behavior.HOLD
 var order_position: Vector2
 var hold_position: Vector2
 var order_target: Node2D
 var combat_target: Node2D
-var previous_order: Order = Order.FOLLOW
+var previous_order: Order = Order.HOLD
 var previous_position: Vector2
 var attack_origin: Vector2
 var _combat_origin: Vector2
@@ -32,13 +34,14 @@ var _progress_position: Vector2
 func setup(character: AllyCharacter) -> void:
 	actor = character
 	hold_position = actor.global_position
+	previous_position = hold_position
 
 
 func issue_order(order: Order, point: Vector2 = Vector2.ZERO, target: Node2D = null) -> void:
 	if behavior == Behavior.DEAD:
 		return
 	if order == Order.ATTACK:
-		if not _valid_hostile(target):
+		if not _valid_hostile(target, true):
 			return
 		if current_order != Order.ATTACK:
 			previous_order = current_order
@@ -80,7 +83,7 @@ func _physics_process(delta: float) -> void:
 		if _visible:
 			_last_seen = combat_target.global_position
 			actor.face_position(_last_seen)
-			if actor.global_position.distance_to(_last_seen) <= 500:
+			if actor.global_position.distance_to(_last_seen) <= fire_range():
 				if actor.weapon.current_ammo == 0:
 					actor.weapon.start_reload()
 				elif actor.weapon.can_fire:
@@ -93,12 +96,17 @@ func _decide() -> void:
 			_resume_previous()
 		else:
 			combat_target = order_target
-	elif hold_fire:
+	elif holding_fire():
 		# Watching: whatever they had locked onto, they let it go.
 		combat_target = null
 	elif not _valid_hostile(combat_target) or _unseen > 2.0 or _combat_origin.distance_to(combat_target.global_position) > _combat_leash:
 		combat_target = null
 		_acquire_nearby()
+		if _valid_hostile(combat_target):
+			# A fight of his own choosing: say so, and whom.
+			actor.raise_alert("ENGAGING!" if fire_discipline == Fire.AT_WILL else "RETURNING FIRE!")
+			BarkLayer.ping(get_tree(), combat_target.global_position, BarkLayer.WARN, combat_target)
+	_report_threats()
 	if _valid_hostile(combat_target):
 		_fight()
 	else:
@@ -157,7 +165,9 @@ func _fight() -> void:
 	if _visible:
 		_last_seen = combat_target.global_position
 	var distance: float = actor.global_position.distance_to(_last_seen)
-	if not _visible or distance > actor.data.preferred_combat_range + 20:
+	# In sight and in rifle range: shoot from here. He closes only to find a
+	# line or to come into range, never just to stand nearer.
+	if not _visible or distance > fire_range():
 		actor.navigate_to(_nav_point(_last_seen), actor.data.move_speed)
 	elif distance < actor.data.preferred_combat_range * 0.5:
 		var away: Vector2 = _last_seen.direction_to(actor.global_position)
@@ -167,14 +177,37 @@ func _fight() -> void:
 	actor.face_position(_last_seen)
 
 
-## Watch, do not engage: no fights started on their own initiative, not even
-## in answer to fire (the training yard uses this while Paul is drilled). An
-## explicit ATTACK order still goes through.
+## Fire discipline, the player's to set (B): HOLD fires only on an order;
+## RETURN fires only at a guard who has spotted the squad or fired on it;
+## AT_WILL takes any Harkonnen in reach. An ATTACK order goes through all three.
+enum Fire { HOLD, RETURN, AT_WILL }
+const FIRE_NAMES: Array[String] = ["HOLD FIRE", "RETURN FIRE", "FIRE AT WILL"]
+
+## The quietest by default: a Fremen starts no fight the player did not choose.
+var fire_discipline: Fire = Fire.HOLD
+## How far his rifle reaches: he fires from anywhere inside it.
+func fire_range() -> float:
+	var data: WeaponData = actor.weapon.weapon_data if actor.weapon != null else null
+	return data.effective_range if data != null else 500.0
+
+
+## Watch, do not engage, whatever the discipline: the training yard's override
+## while Paul is drilled. An explicit ATTACK order still goes through.
 var hold_fire: bool = false
 
 
+## Not firing on his own: the player's HOLD, or the drill's override.
+func holding_fire() -> bool:
+	return hold_fire or fire_discipline == Fire.HOLD
+
+
+## What he is actually doing about fire, for the card.
+func fire_name() -> String:
+	return FIRE_NAMES[Fire.HOLD if holding_fire() else fire_discipline]
+
+
 func _acquire_nearby() -> void:
-	if hold_fire:
+	if holding_fire():
 		return
 	var closest: float = actor.data.aggression_radius
 	for enemy: Node2D in get_tree().get_nodes_in_group("enemies"):
@@ -184,6 +217,9 @@ func _acquire_nearby() -> void:
 		if current_order == Order.FOLLOW and is_instance_valid(actor.player) and actor.player.is_crouching:
 			if enemy is EnemyCharacter and enemy.ai.state != EnemyAIController.State.COMBAT:
 				continue
+		# Return fire: only a guard who knows the squad is there.
+		if fire_discipline == Fire.RETURN and enemy is EnemyCharacter and enemy.ai.state != EnemyAIController.State.COMBAT:
+			continue
 		var distance: float = actor.global_position.distance_to(enemy.global_position)
 		if _autonomy_anchor().distance_to(enemy.global_position) > actor.data.aggression_radius + 80:
 			continue
@@ -198,16 +234,45 @@ func _acquire_nearby() -> void:
 
 
 func defend_against(source: Node2D) -> void:
-	if hold_fire or current_order == Order.ATTACK or not _valid_hostile(source):
+	if holding_fire() or current_order == Order.ATTACK or not _valid_hostile(source):
 		return
 	if actor.global_position.distance_to(source.global_position) > actor.data.attack_leash:
 		return
+	if combat_target != source:
+		actor.raise_alert("RETURNING FIRE!")
+		BarkLayer.ping(get_tree(), source.global_position, BarkLayer.WARN, source)
 	combat_target = source
 	_combat_leash = actor.data.attack_leash
 	_combat_origin = actor.global_position
 	_last_seen = source.global_position
 	_unseen = 0.0
 	_decision = 0.0
+
+
+## Guards he has called out, and when he may call them out again.
+var _reported: Dictionary = {}
+const REPORT_AGAIN_SECONDS: float = 12.0
+
+
+## Allies report, the player decides: a Fremen who sees a Harkonnen the squad
+## has not been told about says so and marks him, whatever his fire discipline.
+func _report_threats() -> void:
+	if actor.recon == null or behavior == Behavior.COMBAT:
+		return
+	var now: int = Time.get_ticks_msec()
+	for node: Node in get_tree().get_nodes_in_group("enemies"):
+		var enemy: Node2D = node as Node2D
+		if not _valid_hostile(enemy) or enemy.get_meta("dormant", false) or now < int(_reported.get(enemy, 0)):
+			continue
+		if not actor.recon.can_see(enemy):
+			continue
+		for other: Node in get_tree().get_nodes_in_group("allies"):
+			if other != actor and other is AllyCharacter:
+				other.ai._reported[enemy] = now + int(REPORT_AGAIN_SECONDS * 1000.0)
+		_reported[enemy] = now + int(REPORT_AGAIN_SECONDS * 1000.0)
+		BarkLayer.say(actor, "HARKONNEN!" if not holding_fire() else "HARKONNEN - HOLDING", BarkLayer.WARN)
+		BarkLayer.ping(get_tree(), enemy.global_position, BarkLayer.WARN, enemy)
+		return
 
 
 func _autonomy_anchor() -> Vector2:
@@ -223,10 +288,15 @@ func _resume_previous() -> void:
 	issue_order(restore, previous_position)
 
 
-func _valid_hostile(candidate: Variant) -> bool:
+func _valid_hostile(candidate: Variant, as_order: bool = false) -> bool:
 	# A freed target must reach this validity check before typed Node coercion.
 	# Orders given while the game is paused must still find their target.
-	if not is_instance_valid(candidate) or not (candidate.can_process() or get_tree().paused) or candidate.get_meta("team_id", &"") != &"harkonnen":
+	if not is_instance_valid(candidate) or not (candidate.can_process() or get_tree().paused):
+		return false
+	# Harkonnen always; a training target or a fuel tank only as the target of
+	# the player's own ATTACK order.
+	var ordered: bool = (as_order or current_order == Order.ATTACK and candidate == order_target) and SquadManager.ordered_target(candidate)
+	if candidate.get_meta("team_id", &"") != &"harkonnen" and not ordered:
 		return false
 	var health: HealthComponent = HealthComponent.find_on(candidate)
 	return health != null and not health.is_dead

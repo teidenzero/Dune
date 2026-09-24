@@ -73,7 +73,9 @@ const GUARDS: Dictionary = {
 	"s": {"kind": "guard", "facing": 180.0, "name": "SENTRY"},
 	"k": {"kind": "guard", "facing": GRID_EAST, "name": "DRILL SOLDIER"},
 	# Walks his round: toward the door, then away from it.
-	"r": {"kind": "guard", "facing": GRID_EAST, "name": "DRILL SOLDIER", "route": [Vector2i(9, 9), Vector2i(11, 9)]},
+	# Timing: close enough to reach his back in one turn, slow enough to react,
+	# short-sighted enough not to see the doorway from the near end of his round.
+	"r": {"kind": "guard", "facing": GRID_EAST, "name": "DRILL SOLDIER", "route": [Vector2i(10, 9), Vector2i(12, 9)], "vision": 300.0, "pace": 65.0},
 	# Two soldiers talking, each watching the other's back.
 	"g": {"kind": "guard", "facing": GRID_SOUTH, "name": "DRILL SOLDIER"},
 	"h": {"kind": "guard", "facing": -60.0, "name": "DRILL SOLDIER"},
@@ -110,6 +112,7 @@ var _failing: bool = false
 func _ready() -> void:
 	add_to_group("solo_tutorial")
 	level.layout = LAYOUT
+	level.kit = &"residency"
 	level.build()
 	call_deferred("_begin")
 
@@ -156,6 +159,7 @@ func _build_props() -> void:
 	console.footprint = 0.55
 	console.light_color = Color(0.5, 0.9, 1.0)
 	console.caption = "DOOR CONSOLE"
+	console.texture = IsoKit.texture(level.kit, "console")
 	level.add_prop(console, _cell("u"))
 	console_point = InteractionPoint.new()
 	console_point.name = "ConsolePoint"
@@ -175,6 +179,8 @@ func _build_props() -> void:
 	hatch.light_color = Color(0.5, 0.9, 1.0)
 	hatch.caption = "WAY OUT"
 	hatch.caption_color = Color(0.6, 0.95, 1.0)
+	hatch.texture = IsoKit.texture(level.kit, "hatch")
+	hatch.anchor = IsoKit.FLOOR_ANCHOR
 	level.add_prop(hatch, _cell("X"))
 	for symbol in ["a", "b", "c", "d"]:
 		var marker: TutorialMarker = TutorialMarker.new()
@@ -213,6 +219,10 @@ func _spawn_guards() -> void:
 			enemy.add_child(visuals)
 		enemy_root.add_child(enemy)
 		(enemy.get_node("NameLabel") as Label).text = spec.name
+		if spec.has("vision"):
+			enemy.perception.vision_distance = spec.vision
+		if spec.has("pace"):
+			enemy.ai.patrol_speed = spec.pace
 		guards[symbol] = enemy
 		_set_dormant(enemy, _room_at(_cell(symbol)) != 0)
 
@@ -320,8 +330,8 @@ func _lessons() -> Array:
 			"instruction": "He has seen you - in this future. Press Q: it never happened.",
 			"completion": func() -> bool: return happened(&"rewound")},
 		{"id": &"fire", "section": &"r4", "speaker": gurney, "title": "Timing",
-			"instruction": "He walks his round: toward the door, then away. Crouch (C) at the door and watch him - the door opens as you step up. When his back is turned, take him with the knife: press Q to go in with a vision, or simply click him - whoever strikes first acts first, but that future cannot be taken back. Or shoot it out, the hard way.",
-			"hint": "Step up to the door and it opens: you see him, and he can see you. Points you keep at the end of a turn become evasion.",
+			"instruction": "He walks his round: toward the door, then away. Crouch (C) at the door and watch. The moment his back turns, press Q - or click him to strike first. Then, in the fight, stand up (C, it is free) and take him with the knife: behind him nobody sees you, and a crouched step costs double. Or shoot it out, the hard way.",
+			"hint": "Hover him before you commit: the cost shows. Crouched, the walk is too long; standing, it fits. Crouch to cross a cone, not to walk behind a back.",
 			"completion": func() -> bool: return _dead("r") and not combat.active(),
 			"on_complete": func() -> void: _open_room(5)},
 		# 6 - spotted
@@ -411,7 +421,7 @@ func _process(delta: float) -> void:
 		if step.on_complete.is_valid():
 			step.on_complete.call()
 		tutorial_step_completed.emit(step)
-		_complete_wait = step.delay_after
+		_complete_wait = step.hold_after(_step_time)
 
 
 func _finish() -> void:

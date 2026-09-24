@@ -231,12 +231,32 @@ static func _squad(t: TutorialManager) -> Array:
 				return warrior.global_position.distance_to(t.player.global_position) < 220.0,
 		},
 		{
+			"id": &"squad_discipline", "section": &"squad", "title": "Fire discipline",
+			"speaker": "DUKE LETO",
+			"instruction": "Your Fremen hold their fire until you say otherwise - their cards read HOLD. Select both and press B for RETURN: they answer anyone who sees them. Press again for AT WILL. Crouching (C) puts the whole squad back on HOLD until you are seen.",
+			"hint": "Press 4 for both Fremen, then B. Each press moves on: HOLD, RETURN, AT WILL.",
+			"note": "A squad that holds its fire chooses when the fight begins.",
+			"completion": func() -> bool:
+				for member in t.squad.members:
+					if is_instance_valid(member) and member.ai.fire_discipline != AllyAIController.Fire.RETURN:
+						return false
+				return not t.squad.members.is_empty(),
+		},
+		{
+			"id": &"squad_signal", "section": &"squad", "title": "On my signal",
+			"speaker": "DUKE LETO",
+			"instruction": "A raid moves as one. Hold CTRL and right-click to plan an order: nothing happens yet, but a line shows the plan. Plan one for each Fremen, then press F - on your signal, they go together.",
+			"hint": "Press 2, CTRL + right-click a spot. Press 3, CTRL + right-click another. Then F. H calls a plan off.",
+			"note": "Plan in quiet, strike at once.",
+			"completion": func() -> bool: return t.squad.last_signal_count >= 2,
+		},
+		{
 			"id": &"squad_attack", "section": &"squad", "title": "Attack order",
 			"speaker": "DUKE LETO",
 			"instruction": "A target stands at the end of the yard. Order the Scout to kill it.",
 			"hint": "Select the Scout, then right-click directly on the hostile.",
 			"markers": ["Highlight_SquadEnemy"],
-			"note": "You do not have to fire a shot yourself.",
+			"note": "Holding fire, a Fremen still shoots what you point him at.",
 			"on_start": func() -> void: t.set_actor_armed(&"Target_SquadEnemy", true),
 			"completion": func() -> bool:
 				var target: Node = t.find(&"Target_SquadEnemy")
@@ -381,11 +401,11 @@ static func _prescience(t: TutorialManager) -> Array:
 		{
 			"id": &"presc_scout", "section": &"prescience", "title": "Their future too",
 			"speaker": "JESSICA",
-			"instruction": "Send the Scout across first. Select him (2), right-click the far marker, and press Q.",
-			"hint": "A selected Fremen's future shows in green beside the sentry's blue. If the green meets his cone, press H to hold, and go again when the gap is behind him. C makes the Scout harder to spot.",
+			"instruction": "The Scout crosses first - but plan it before you send him. Select him (2), CTRL + right-click the far marker, and press Q: the vision walks your plan beside the sentry. Gold is clear; red is where he would be SEEN. When it reads clear, press F.",
+			"hint": "The plan line is already red where it crosses his view as he stands now - but he walks. Q shows where he will be: red from the moment he would see the Scout, and his cone at that moment. Wait for the gap, read it again, then F. C makes the Scout harder to spot.",
 			"hint_delay": 6.0,
 			"markers": ["Marker_PrescienceExit", "Highlight_Scout"],
-			"note": "Select a Fremen before you read the future, and you read his as well.",
+			"note": "A plan read in a vision is a plan rehearsed.",
 			"delay_after": 1.4,
 			"retry_here": true,
 			# A retry lands here straight from a reload; stage the Fremen again.
@@ -508,7 +528,7 @@ static func _combined(t: TutorialManager) -> Array:
 			"id": &"combined_clear", "section": &"combined", "title": "Final exercise",
 			"speaker": "GURNEY",
 			"instruction": "Live opposition ahead: three guards, one on patrol, and a shielded elite. Clear the yard - with the whole squad.",
-			"hint": "Pause with SPACE, read the patrol with Q, place your Fremen, and save a held left-click - the slow blade - for the shielded one.",
+			"hint": "Pause with SPACE, read the patrol with Q, place your Fremen, set their fire with B, and save a held left-click - the slow blade - for the shielded one.",
 			"hint_delay": 14.0,
 			"completion": func() -> bool:
 				var group: Node = t.find(&"CombinedEnemies")

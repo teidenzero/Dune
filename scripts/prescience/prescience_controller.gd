@@ -26,6 +26,8 @@ signal projections_updated
 @export_range(0.1, 1.0, 0.05) var move_speed_multiplier: float = 0.6
 ## A firing line passing this close to Paul is called out as dangerous.
 @export var danger_radius: float = 60.0
+## How far ahead a plan is rehearsed: its whole route, up to this many seconds.
+@export var rehearsal_limit: float = 8.0
 
 var active: bool = false
 var remaining: float = 0.0
@@ -186,9 +188,61 @@ func _rebuild() -> void:
 		projections.append(projection)
 		if projection.fires and _threatens_player(projection):
 			danger = true
+	var planned: Dictionary = _squad.staged if is_instance_valid(_squad) else {}
 	for ally: AllyCharacter in _selected_allies():
-		projections.append(FuturePredictor.predict_ally(ally, projection_offsets, prediction_horizon))
+		if not planned.has(ally):
+			projections.append(FuturePredictor.predict_ally(ally, projection_offsets, prediction_horizon))
+	_rehearse(planned)
 	projections_updated.emit()
+
+
+## The plan, rehearsed: every order waiting for the signal is walked forward
+## as if it went now, beside the guards' own futures. A planned unit that one
+## of them would see at the same moment is flagged SEEN.
+func _rehearse(planned: Dictionary) -> void:
+	if planned.is_empty():
+		return
+	var guards: Array[FuturePredictor.FutureTrack] = []
+	for projection in projections:
+		if not projection.friendly:
+			guards.append(projection)
+	var space: PhysicsDirectSpaceState2D = player.get_world_2d().direct_space_state
+	for unit: Node2D in planned:
+		if not is_instance_valid(unit) or not unit.can_process():
+			continue
+		var track: FuturePredictor.FutureTrack = FuturePredictor.predict_plan(unit, planned[unit], projection_offsets, prediction_horizon, _plan_speed(unit), _plan_reach(unit, planned[unit]))
+		FuturePredictor.rehearse(track, guards, rehearsal_limit, space)
+		if track.seen_time >= 0.0:
+			# The first ghost at or past that moment turns red.
+			track.seen_at = track.positions.size()
+			for index in range(projection_offsets.size()):
+				if projection_offsets[index] >= track.seen_time:
+					track.seen_at = index
+					break
+		projections.append(track)
+
+
+## How fast the unit will go when the signal sends it: a planned order walks,
+## and a squad that is low walks low.
+func _plan_speed(unit: Node2D) -> float:
+	if unit == player:
+		return player.crouch_speed if player.is_crouching else player.walk_speed
+	var ally: AllyCharacter = unit as AllyCharacter
+	if ally == null or ally.data == null:
+		return 180.0
+	if ally.sneaking and is_instance_valid(player):
+		return minf(ally.data.move_speed, player.crouch_speed)
+	return ally.data.move_speed
+
+
+## Where an attack stops: in knife reach, or where the unit would open fire.
+func _plan_reach(unit: Node2D, order: Dictionary) -> float:
+	if order.kind == &"melee" and unit == player:
+		return player.melee.hitbox_base_range * 0.8
+	if unit == player:
+		return player.weapon_controller.weapon_data.effective_range
+	var ally: AllyCharacter = unit as AllyCharacter
+	return ally.data.preferred_combat_range if ally != null and ally.data != null else 300.0
 
 
 ## Prescience is not omniscience: it only looks ahead for hostiles the squad can

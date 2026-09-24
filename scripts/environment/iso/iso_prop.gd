@@ -12,6 +12,9 @@ extends StaticBody2D
 @export var caption: String = ""
 @export var caption_color: Color = Color(0.85, 0.8, 0.7)
 
+## Painted art (IsoKit) and where the cell centre sits in it.
+var texture: Texture2D
+var anchor: Vector2 = IsoKit.BLOCK_ANCHOR
 var _pulse: float = 0.0
 var fade: float = 1.0:
 	set(value):
@@ -38,6 +41,13 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var d: PackedVector2Array = IsoMath.diamond(footprint)
 	var up: Vector2 = Vector2(0, -height)
+	if texture != null:
+		draw_texture(texture, -anchor)
+		if light_color.a > 0.0:
+			var glow: float = 0.55 + 0.45 * sin(_pulse)
+			draw_arc(Vector2(0, -height * 0.5), 30.0, 0, TAU, 28, Color(light_color, 0.35 * glow), 2.5, true)
+		_draw_caption(up)
+		return
 	if height > 0.0:
 		draw_colored_polygon(PackedVector2Array([d[3] + up, d[2] + up, d[2], d[3]]), side_color)
 		draw_colored_polygon(PackedVector2Array([d[2] + up, d[1] + up, d[1], d[2]]), side_color.darkened(0.25))
@@ -46,6 +56,10 @@ func _draw() -> void:
 	if light_color.a > 0.0:
 		var glow: float = 0.55 + 0.45 * sin(_pulse)
 		draw_circle(up + Vector2(0, -2), 7.0, Color(light_color, glow))
+	_draw_caption(up)
+
+
+func _draw_caption(up: Vector2) -> void:
 	if caption != "":
 		var font: Font = ThemeDB.fallback_font
 		var size: int = WorldLabel.font_size(self, 13)

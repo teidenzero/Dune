@@ -120,6 +120,16 @@ The direct controls below (WASD and mouse aim) are kept for the solo test on the
 
 Spice-fuel tanks explode when shot: they hurt everything nearby (you too) and the whole crawler hears it.
 
+**Fire discipline.** Each Fremen's card shows how freely he shoots: HOLD (only at what you order him to attack; the default), RETURN (at guards who have seen the squad or fired on it) or AT WILL. `B` moves the selected Fremen (or all of them) to the next. Crouching (`C`) holds the whole squad until someone is spotted, then they return fire; standing up gives each his own setting back.
+
+**On my signal.** Hold `Ctrl` and right-click to *plan* an order for the selected units instead of giving it: a move, a shot at a guard or a tank, a use. `Ctrl` + left-click on a guard plans Paul's knife. A dashed line shows each plan and the cards read ON SIGNAL. `F` sends every planned order at the same instant; `H` calls the selection's plans off, and a direct order replaces a plan. A Fremen out of command range when the signal goes does not hear it, and says so. With orders planned, `Q` rehearses them: Paul's vision walks every plan forward beside the guards' futures, gold where it is clear and red where a guard would see it (SEEN +2s).
+
+**Only the selected move.** A Fremen holds where he stands until you order him: select him (click, a number key, a box or `4` for everyone) and right-click, or press `G` to have him follow Paul. With only Paul selected (`1`), only Paul moves. Ordered to attack, a Fremen who can see his target and is within rifle range fires from where he stands; he moves only to get a line or to come into range.
+
+**Feedback.** The Fremen answer every order out loud (MOVING., HOLDING., ON HIM., WITH YOU., NOW!) and say what they decide on their own (RETURNING FIRE!, ENGAGING!). A Fremen who sees a Harkonnen calls it out and marks him with a pulsing ring, even while holding fire. When one is hit or fighting, his card flashes red, and if he is off-screen an arrow at the screen edge points to him. An order to a place he cannot reach is refused aloud: NO WAY THERE.
+
+**Tutorials.** A finished lesson stays on screen, ticked, until it could be read. `Tab` folds the lesson panel away to a small tab for a clear view; `L` shows the last lessons again.
+
 The squad cards in the bottom-left corner are clickable too: click to select,
 Shift-click to add, double-click to jump the camera to that unit.
 

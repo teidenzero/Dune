@@ -31,7 +31,8 @@ func _run() -> void:
 	await _rounds_move_the_clocks()
 	await _rewind_restores_everything()
 	await _attack_opens_the_fight()
-	_check(completed == 8, "all turn-combat scenarios completed")
+	await _leaving_is_bulletproof()
+	_check(completed == 9, "all turn-combat scenarios completed")
 	print("TURN COMBAT SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
 
@@ -74,6 +75,7 @@ func _prescience_entry_and_rewind() -> void:
 	await _frames(12)
 	_check(combat.active() and combat.phase == TurnCombat.Phase.PLAYER, "Q starts a fight, the hero's turn first")
 	_check(combat.in_vision and combat.vision_from_explore, "and the opening is a vision")
+	_check(combat.opening == &"vision" and (mission.get_node("InteriorController/CombatHud") as CombatHud)._banner.text in ["PRESCIENCE", "VISION"], "and the banner is a prescience one")
 	var anchor: VisionAnchor = combat._anchor
 	_check(is_instance_valid(anchor) and anchor.global_position.distance_to(start) < 2.0 and player.modulate == VisionAnchor.SHADOW, "the real Paul stays where he stood; the one who acts is his blue shadow")
 	_check(combat.prescience_left == 2, "one of Paul's three visions spent")
@@ -303,6 +305,8 @@ func _attack_opens_the_fight() -> void:
 	squad._release_blade_charge()
 	await _frames(3)
 	_check(combat.active() and combat.acting == player and not combat.in_vision, "released: the fight opens on Paul's turn, and it is not a vision")
+	var hud: CombatHud = mission.get_node("InteriorController/CombatHud")
+	_check(combat.opening == &"strike" and hud._banner.text == "YOU STRIKE FIRST", "the banner says he struck first - not PRESCIENCE")
 	crewman.face_position(IsoMath.cell_to_world(Vector2i(14, 2)))
 	for index in range(240):
 		if not combat.active():
@@ -340,6 +344,107 @@ func _attack_opens_the_fight() -> void:
 	squad.issue_context(hidden.global_position)
 	await _frames(3)
 	_check(not reachable and not combat.active() and player.order == PlayerController.Order.ATTACK, "a guard he cannot shoot this turn: a real-time order to find a line")
+	completed += 1
+
+
+## However the last hunter dies, outside a vision the fight ends and real time
+## returns; a dead guard never starts one; a vision still ends in its choice.
+func _leaving_is_bulletproof() -> void:
+	# A spotted fight; the guard dies to something that is not the hero's turn.
+	await _load()
+	var guard: EnemyCharacter = _enemy("Guard_b")
+	_place(guard, Vector2i(18, 7))
+	_place(player, Vector2i(21, 7))
+	guard.face_position(player.global_position)
+	await _frames(2)
+	combat.forced_roll = 100.0
+	guard.ai.target = player
+	guard.ai.change_state(EnemyAIController.State.COMBAT)
+	await _frames(3)
+	await _wait_for_player_turn()
+	_check(combat.phase == TurnCombat.Phase.PLAYER and combat.aware.has(guard), "a spotted fight reaches the hero's turn")
+	# His shot brought the crawler; every one of them dies outside the turn.
+	for hunter in combat._aware_living():
+		hunter.health.take_damage(hunter.health.max_health * 3.0, null)
+	await _frames(5)
+	_check(not combat.active() and not player.turn_based, "the last hunters killed by a blast: real time at once")
+	# A dead guard left in combat state never starts a fight.
+	guard.ai.state = EnemyAIController.State.COMBAT
+	await _frames(10)
+	_check(not combat.active(), "a dead guard, whatever his state, never starts a fight")
+	# A fight the hero opened: the wounded guard he did not alert dies too.
+	await _load()
+	var first: EnemyCharacter = _enemy("Guard_a")
+	var second: EnemyCharacter = _enemy("Guard_b")
+	_place(first, Vector2i(12, 2))
+	_place(second, Vector2i(14, 5))
+	first.face_position(IsoMath.cell_to_world(Vector2i(14, 2)))
+	second.face_position(IsoMath.cell_to_world(Vector2i(18, 5)))
+	_place(player, Vector2i(10, 2))
+	await _frames(3)
+	combat.begin(true, [], false)
+	await _frames(5)
+	combat.aware.clear()
+	first.health.take_damage(first.health.max_health * 3.0, null)
+	second.health.take_damage(second.health.max_health * 3.0, null)
+	await _frames(5)
+	_check(not combat.active() and not player.turn_based, "nobody left who knows of him: the fight he opened ends too")
+	# A guard removed while the hero walks up to knife him: the action ends
+	# cleanly, and with nobody left the fight does too.
+	await _load()
+	var victim: EnemyCharacter = _enemy("Guard_a")
+	_place(victim, Vector2i(14, 2))
+	victim.face_position(IsoMath.cell_to_world(Vector2i(16, 2)))
+	_place(player, Vector2i(9, 2))
+	await _frames(3)
+	combat.begin(true, [], false)
+	await _frames(5)
+	combat._make_aware(victim, false)
+	combat.select_attack(TurnRules.Attack.QUICK_KNIFE)
+	combat.command_attack(victim)
+	await _frames(8)
+	# Every guard aboard, even behind closed doors, is gone - and no more come.
+	controller._pending_groups = 0
+	for enemy: Node in get_nodes_in_group("enemies"):
+		enemy.remove_from_group("enemies")
+		enemy.queue_free()
+	for index in range(480):
+		if not combat.active():
+			break
+		await _frames(1)
+	_check(not combat.active() and not player.turn_based, "a target gone mid-action: no hang, back to real time")
+	# A phase that never moves on is recovered.
+	await _load()
+	var watcher: EnemyCharacter = _enemy("Guard_b")
+	_place(player, Vector2i(3, 6))
+	await _frames(3)
+	combat.begin(true, [], false)
+	await _frames(5)
+	combat._make_aware(watcher, false)
+	combat.phase = TurnCombat.Phase.BUSY
+	combat._phase_since = Time.get_ticks_msec() - int((TurnCombat.STALL_SECONDS + 1.0) * 1000.0)
+	await _frames(3)
+	_check(combat.phase == TurnCombat.Phase.PLAYER, "a stalled phase is recovered: the hero's turn again")
+	# The one who knew dies: nobody is hunting him any more.
+	watcher.health.take_damage(watcher.health.max_health * 3.0, null)
+	await _frames(3)
+	_check(not combat.active(), "and with nobody hunting him, real time")
+	# Inside a vision the vision decides: it ends in its own choice.
+	await _load()
+	_place(player, Vector2i(3, 6))
+	await _frames(2)
+	_key(KEY_Q)
+	await _frames(12)
+	for enemy in combat._living_enemies():
+		enemy.health.take_damage(enemy.health.max_health * 3.0, null)
+	await _frames(5)
+	_check(combat.active() and combat.in_vision, "in a vision, everyone gone: the vision still stands until its choice")
+	combat.end_turn()
+	await _wait_for_player_turn()
+	_check(combat.phase == TurnCombat.Phase.PROMPT, "ending the turn brings the choice")
+	combat.accept_vision()
+	await _frames(40)
+	_check(not combat.active() and not player.turn_based, "accepted: real time")
 	completed += 1
 
 

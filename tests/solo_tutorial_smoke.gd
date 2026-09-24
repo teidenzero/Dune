@@ -21,6 +21,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	root.get_node("GameManager").tutorial_checkpoint = &""
+	TutorialStep.read_scale = 0.0
 	await _load()
 	await _moving()
 	await _walls_and_console()
@@ -34,6 +35,7 @@ func _run() -> void:
 	await _restart_resumes()
 	await _tank_in_real_time()
 	await _tank_in_prescience()
+	await _timing_is_possible()
 	print("SOLO TUTORIAL SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
 
@@ -54,6 +56,56 @@ func _load() -> void:
 func _step() -> StringName:
 	var step: TutorialStep = tutorial.current_step()
 	return step.id if step != null else &""
+
+
+## The Timing lesson can be done as taught: from the door, standing, the knife
+## reaches his back in one turn wherever he is on his round; crouched, the
+## readout says to stand.
+func _timing_is_possible() -> void:
+	root.get_node("GameManager").tutorial_checkpoint = &"fire"
+	await _load()
+	var soldier: EnemyCharacter = tutorial.guards["r"]
+	soldier.set_physics_process(false)
+	soldier.ai.set_physics_process(false)
+	soldier.perception.set_physics_process(false)
+	var all_fit: bool = true
+	var worst: int = 0
+	for cell in [Vector2i(10, 9), Vector2i(11, 9), Vector2i(12, 9)]:
+		soldier.global_position = IsoMath.cell_to_world(cell)
+		soldier.face_position(IsoMath.cell_to_world(cell + Vector2i(-3, 0)))
+		player.teleport_to(IsoMath.cell_to_world(Vector2i(17, 9)))
+		player.set_crouching(false)
+		await _frames(30)
+		combat.begin(true, [], false)
+		await _frames(5)
+		soldier.face_position(IsoMath.cell_to_world(cell + Vector2i(-3, 0)))
+		combat.select_attack(TurnRules.Attack.QUICK_KNIFE)
+		var plan: Dictionary = combat.preview_attack(soldier)
+		all_fit = all_fit and plan.ok and plan.note == "FROM BEHIND: SILENT KILL"
+		worst = maxi(worst, plan.cost)
+		if cell == Vector2i(10, 9):
+			player.set_crouching(true)
+			var low: Dictionary = combat.preview_attack(soldier)
+			_check(not low.ok and low.note.contains("STAND (C)"), "crouched at the far end it is too far - and the readout says to stand")
+			player.set_crouching(false)
+		combat._finish()
+		await _frames(5)
+	_check(all_fit and worst <= 9, "from the door, standing, a silent kill fits in one turn at every point of his round, with room to spare (worst %d AP)" % worst)
+	# Waiting low at the door for two whole rounds, he never sees the doorway.
+	soldier.set_physics_process(true)
+	soldier.ai.set_physics_process(true)
+	soldier.perception.set_physics_process(true)
+	soldier.ai.change_state(EnemyAIController.State.PATROL)
+	player.teleport_to(IsoMath.cell_to_world(Vector2i(17, 9)))
+	player.set_crouching(true)
+	var spotted: bool = false
+	for index in range(60 * 12):
+		if soldier.perception.detection_value > soldier.perception.detection_max * 0.5 or combat.active():
+			spotted = true
+			break
+		await _frames(1)
+	_check(not spotted, "crouched at the door he does not spot you, through two whole rounds")
+	root.get_node("GameManager").tutorial_checkpoint = &""
 
 
 ## Waits for the tutorial to move on to `id` (or finish), up to `seconds`.
@@ -326,6 +378,7 @@ func _tank_in_real_time() -> void:
 		var soldier: EnemyCharacter = tutorial.guards[symbol]
 		hurt = hurt and (soldier.health.is_dead or soldier.health.current_health < soldier.health.max_health)
 	_check(hurt and tutorial.guards["m"].health.is_dead and tutorial.guards["n"].health.is_dead, "taking the two soldiers with it: both dead")
+	_check(await _until(func() -> bool: return not tutorial.combat.active() and not player.turn_based, 2.0), "and the fight is over: back to real time")
 	root.get_node("GameManager").tutorial_checkpoint = &""
 
 

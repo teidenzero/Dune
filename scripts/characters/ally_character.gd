@@ -21,6 +21,10 @@ var face_travel: bool = true
 var is_crouching: bool = false
 var command_feedback_text: String = ""
 var _command_feedback_until: int = 0
+## Something the player must see: hit, spotted, fighting on his own. The card
+## flashes and, off-screen, an arrow at the edge points to him.
+var alert_text: String = ""
+var _alert_until: int = 0
 ## Stuck recovery: if an ally wanting to move makes no progress, re-path.
 var _stuck_anchor: Vector2 = Vector2.ZERO
 var _stuck_time: float = 0.0
@@ -146,6 +150,17 @@ func command_feedback_active() -> bool:
 	return Time.get_ticks_msec() < _command_feedback_until
 
 
+## Says `text` aloud and flags him for the card and the screen edge.
+func raise_alert(text: String, seconds: float = 3.0) -> void:
+	alert_text = text
+	_alert_until = Time.get_ticks_msec() + int(seconds * 1000.0)
+	BarkLayer.say(self, text, BarkLayer.WARN)
+
+
+func alert_active() -> bool:
+	return Time.get_ticks_msec() < _alert_until and not health.is_dead
+
+
 func set_selected(value: bool) -> void:
 	selected = value and not health.is_dead
 	selection_changed.emit()
@@ -160,7 +175,10 @@ func has_line_of_sight(candidate: Node2D) -> bool:
 
 
 func _on_damage_received(_amount: float, source: Node) -> void:
-	if not health.is_dead and source is Node2D:
+	if health.is_dead:
+		return
+	raise_alert("HIT!")
+	if source is Node2D:
 		ai.defend_against(source)
 
 

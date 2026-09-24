@@ -12,7 +12,11 @@ var _music: Button
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(DuneBackdrop.new())
-	var painting: Texture2D = ArtLibrary.story("menu_background")
+	# The title is painted into the title screen itself.
+	var painting: Texture2D = ArtLibrary.story("title_screen")
+	var painted_title: bool = painting != null
+	if painting == null:
+		painting = ArtLibrary.story("menu_background")
 	if painting != null:
 		var image: TextureRect = TextureRect.new()
 		image.texture = painting
@@ -22,18 +26,26 @@ func _ready() -> void:
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(image)
 	var rows: VBoxContainer = VBoxContainer.new()
-	rows.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
-	rows.offset_left = 140
-	rows.offset_top = -260
-	rows.offset_bottom = 300
-	rows.add_theme_constant_override("separation", 14)
+	rows.add_theme_constant_override("separation", 12)
 	add_child(rows)
-	var title: Label = HudStyle.label("DUNE", 120, HudStyle.GOLD_LIGHT, HudStyle.display_font())
-	rows.add_child(title)
-	rows.add_child(HudStyle.label("THE SPICE MUST FLOW   ·   A PROTOTYPE", 18, HudStyle.SAND, HudStyle.body_font(600)))
-	var gap: Control = Control.new()
-	gap.custom_minimum_size = Vector2(0, 40)
-	rows.add_child(gap)
+	if painted_title:
+		# On the right, across from the painted title, clear of the banner.
+		rows.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+		rows.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		rows.grow_vertical = Control.GROW_DIRECTION_BOTH
+		rows.offset_right = -110
+		rows.offset_left = -110 - 420
+		rows.offset_top = -210
+		rows.offset_bottom = 210
+	else:
+		rows.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+		rows.offset_left = 140
+		rows.offset_top = -260
+		rows.offset_bottom = 300
+		rows.add_child(HudStyle.label("DUNE", 120, HudStyle.GOLD_LIGHT, HudStyle.display_font()))
+		var gap: Control = Control.new()
+		gap.custom_minimum_size = Vector2(0, 40)
+		rows.add_child(gap)
 	rows.add_child(_button("NEW CAMPAIGN", new_campaign))
 	_continue = _button("CONTINUE", continue_campaign)
 	rows.add_child(_continue)
@@ -98,7 +110,7 @@ func _button(text: String, action: Callable) -> Button:
 	button.add_theme_color_override("font_hover_color", HudStyle.GOLD_LIGHT)
 	button.add_theme_color_override("font_disabled_color", Color(HudStyle.SAND_DIM, 0.6))
 	for key in ["normal", "hover", "pressed", "disabled", "focus"]:
-		var box: StyleBoxFlat = HudStyle.panel_box(HudStyle.GOLD if key in ["hover", "pressed", "focus"] else Color(0, 0, 0, 0), Color(0.06, 0.03, 0.02, 0.55) if key != "focus" else Color(0, 0, 0, 0), 1)
+		var box: StyleBoxFlat = HudStyle.panel_box(HudStyle.GOLD if key in ["hover", "pressed", "focus"] else Color(0, 0, 0, 0), Color(0.06, 0.03, 0.02, 0.78) if key != "focus" else Color(0, 0, 0, 0), 1)
 		box.set_content_margin_all(14)
 		box.shadow_size = 0
 		button.add_theme_stylebox_override(key, box)

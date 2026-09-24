@@ -405,7 +405,7 @@ func _move_player(marker_name: StringName) -> void:
 		ally.global_position = marker.global_position + Vector2(-80 + offset * 160, 90)
 		ally.velocity = Vector2.ZERO
 		ally.stop_moving()
-		ally.ai.issue_order(AllyAIController.Order.FOLLOW)
+		ally.ai.issue_order(AllyAIController.Order.HOLD, ally.global_position)
 		offset += 1
 
 

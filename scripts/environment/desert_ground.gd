@@ -12,9 +12,26 @@ func _ready() -> void:
 	# above it free for things painted on the ground - vision cones, for one.
 	# See VisionCone.GROUND_Z / VisionCone.CONE_Z.
 	z_index = VisionCone.GROUND_Z
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	_sand = SquadDresser.texture("ground_sand")
+	if not Engine.is_editor_hint():
+		# The rest of the map dresses once it has all loaded.
+		call_deferred("_dress")
+
+
+## Painted sand, tiled; without it the drawn sand and ripples below.
+var _sand: Texture2D
+
+
+func _dress() -> void:
+	SquadDresser.dress(owner if owner != null else get_parent())
 
 
 func _draw() -> void:
+	if _sand != null:
+		draw_texture_rect(_sand, arena_rect, true)
+		draw_rect(arena_rect.grow(-12), Color("8c704c"), false, 24.0)
+		return
 	draw_rect(arena_rect, sand_color)
 	var random: RandomNumberGenerator = RandomNumberGenerator.new()
 	random.seed = detail_seed

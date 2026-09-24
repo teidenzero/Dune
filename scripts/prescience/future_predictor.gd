@@ -39,6 +39,20 @@ class FutureTrack extends RefCounted:
 	var fire_from: Vector2 = Vector2.ZERO
 	var fire_to: Vector2 = Vector2.ZERO
 	var fire_delay: float = 0.0
+	## A plan waiting for the signal, projected as if it went now.
+	var planned: bool = false
+	## First sample at which a guard's projected cone would hold this unit.
+	var seen_at: int = -1
+	var strike_label: String = "FIRES"
+	## Walking speed along `path`, for positions at any moment (rehearsal).
+	var speed: float = 0.0
+	## When and where a guard would first see this plan (-1: never), and that
+	## guard's own place and facing at that moment, to show who sees it.
+	var seen_time: float = -1.0
+	var seen_point: Vector2 = Vector2.ZERO
+	var seen_by: Vector2 = Vector2.ZERO
+	var seen_facing: Vector2 = Vector2.RIGHT
+	var seen_guard: EnemyCharacter
 
 
 static func predict_enemy(actor: EnemyCharacter, offsets: PackedFloat32Array, horizon: float) -> FutureTrack:
@@ -52,6 +66,8 @@ static func predict_enemy(actor: EnemyCharacter, offsets: PackedFloat32Array, ho
 		route = _route_from(actor.patrol_route.get_points(), actor.ai.patrol_index)
 	projection.path = _forward_path(actor, speed, horizon, route)
 	projection.positions = _sample(actor.global_position, projection.path, speed, offsets)
+	# A patrol pausing at a waypoint still walks on: rehearsal needs his pace.
+	projection.speed = speed if speed > 0.0 else (actor.ai.patrol_speed if actor.ai.state == EnemyAIController.State.PATROL else 0.0)
 	_predict_fire(actor, projection, horizon)
 	return projection
 
@@ -66,6 +82,136 @@ static func predict_ally(actor: AllyCharacter, offsets: PackedFloat32Array, hori
 	projection.path = _forward_path(actor, speed, horizon, PackedVector2Array())
 	projection.positions = _sample(actor.global_position, projection.path, speed, offsets)
 	return projection
+
+
+## A planned order (SquadManager.staged) walked forward as if the signal went
+## now: the path is a read-only navigation query, the speed the unit's own. An
+## attack stops where the unit would open fire; a knife goes all the way.
+static func predict_plan(unit: Node2D, order: Dictionary, offsets: PackedFloat32Array, horizon: float, speed: float, reach: float) -> FutureTrack:
+	var projection: FutureTrack = FutureTrack.new()
+	projection.actor = unit
+	projection.friendly = true
+	projection.planned = true
+	projection.certainty = 1.0
+	var target: Node2D = order.target if is_instance_valid(order.target) else null
+	var goal: Vector2 = target.global_position if target != null else order.point
+	projection.state_name = "ON SIGNAL"
+	var path: PackedVector2Array = PackedVector2Array([unit.global_position, goal])
+	var agent: NavigationAgent2D = unit.get_node_or_null("NavigationAgent2D") as NavigationAgent2D
+	if agent != null and NavigationServer2D.map_get_iteration_id(agent.get_navigation_map()) > 0:
+		var route: PackedVector2Array = NavigationServer2D.map_get_path(agent.get_navigation_map(), unit.global_position, goal, true)
+		if route.size() >= 2:
+			path = route
+	var strikes: bool = order.kind == &"attack" or order.kind == &"melee"
+	if strikes and target != null:
+		path = _trim_to_reach(path, goal, reach)
+	projection.path = path
+	projection.speed = speed
+	projection.positions = _sample(unit.global_position, path, speed, offsets)
+	if strikes and target != null:
+		var arrival: float = _length(path) / maxf(speed, 1.0)
+		if arrival <= horizon:
+			projection.fires = true
+			projection.fire_delay = arrival
+			projection.fire_from = path[path.size() - 1]
+			projection.fire_to = goal
+			projection.strike_label = "KNIFE" if order.kind == &"melee" else "FIRES"
+	return projection
+
+
+## Where a track's actor is `seconds` from now, along its projected path.
+static func position_at(track: FutureTrack, seconds: float) -> Vector2:
+	return _walk(track.path, track.speed * maxf(seconds, 0.0), track.actor.global_position)
+
+
+## The whole plan against every guard's walked-forward future, a quarter of a
+## second at a time until the unit arrives (or `limit` seconds): the first
+## moment one of them would have it in his cone, with no wall between.
+static func rehearse(plan: FutureTrack, guards: Array[FutureTrack], limit: float, space: PhysicsDirectSpaceState2D) -> void:
+	var arrival: float = _length(plan.path) / maxf(plan.speed, 1.0)
+	var until: float = minf(arrival + 0.5, limit)
+	var step: float = 0.25
+	var moment: float = 0.0
+	while moment <= until:
+		var point: Vector2 = position_at(plan, moment)
+		for guard in guards:
+			var enemy: EnemyCharacter = guard.actor as EnemyCharacter
+			if enemy == null:
+				continue
+			var at: Vector2 = position_at(guard, moment)
+			var before: Vector2 = position_at(guard, moment - step)
+			var facing: Vector2 = before.direction_to(at) if before.distance_squared_to(at) > 1.0 else Vector2.RIGHT.rotated(enemy.aim_pivot.global_rotation)
+			if sees_from(enemy, at, facing, point, space):
+				plan.seen_time = moment
+				plan.seen_point = point
+				plan.seen_by = at
+				plan.seen_facing = facing
+				plan.seen_guard = enemy
+				return
+		moment += step
+
+
+## Whether `enemy`, standing at `from` and facing `facing`, would see `point`:
+## inside his cone and reach, and no wall between.
+static func sees_from(enemy: EnemyCharacter, from: Vector2, facing: Vector2, point: Vector2, space: PhysicsDirectSpaceState2D) -> bool:
+	var offset: Vector2 = point - from
+	if offset.length() > enemy.perception.vision_distance:
+		return false
+	if not offset.is_zero_approx() and facing.dot(offset.normalized()) < cos(deg_to_rad(enemy.perception.field_of_view_degrees * 0.5)):
+		return false
+	# Walls only: bodies will have moved by then.
+	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(from, point, 1)
+	return space.intersect_ray(query).is_empty()
+
+
+## Whether `enemy`'s projected self at sample `index` would see `point`: inside
+## his cone, facing the way he will be walking, with no wall between.
+static func sees_at(enemy_track: FutureTrack, index: int, point: Vector2, space: PhysicsDirectSpaceState2D) -> bool:
+	var enemy: EnemyCharacter = enemy_track.actor as EnemyCharacter
+	if enemy == null or index >= enemy_track.positions.size():
+		return false
+	var from: Vector2 = enemy_track.positions[index]
+	var offset: Vector2 = point - from
+	if offset.length() > enemy.perception.vision_distance:
+		return false
+	var previous: Vector2 = enemy.global_position if index == 0 else enemy_track.positions[index - 1]
+	var forward: Vector2 = previous.direction_to(from) if previous.distance_squared_to(from) > 4.0 else Vector2.RIGHT.rotated(enemy.aim_pivot.global_rotation)
+	if not offset.is_zero_approx() and forward.dot(offset.normalized()) < cos(deg_to_rad(enemy.perception.field_of_view_degrees * 0.5)):
+		return false
+	# Walls only: bodies will have moved by then.
+	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(from, point, 1)
+	return space.intersect_ray(query).is_empty()
+
+
+## The path cut at the first point within `reach` of `goal`.
+static func _trim_to_reach(path: PackedVector2Array, goal: Vector2, reach: float) -> PackedVector2Array:
+	var result: PackedVector2Array = PackedVector2Array([path[0]])
+	if path[0].distance_to(goal) <= reach:
+		return result
+	for index in range(1, path.size()):
+		var a: Vector2 = path[index - 1]
+		var b: Vector2 = path[index]
+		if b.distance_to(goal) > reach:
+			result.append(b)
+			continue
+		# Step along this segment to where it enters reach.
+		var length: float = a.distance_to(b)
+		var steps: int = maxi(int(length / 8.0), 1)
+		for step in range(1, steps + 1):
+			var point: Vector2 = a.lerp(b, float(step) / steps)
+			if point.distance_to(goal) <= reach:
+				result.append(point)
+				return result
+		result.append(b)
+		return result
+	return result
+
+
+static func _length(path: PackedVector2Array) -> float:
+	var total: float = 0.0
+	for index in range(1, path.size()):
+		total += path[index - 1].distance_to(path[index])
+	return total
 
 
 ## The remaining navigation path, optionally continued along a patrol route so a

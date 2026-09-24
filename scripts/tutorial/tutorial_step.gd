@@ -49,6 +49,25 @@ static func create(data: Dictionary) -> TutorialStep:
 	return step
 
 
+## Seconds a reader needs for `text`: a moment to look, then about 250 words a
+## minute. Tests shrink it through `read_scale`.
+static var read_scale: float = 1.0
+
+static func reading_seconds(text: String) -> float:
+	if text.strip_edges() == "":
+		return 0.0
+	var words: int = text.split(" ", false).size()
+	return clampf(1.2 + words * 0.24, 3.0, 9.0) * read_scale
+
+
+## How long to stay on this step once it is done, given how long it has been
+## on screen: its own pause, the rest of its reading time, and time to read
+## its closing note. Finishing fast never skips a lesson's text.
+func hold_after(shown_for: float) -> float:
+	var unread: float = reading_seconds(title + " " + instruction) - shown_for
+	return maxf(maxf(delay_after, unread), reading_seconds(note))
+
+
 func is_satisfied() -> bool:
 	return completion.is_valid() and bool(completion.call())
 

@@ -263,7 +263,7 @@ func _complete_step(step: TutorialStep) -> void:
 	if step.on_complete.is_valid():
 		step.on_complete.call()
 	tutorial_step_completed.emit(step)
-	_completion_hold = maxf(step.delay_after, 0.05)
+	_completion_hold = maxf(step.hold_after(step_time), 0.05)
 
 
 func _complete_tutorial() -> void:
@@ -297,8 +297,9 @@ func _apply_section(section: StringName, reposition: bool) -> void:
 	# guides move together, and every order reaches them.
 	if is_instance_valid(squad):
 		squad.commands_enabled = true
-		# While Paul himself is drilled, the Fremen watch and hold their fire.
-		var drilling: bool = reached < sections.find("squad")
+		# While Paul himself is drilled, and while a lesson is about moving
+		# unseen, the Fremen watch and hold their fire whatever B says.
+		var drilling: bool = reached < sections.find("squad") or section in [&"recon", &"prescience"]
 		for member in squad.members:
 			if is_instance_valid(member):
 				member.ai.hold_fire = drilling
@@ -365,8 +366,8 @@ func station_allies(points: Array) -> void:
 		slot += 1
 
 
-## Forms the squad up on Paul at the start of a squad exercise, through the
-## ordinary FOLLOW order rather than a tutorial-only movement path.
+## Forms the squad up beside Paul at the start of a section, each holding
+## there until the player moves him (or calls him to follow with G).
 func regroup_allies() -> void:
 	if not is_instance_valid(squad) or not is_instance_valid(player):
 		return
@@ -381,7 +382,8 @@ func regroup_allies() -> void:
 		member.global_position = point
 		member.velocity = Vector2.ZERO
 		member.stop_moving()
-		member.ai.issue_order(AllyAIController.Order.FOLLOW)
+		# Beside Paul, holding: they move when the player moves them.
+		member.ai.issue_order(AllyAIController.Order.HOLD, point)
 		index_offset += 1
 
 

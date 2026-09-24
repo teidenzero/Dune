@@ -18,6 +18,19 @@ var locked: bool = false:
 	set(value):
 		locked = value
 		queue_redraw()
+## Painted art (IsoKit). `se` runs along grid x (screen down-right), `sw`
+## along grid y; set after `along_x`.
+var kit: StringName = &"":
+	set(value):
+		kit = value
+		var axis: String = "se" if along_x else "sw"
+		_closed_art = IsoKit.texture(kit, "door_%s_closed" % axis)
+		_open_art = IsoKit.texture(kit, "door_%s_open" % axis)
+		_locked_art = IsoKit.texture(kit, "door_%s_locked" % axis)
+		queue_redraw()
+var _closed_art: Texture2D
+var _open_art: Texture2D
+var _locked_art: Texture2D
 ## 0 closed .. 1 open, for the slide.
 var _slide: float = 0.0
 var _shape: CollisionPolygon2D
@@ -64,6 +77,13 @@ func _physics_process(delta: float) -> void:
 
 
 func _draw() -> void:
+	if _open_art != null and _closed_art != null:
+		# The frame always; the panel fades as it sinks into the floor.
+		draw_texture(_open_art, -IsoKit.BLOCK_ANCHOR)
+		var panel: Texture2D = _locked_art if locked and _locked_art != null else _closed_art
+		if _slide < 0.99:
+			draw_texture(panel, -IsoKit.BLOCK_ANCHOR + Vector2(0, 30.0 * _slide), Color(1, 1, 1, 1.0 - _slide))
+		return
 	var hw: float = IsoMath.TILE_W * 0.5
 	var hh: float = IsoMath.TILE_H * 0.5
 	var n: Vector2 = Vector2(0, -hh)

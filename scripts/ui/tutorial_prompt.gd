@@ -1,7 +1,9 @@
 extends CanvasLayer
-## Tutorial presentation: the current instruction, a delayed hint, a brief
-## completion tick, the failure banner, and the closing summary. It renders what
-## TutorialManager reports and never decides anything itself.
+## Tutorial presentation: the current instruction, a delayed hint, the
+## completion tick and closing note (held on screen until they can be read),
+## the failure banner and the closing summary. Tab folds the panel away to a
+## small tab for a clear view of the field; L opens the last lessons again.
+## It renders what TutorialManager reports and never decides anything itself.
 
 ## A TutorialManager, or any node with the same signals, current_step(),
 ## `running` and `hint_shown` (the solo tutorial).
@@ -11,12 +13,16 @@ extends CanvasLayer
 @export var next_label: String = ""
 
 const FADE_SPEED: float = 6.0
+const HISTORY_SIZE: int = 8
 
-var _note: String = ""
-var _note_until: int = 0
-var _completed_title: String = ""
-var _completed_step: TutorialStep
-var _completed_until: int = 0
+## Folded away with Tab: only a small tab shows there is a lesson.
+var collapsed: bool = false
+var _history: Array[TutorialStep] = []
+var _tab: PanelContainer
+var _tab_label: Label
+var _tab_pulse_until: int = 0
+var _log: PanelContainer
+var _log_text: Label
 
 @onready var panel: PanelContainer = $Screen/Prompt
 @onready var speaker: Label = $Screen/Prompt/Margin/Rows/Speaker
@@ -33,6 +39,8 @@ var portrait: TextureRect
 
 func _ready() -> void:
 	_add_portrait()
+	_build_tab()
+	_build_log()
 	summary.hide()
 	banner.hide()
 	panel.modulate.a = 0.0
@@ -85,15 +93,100 @@ func _on_step_started(step: TutorialStep) -> void:
 	hint.hide()
 	note.hide()
 	panel.show()
+	_history.erase(step)
+	_history.push_front(step)
+	if _history.size() > HISTORY_SIZE:
+		_history.pop_back()
+	if _log.visible:
+		_refresh_log()
+	# Folded away: the tab catches the eye when a new lesson arrives.
+	_tab_pulse_until = Time.get_ticks_msec() + 2500
 
 
-func _on_step_completed(step: TutorialStep) -> void:
-	_completed_step = step
-	_completed_title = step.title
-	_completed_until = Time.get_ticks_msec() + 1200
-	if step.note != "":
-		_note = step.note
-		_note_until = Time.get_ticks_msec() + int(maxf(step.delay_after, 1.2) * 1000.0) + 400
+func _on_step_completed(_step: TutorialStep) -> void:
+	pass
+
+
+## The folded panel: a small tab at the top of the screen.
+func _build_tab() -> void:
+	_tab = PanelContainer.new()
+	_tab.name = "Tab"
+	var box: StyleBoxFlat = HudStyle.panel_box(HudStyle.LINE, Color(HudStyle.PANEL, 0.88), 1)
+	box.set_content_margin_all(8)
+	box.content_margin_left = 16
+	box.content_margin_right = 16
+	_tab.add_theme_stylebox_override("panel", box)
+	_tab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tab.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_tab.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_tab.offset_top = 10.0
+	$Screen.add_child(_tab)
+	_tab_label = HudStyle.label("", 15, HudStyle.SAND, HudStyle.body_font(600))
+	_tab.add_child(_tab_label)
+	_tab.hide()
+
+
+## L: the last lessons, newest first, for whatever went by too fast.
+func _build_log() -> void:
+	_log = PanelContainer.new()
+	_log.name = "Log"
+	var box: StyleBoxFlat = HudStyle.panel_box(HudStyle.GOLD, Color(HudStyle.PANEL, 0.96), 2)
+	box.set_content_margin_all(22)
+	_log.add_theme_stylebox_override("panel", box)
+	_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_log.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+	_log.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_log.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_log.offset_right = -24.0
+	$Screen.add_child(_log)
+	var rows: VBoxContainer = VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 10)
+	_log.add_child(rows)
+	rows.add_child(HudStyle.label("LESSONS SO FAR   ·   L TO CLOSE", 15, HudStyle.GOLD, HudStyle.body_font(700)))
+	_log_text = HudStyle.label("", 16, HudStyle.TEXT, HudStyle.body_font(500))
+	_log_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_log_text.custom_minimum_size = Vector2(560, 0)
+	rows.add_child(_log_text)
+	_log.hide()
+
+
+func _refresh_log() -> void:
+	var lines: PackedStringArray = []
+	for step in _history:
+		var head: String = step.title.to_upper()
+		if step.speaker != "":
+			head = step.speaker + "  ·  " + head
+		var entry: String = head + "
+" + step.instruction
+		if step.state == TutorialStep.State.COMPLETE and step.note != "":
+			entry += "
+" + step.note
+		lines.append(entry)
+	_log_text.text = "
+
+".join(lines) if not lines.is_empty() else "Nothing yet."
+
+
+func toggle_collapsed() -> void:
+	collapsed = not collapsed
+
+
+func toggle_log() -> void:
+	_log.visible = not _log.visible
+	if _log.visible:
+		_refresh_log()
+
+
+func _input(event: InputEvent) -> void:
+	if summary.visible or event.is_echo():
+		return
+	# Before the GUI: Tab would otherwise move keyboard focus.
+	if event.is_action_pressed("tutorial_toggle"):
+		toggle_collapsed()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("tutorial_log"):
+		toggle_log()
+		get_viewport().set_input_as_handled()
 
 
 func _on_failed(reason: String) -> void:
@@ -104,6 +197,8 @@ func _on_failed(reason: String) -> void:
 func _on_completed() -> void:
 	panel.hide()
 	banner.hide()
+	_tab.hide()
+	_log.hide()
 	var growth: PackedStringArray = GrowthReport.lines(Progression.campaign_of(self))
 	var taught: Label = get_node_or_null("Screen/Summary/Margin/Rows/Taught") as Label
 	if taught != null and not growth.is_empty():
@@ -136,19 +231,22 @@ func _process(delta: float) -> void:
 	var now: int = Time.get_ticks_msec()
 	var step: TutorialStep = manager.current_step()
 	var showing: bool = step != null and manager.running
-	# The tick belongs to the lesson just done, and only while it is still
-	# the one on screen; the next lesson always shows its own name.
+	# A finished lesson stays on screen, ticked, with its closing note, until
+	# the manager has held it long enough to be read.
+	var done: bool = showing and step.state == TutorialStep.State.COMPLETE
 	if showing:
-		if step == _completed_step and now < _completed_until:
-			title.text = "✓ " + _completed_title.to_upper()
-		else:
-			title.text = step.title.to_upper()
-	hint.visible = showing and manager.hint_shown and hint.text != ""
-	note.visible = now < _note_until and _note != ""
-	note.text = _note
-	panel.visible = showing or note.visible
+		title.text = ("✓ " if done else "") + step.title.to_upper()
+		note.text = step.note
+	hint.visible = showing and not done and manager.hint_shown and hint.text != ""
+	note.visible = done and step.note != ""
+	panel.visible = showing and not collapsed
 	var target: float = 1.0 if panel.visible else 0.0
 	panel.modulate.a = move_toward(panel.modulate.a, target, FADE_SPEED * delta)
+	_tab.visible = showing and collapsed
+	if _tab.visible:
+		_tab_label.text = "TAB  ·  SHOW LESSON:  " + title.text
+		var pulse: float = 0.5 + 0.5 * sin(now / 120.0) if now < _tab_pulse_until else 1.0
+		_tab.modulate = Color(1, 1, 1, 0.55 + 0.45 * pulse)
 
 ## Autoload path lookup, not the global identifier: a --script test harness
 ## can compile these before autoloads are registered.

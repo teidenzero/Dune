@@ -25,6 +25,8 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	# Reading time is checked once, below; elsewhere lessons move on at once.
+	TutorialStep.read_scale = 0.0
 	await _framework_and_movement()
 	await _ranged_section()
 	await _melee_and_shields()
@@ -132,10 +134,11 @@ func _look_at(world: Vector2) -> void:
 		await _frames(2)
 
 
-func _mouse(button: MouseButton, world: Vector2, pressed: bool) -> void:
+func _mouse(button: MouseButton, world: Vector2, pressed: bool, ctrl: bool = false) -> void:
 	var event: InputEventMouseButton = InputEventMouseButton.new()
 	event.button_index = button
 	event.pressed = pressed
+	event.ctrl_pressed = ctrl
 	event.position = _screen(world)
 	event.global_position = event.position
 	Input.parse_input_event(event)
@@ -145,6 +148,14 @@ func _right_click(world: Vector2) -> void:
 	await _look_at(world)
 	_mouse(MOUSE_BUTTON_RIGHT, world, true)
 	_mouse(MOUSE_BUTTON_RIGHT, world, false)
+	await _frames(1)
+
+
+## Ctrl + right-click: plan an order for the signal.
+func _plan_click(world: Vector2) -> void:
+	await _look_at(world)
+	_mouse(MOUSE_BUTTON_RIGHT, world, true, true)
+	_mouse(MOUSE_BUTTON_RIGHT, world, false, true)
 	await _frames(1)
 
 
@@ -215,10 +226,38 @@ func _framework_and_movement() -> void:
 	tutorial.step_time = tutorial.current_step().hint_delay + 0.1
 	await _frames(2)
 	_check(tutorial.hint_shown, "an unfinished step eventually offers a hint")
-	# Walk to the marker with a right-click.
+	# The prompt folds away with Tab and keeps a log on L.
+	var prompt: Node = mission.get_node("TutorialPrompt")
+	await _tap(KEY_TAB)
+	await _frames(2)
+	_check(prompt.collapsed and not prompt.panel.visible and prompt._tab.visible, "Tab folds the lesson away to a small tab")
+	await _tap(KEY_TAB)
+	await _frames(2)
+	_check(not prompt.collapsed and prompt.panel.visible and not prompt._tab.visible, "Tab again brings it back")
+	await _tap(KEY_L)
+	_check(prompt._log.visible and prompt._log_text.text.contains(tutorial.current_step().title.to_upper()), "L opens the log of lessons so far")
+	await _tap(KEY_L)
+	_check(not prompt._log.visible, "L again closes it")
+	# Walk to the marker with a right-click. Done fast, the lesson still stays
+	# on screen, ticked, until it could have been read.
+	TutorialStep.read_scale = 1.0
+	tutorial.step_time = 0.0
 	await _right_click(tutorial.actor(&"Marker_MoveA").global_position)
 	_check(player.order == PlayerController.Order.MOVE and not player.running, "a single right-click walks Paul")
-	_check(await _await_step(&"move_sprint", 600), "reaching the marker completes the movement step")
+	for index in range(600):
+		if tutorial.current_step().state == TutorialStep.State.COMPLETE:
+			break
+		await _frames(1)
+	var reading: float = TutorialStep.reading_seconds(tutorial.current_step().title + " " + tutorial.current_step().instruction)
+	var shown_before: float = tutorial.step_time
+	var held_frames: int = 0
+	while _step_id() == &"move_marker" and held_frames < 900:
+		await _frames(1)
+		held_frames += 1
+		if held_frames == 10:
+			_check(prompt.title.text.begins_with("✓"), "the finished lesson shows its tick while it is held")
+	_check(held_frames >= 60 and float(held_frames) / 60.0 >= reading - shown_before - 0.5 and _step_id() == &"move_sprint", "the next lesson waits until this one could be read (%.1f s held)" % (held_frames / 60.0))
+	TutorialStep.read_scale = 0.0
 	_check(gate.is_open == false, "the gate stays shut until the section is finished")
 	# Run with a double right-click.
 	await _double_right_click(tutorial.actor(&"Marker_MoveB").global_position)
@@ -424,8 +463,51 @@ func _squad_section() -> void:
 	_check(await _await_step(&"squad_follow"), "H completes the hold step")
 	_check(warrior.ai.current_order == Order.HOLD, "the Warrior holds through the real order system")
 	await _tap(KEY_G)
-	_check(await _await_step(&"squad_attack", 900), "G and a return to Paul complete the recall step")
+	_check(await _await_step(&"squad_discipline", 900), "G and a return to Paul complete the recall step")
 	_check(warrior.ai.current_order == Order.FOLLOW, "the Warrior is following again")
+	# Fire discipline: return fire by default; crouching holds everyone.
+	_check(scout.ai.fire_discipline == AllyAIController.Fire.HOLD and warrior.ai.fire_discipline == AllyAIController.Fire.HOLD, "the Fremen start on HOLD FIRE, the quietest")
+	await _tap(KEY_4)
+	await _tap(KEY_B)
+	_check(scout.ai.fire_discipline == AllyAIController.Fire.RETURN and squad.notice.contains("RETURN FIRE"), "B moves the selected Fremen on, and says so")
+	_check(await _await_step(&"squad_signal", 300), "B to RETURN for both completes the discipline step")
+	await _tap(KEY_C)
+	_check(scout.ai.holding_fire() and warrior.ai.holding_fire(), "crouching puts the squad on HOLD FIRE")
+	var foe_ai: EnemyAIController = (tutorial.actor(&"Target_SquadEnemy") as EnemyCharacter).ai
+	var foe_state: EnemyAIController.State = foe_ai.state
+	foe_ai.state = EnemyAIController.State.COMBAT
+	await _frames(2)
+	_check(scout.ai.fire_discipline == AllyAIController.Fire.RETURN, "spotted while low: they return fire")
+	foe_ai.state = foe_state
+	await _tap(KEY_C)
+	_check(scout.ai.fire_discipline == AllyAIController.Fire.RETURN and not scout.ai.holding_fire(), "standing gives each his own discipline back")
+	await _tap(KEY_B)
+	_check(scout.ai.fire_discipline == AllyAIController.Fire.AT_WILL, "B again: FIRE AT WILL")
+	await _tap(KEY_B)
+	_check(scout.ai.fire_discipline == AllyAIController.Fire.HOLD and warrior.ai.fire_discipline == AllyAIController.Fire.HOLD, "and round to HOLD FIRE")
+	# On my signal: plan with Ctrl, nothing moves; F sends everything at once.
+	var plan_a: Vector2 = player.global_position + Vector2(260, -120)
+	var plan_b: Vector2 = player.global_position + Vector2(260, 120)
+	var scout_before: Order = scout.ai.current_order
+	var warrior_before: Order = warrior.ai.current_order
+	await _tap(KEY_2)
+	await _plan_click(plan_a)
+	_check(squad.staged.has(scout) and squad.staged_kind(scout) == "MOVE" and scout.ai.current_order == scout_before, "Ctrl + right-click plans the Scout's move; he waits (%s)" % Order.keys()[scout.ai.current_order])
+	await _tap(KEY_H)
+	_check(not squad.staged.has(scout), "H calls the plan off")
+	await _plan_click(plan_a)
+	await _tap(KEY_3)
+	await _plan_click(plan_b)
+	await _frames(20)
+	_check(squad.staged.size() == 2 and scout.ai.current_order == scout_before and warrior.ai.current_order == warrior_before, "two plans held, nobody has moved")
+	await _tap(KEY_F)
+	_check(scout.ai.current_order == Order.MOVE_TO and warrior.ai.current_order == Order.MOVE_TO and squad.staged.is_empty(), "F: both go at the same instant")
+	_check(squad.notice.contains("ON MY SIGNAL"), "and the signal is announced")
+	_check(await _await_step(&"squad_attack", 300), "a signal that sends both completes the signal step")
+	await _tap(KEY_F)
+	_check(squad.notice.contains("NOTHING PLANNED"), "a signal with nothing planned says how to plan")
+	await _tap(KEY_4)
+	await _tap(KEY_G)
 	# Attack order: Paul closes enough to command, then the Scout does the work.
 	var foe: Node2D = tutorial.actor(&"Target_SquadEnemy")
 	await _tap(KEY_1)
@@ -433,7 +515,7 @@ func _squad_section() -> void:
 	_check(await _await_idle(), "Paul walks up to the yard")
 	await _tap(KEY_2)
 	await _right_click(foe.global_position)
-	_check(scout.ai.current_order == Order.ATTACK, "the Scout received a real ATTACK order")
+	_check(scout.ai.current_order == Order.ATTACK and scout.ai.holding_fire(), "the Scout, holding fire, still takes a real ATTACK order")
 	_check(await _await_step(&"recon_send", 2200), "the Scout defeating the target completes the attack step")
 	_check(HealthComponent.find_on(foe).is_dead, "the training foe was defeated")
 	_check(tutorial.current_section() == &"recon", "the tutorial advanced into the reconnaissance run")

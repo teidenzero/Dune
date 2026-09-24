@@ -84,6 +84,7 @@ var mapes_point: InteractionPoint
 func _ready() -> void:
 	add_to_group("mission_controller")
 	level.layout = LAYOUT
+	level.kit = &"residency"
 	level.build()
 	call_deferred("_begin")
 
@@ -140,6 +141,8 @@ func _furnish() -> void:
 	vent.height = 0.0
 	vent.footprint = 0.4
 	vent.top_color = Color("22201c")
+	vent.texture = IsoKit.texture(level.kit, "floor_grate")
+	vent.anchor = IsoKit.FLOOR_ANCHOR
 	level.add_prop(vent, _cell("v"))
 	var hatch: IsoProp = IsoProp.new()
 	hatch.name = "CellarHatch"
@@ -148,6 +151,8 @@ func _furnish() -> void:
 	hatch.footprint = 0.7
 	hatch.top_color = Color("2a2520")
 	hatch.caption = "CELLAR DOOR"
+	hatch.texture = IsoKit.texture(level.kit, "hatch")
+	hatch.anchor = IsoKit.FLOOR_ANCHOR
 	level.add_prop(hatch, _cell("X"))
 	# Mapes, the housekeeper, in the kitchen.
 	var mapes: IsoProp = IsoProp.new()

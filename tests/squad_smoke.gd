@@ -26,7 +26,8 @@ func _run() -> void:
 	await _defense_and_factions()
 	await _target_and_order_edges()
 	await _death_and_time_restore()
-	_check(completed == 6, "all squad scenarios completed")
+	await _feedback()
+	_check(completed == 7, "all squad scenarios completed")
 	_check(Engine.time_scale == 1.0, "suite leaves normal game speed")
 	print("SQUAD SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
@@ -67,7 +68,7 @@ func _load(active_guard: bool = false) -> void:
 func _selection_and_controls() -> void:
 	await _load()
 	_check(squad.members.size() == 2 and scout.health.current_health == 80 and warrior.health.current_health == 120, "two data-configured Fremen register with correct health")
-	_check(scout.ai.current_order == Order.FOLLOW and warrior.ai.current_order == Order.FOLLOW, "both allies start following")
+	_check(scout.ai.current_order == Order.HOLD and warrior.ai.current_order == Order.HOLD, "both allies start holding where they stand")
 	_check(squad.paul_selected and player.selected and squad.selected_members.is_empty(), "Paul starts selected on his own")
 	await _tap(KEY_2)
 	_check(scout.selected and not warrior.selected and not squad.paul_selected, "2 selects only Scout")
@@ -107,6 +108,8 @@ func _selection_and_controls() -> void:
 	_check(squad.paul_selected and squad.selected_members.is_empty(), "plain click on Paul selects him alone")
 	await _left_click(Vector2(-1100, 950))
 	_check(not squad.has_selection() and not player.selected, "click on empty ground clears everything")
+	await _tap(KEY_2)
+	await _tap(KEY_G)
 	await _tap(KEY_3)
 	await _tap(KEY_H)
 	_check(warrior.ai.current_order == Order.HOLD and scout.ai.current_order == Order.FOLLOW, "H affects selected unit only")
@@ -145,6 +148,15 @@ func _selection_and_controls() -> void:
 	var order: Order = scout.ai.current_order
 	await _right_click(Vector2(-1250, 750))
 	_check(player.order == PlayerController.Order.MOVE and scout.ai.current_order == order and warrior.ai.current_order == order, "right-click with Paul selected orders only Paul")
+	# Both Fremen holding; Paul alone walks off, and nobody goes with him.
+	for ally: AllyCharacter in [scout, warrior]:
+		ally.ai.issue_order(Order.HOLD, ally.global_position)
+	var scout_at: Vector2 = scout.global_position
+	var warrior_at: Vector2 = warrior.global_position
+	await _tap(KEY_1)
+	await _right_click(player.global_position + Vector2(-300, 0))
+	await _frames(60)
+	_check(scout.global_position.distance_to(scout_at) < 10.0 and warrior.global_position.distance_to(warrior_at) < 10.0, "with only Paul selected, the holding Fremen stay put while he walks off")
 	await _frames(30)
 	_check(player.position.x < initial.x - 5, "Paul walks to the right-clicked point")
 	await _tap(KEY_H)
@@ -194,6 +206,100 @@ func _navigation_and_orders() -> void:
 	await _frames(30)
 	_check(scout.velocity.length() <= 112 and warrior.velocity.length() <= 112, "crouched Paul limits companion follow speed")
 	_check(scout.get_collision_exceptions().has(player) and player.get_collision_exceptions().has(scout), "friendly bodies cannot hard-block Paul")
+	completed += 1
+
+
+## Every order answered, every sighting reported, trouble shown even off-screen.
+func _feedback() -> void:
+	await _combat_fixture()
+	guard.weapon.disable()
+	# The Scout, holding fire, sees the guard: he calls it out and marks him.
+	var reported: bool = false
+	for index in range(120):
+		if BarkLayer.current(scout).begins_with("HARKONNEN"):
+			reported = true
+			break
+		await _frames(1)
+	_check(reported and not guard.health.is_dead and scout.ai.behavior != Behavior.COMBAT, "a Fremen on HOLD reports the guard he sees, and does not fire")
+	var layer: BarkLayer = get_first_node_in_group("bark_layer") as BarkLayer
+	_check(layer != null and not layer._pings.is_empty(), "and marks him on the field")
+	# Orders are acknowledged.
+	squad.select_slot(2)
+	squad.issue_context(scout.global_position + Vector2(-120, 0))
+	await _frames(1)
+	_check(BarkLayer.current(scout) == "MOVING.", "a move order is answered: MOVING.")
+	squad.issue_hold()
+	await _frames(1)
+	_check(BarkLayer.current(scout) == "HOLDING.", "a hold is answered: HOLDING.")
+	_check(not squad.reachable(scout, Vector2(90000, 90000)), "a place he cannot walk to is known before he tries")
+	# Clicking the figure picks the unit: Paul's body, with a Fremen beside him.
+	scout.global_position = player.global_position + Vector2(26, 10)
+	await _frames(2)
+	_check(squad.unit_at(player.global_position + Vector2(0, -38)) == player, "a click on Paul's body picks Paul, not the Fremen beside him")
+	_check(squad.unit_at(scout.global_position + Vector2(0, -38)) == scout, "a click on the Fremen's body picks him")
+	scout.global_position = Vector2(-1200, -700)
+	scout.ai.issue_order(Order.HOLD, scout.global_position)
+	await _frames(3)
+	# In rifle range and in sight: he shoots from where he stands.
+	var standing: Vector2 = scout.global_position
+	# He must survive being the target: later checks need him alive.
+	guard.health.max_health = 5000.0
+	guard.health.reset_health()
+	guard.global_position = standing + Vector2(450, 0)
+	await _frames(3)
+	var fired: Array[int] = [0]
+	var count_shot: Callable = func() -> void: fired[0] += 1
+	scout.weapon.weapon_fired.connect(count_shot)
+	squad.select_slot(2)
+	squad.issue_context(guard.global_position)
+	await _frames(120)
+	scout.weapon.weapon_fired.disconnect(count_shot)
+	_check(fired[0] > 0 and scout.global_position.distance_to(standing) < 30.0, "in range and in sight, a Fremen fires from where he stands (moved %d)" % int(scout.global_position.distance_to(standing)))
+	squad.issue_hold()
+	guard.global_position = Vector2(-800, -700)
+	await _frames(3)
+	# All selected, a right-click on a training target: everyone shoots it,
+	# the Fremen as well as Paul - not a walk to where it stands.
+	var dummy: Node2D = (load("res://scenes/characters/test_dummy.tscn") as PackedScene).instantiate()
+	dummy.add_to_group("training_targets")
+	mission.add_child(dummy)
+	dummy.global_position = scout.global_position + Vector2(-260, 120)
+	# The fixture parks the Warrior out of command range; bring him in.
+	warrior.global_position = scout.global_position + Vector2(-40, -80)
+	warrior.ai.issue_order(Order.HOLD, warrior.global_position)
+	await _frames(3)
+	var dummy_health: HealthComponent = HealthComponent.find_on(dummy)
+	var dummy_hp: float = dummy_health.current_health
+	squad.select_slot(4)
+	squad.issue_context(dummy.global_position)
+	await _frames(2)
+	_check(scout.ai.current_order == Order.ATTACK and scout.ai.order_target == dummy and warrior.ai.current_order == Order.ATTACK, "all selected, a right-click on a target makes the Fremen attack it too")
+	for index in range(180):
+		if dummy_health.current_health < dummy_hp - 40.0:
+			break
+		await _frames(1)
+	_check(dummy_health.current_health < dummy_hp, "and they actually hit it")
+	_check(BarkLayer.current(scout) == "ON IT." or scout.weapon.current_ammo < scout.weapon.weapon_data.magazine_size, "the Scout answered the order")
+	dummy.queue_free()
+	await _frames(2)
+	squad.select_slot(2)
+	squad.issue_hold()
+	# Hit: the card flashes and says why; off-screen, an arrow points to him.
+	scout.health.take_damage(1, guard)
+	await _frames(1)
+	_check(scout.alert_active() and scout.alert_text == "HIT!" and BarkLayer.current(scout) == "HIT!", "a hit Fremen cries out and is flagged")
+	var hud: PlayerHud = get_first_node_in_group("player_hud") as PlayerHud
+	camera.snap_to(scout.global_position + Vector2(4000, 0))
+	await _frames(3)
+	_check(hud != null and hud.offscreen.indicated().has(scout), "off-screen, an arrow at the edge points to him")
+	camera.snap_to(scout.global_position)
+	await _frames(3)
+	_check(not hud.offscreen.indicated().has(scout), "on screen, no arrow")
+	# His own decision to fight is said out loud.
+	scout.ai.fire_discipline = AllyAIController.Fire.RETURN
+	scout.health.take_damage(1, guard)
+	await _frames(2)
+	_check(scout.alert_text == "RETURNING FIRE!", "returning fire on his own is announced")
 	completed += 1
 
 
@@ -260,14 +366,29 @@ func _attack_and_enemy_response() -> void:
 
 
 func _defense_and_factions() -> void:
+	# On my signal: a planned attack waits, then goes with the signal.
+	await _combat_fixture()
+	guard.weapon.disable()
+	squad.select_slot(2)
+	var before: Order = scout.ai.current_order
+	squad.stage_context(guard.global_position)
+	await _frames(5)
+	_check(squad.staged_kind(scout) == "ATTACK" and scout.ai.current_order == before, "a planned attack waits for the signal")
+	squad.give_signal()
+	await _frames(2)
+	_check(scout.ai.current_order == Order.ATTACK and scout.ai.order_target == guard and squad.last_signal_count == 1, "the signal sends it: a real ATTACK order")
 	await _combat_fixture()
 	guard.weapon.disable()
 	warrior.position = Vector2(-1150, -850)
 	warrior.ai.issue_order(Order.HOLD, warrior.position)
 	var anchor: Vector2 = warrior.position
 	guard.position = Vector2(-900, -850)
+	# The default is HOLD FIRE: a guard in plain sight is left to the player.
+	await _frames(90)
+	_check(not guard.health.is_dead and warrior.ai.behavior != Behavior.COMBAT, "on HOLD FIRE a Fremen starts no fight of his own")
+	warrior.ai.fire_discipline = AllyAIController.Fire.AT_WILL
 	await _frames(250)
-	_check(guard.health.is_dead and warrior.ai.current_order == Order.HOLD, "HOLD defends against nearby visible hostiles without replacing order")
+	_check(guard.health.is_dead and warrior.ai.current_order == Order.HOLD, "FIRE AT WILL: a HOLD order defends against nearby visible hostiles without replacing the order")
 	await _frames(150)
 	_check(warrior.position.distance_to(anchor) < 25, "temporary combat returns Warrior to hold anchor")
 	await _combat_fixture()
@@ -276,7 +397,11 @@ func _defense_and_factions() -> void:
 	var scout_order: Order = scout.ai.current_order
 	scout.health.take_damage(1, guard)
 	await _frames(15)
-	_check(scout.ai.combat_target == guard and scout.ai.current_order == scout_order, "damage source triggers self-defense beyond passive radius")
+	_check(scout.ai.combat_target != guard, "on HOLD FIRE even a shot at him is left to the player")
+	scout.ai.fire_discipline = AllyAIController.Fire.RETURN
+	scout.health.take_damage(1, guard)
+	await _frames(15)
+	_check(scout.ai.combat_target == guard and scout.ai.current_order == scout_order, "RETURN FIRE: the damage source triggers self-defense beyond passive radius")
 	guard.health.die()
 	await _frames(50)
 	_check(scout.ai.behavior == Behavior.HOLD and scout.ai.current_order == scout_order, "self-defense resumes the persistent order")
@@ -334,9 +459,10 @@ func _target_and_order_edges() -> void:
 	guard.weapon.disable()
 	scout.weapon.disable()
 	var anchor: Vector2 = scout.ai.hold_position
+	scout.ai.fire_discipline = AllyAIController.Fire.AT_WILL
 	guard.position = anchor + Vector2(250, 0)
 	await _frames(20)
-	_check(scout.ai.behavior == Behavior.COMBAT, "nearby hostile starts autonomous defense")
+	_check(scout.ai.behavior == Behavior.COMBAT, "FIRE AT WILL: a nearby hostile starts autonomous defense")
 	scout.position = anchor + Vector2(300, 0)
 	guard.position = anchor + Vector2(500, 0)
 	await _frames(25)

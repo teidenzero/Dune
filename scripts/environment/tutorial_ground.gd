@@ -15,10 +15,26 @@ func _ready() -> void:
 	# above it free for things painted on the ground - vision cones, for one.
 	# See VisionCone.GROUND_Z / VisionCone.CONE_Z.
 	z_index = VisionCone.GROUND_Z
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	_paving = SquadDresser.texture("ground_courtyard")
+	if not Engine.is_editor_hint():
+		# The rest of the yard dresses once it has all loaded.
+		call_deferred("_dress")
+
+
+## The painted courtyard, tiled; without it the drawn paving below.
+var _paving: Texture2D
+
+
+func _dress() -> void:
+	SquadDresser.dress(owner if owner != null else get_parent())
 
 
 func _draw() -> void:
 	draw_rect(courtyard_rect.grow(60.0), Color("2a2724"))
+	if _paving != null:
+		draw_texture_rect(_paving, courtyard_rect, true)
+		return
 	draw_rect(courtyard_rect, stone_color)
 	var x: float = courtyard_rect.position.x
 	while x < courtyard_rect.end.x:

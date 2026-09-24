@@ -41,7 +41,14 @@ const BAYONET_COST: int = 4
 @export var min_zoom: float = 1.3
 @export var max_zoom: float = 1.9
 
-var phase: Phase = Phase.EXPLORE
+var phase: Phase = Phase.EXPLORE:
+	set(value):
+		phase = value
+		_phase_since = Time.get_ticks_msec()
+## When the phase (or, in the Harkonnen turn, the acting guard) last changed.
+var _phase_since: int = 0
+## A busy or enemy phase this long without change is stuck, and recovered.
+const STALL_SECONDS: float = 20.0
 var round_number: int = 0
 var points: int = 0
 var max_points: int = 10
@@ -63,6 +70,9 @@ var auto_engage: bool = true
 var allow_voluntary: bool = true
 ## Tests: a fixed roll (0..100) instead of a random one. Negative is random.
 var forced_roll: float = -1.0
+## How the fight in progress opened: &"vision" (Q), &"strike" (the hero
+## attacked first, no vision) or &"spotted" (a guard saw him).
+var opening: StringName = &""
 
 var _snapshot: TurnSnapshot
 ## The hero as he really stands while a vision plays; the body in the vision
@@ -114,15 +124,54 @@ static func install(parent: Node, hero_body: PlayerController, iso_level: IsoLev
 # --------------------------------------------------------------------------
 
 func _process(_delta: float) -> void:
-	if phase != Phase.EXPLORE or not is_instance_valid(player) or player.health.is_dead or not auto_engage:
+	if not is_instance_valid(player) or player.health.is_dead:
 		return
-	# A guard who has fully detected the hero starts the fight.
+	if phase == Phase.PLAYER:
+		_end_if_over()
+		return
+	if phase == Phase.BUSY or phase == Phase.ENEMY:
+		if Time.get_ticks_msec() - _phase_since > int(STALL_SECONDS * 1000.0):
+			_recover()
+		return
+	if phase != Phase.EXPLORE or not auto_engage:
+		return
+	# A living guard who has fully detected the hero starts the fight. (A dead
+	# one can keep his last state; he must never start one.)
 	var spotters: Array[EnemyCharacter] = []
-	for enemy in _enemies():
+	for enemy in _living_enemies():
 		if enemy.ai.state == EnemyAIController.State.COMBAT:
 			spotters.append(enemy)
 	if not spotters.is_empty():
 		begin(false, spotters)
+
+
+## The one rule for leaving turn-based mode: outside a vision, a fight lasts
+## only while somebody alive knows where the hero is. However they died - his
+## blade, a blast, anything - once nobody is left, it is real time again.
+## Inside a vision the vision decides, and ends in its own choice.
+func fight_over() -> bool:
+	return phase != Phase.EXPLORE and not in_vision and _aware_living().is_empty()
+
+
+func _end_if_over() -> void:
+	if fight_over():
+		_log("NOBODY LEFT")
+		_finish()
+
+
+## Last resort: an action that never came back (its target gone mid-way).
+## Nobody hunting him - real time; a vision - its choice; otherwise his turn.
+func _recover() -> void:
+	push_warning("TurnCombat: %s stalled for %.0f s; recovering" % [Phase.keys()[phase], STALL_SECONDS])
+	acting = null
+	if vision_fatal:
+		_prompt(&"")
+	elif in_vision:
+		_prompt(&"finish" if _aware_living().is_empty() else &"player")
+	elif _aware_living().is_empty():
+		_finish()
+	else:
+		_start_player_turn()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -198,6 +247,10 @@ func begin(voluntary: bool, spotters: Array[EnemyCharacter] = [], with_vision: b
 		return
 	# Going in with prescience: the vision starts the instant Q is pressed,
 	# before anyone is frozen or moved, so taking it back changes nothing.
+	# Only the living start a fight.
+	spotters = spotters.filter(func(e: EnemyCharacter) -> bool: return is_instance_valid(e) and not e.health.is_dead)
+	if not voluntary and spotters.is_empty():
+		return
 	var before: TurnSnapshot = TurnSnapshot.capture(get_tree(), player, {}) if voluntary and with_vision else null
 	round_number = 1
 	evasion = 0.0
@@ -212,6 +265,7 @@ func begin(voluntary: bool, spotters: Array[EnemyCharacter] = [], with_vision: b
 		_make_aware(enemy, false)
 	phase = Phase.BUSY
 	_frame_fight()
+	opening = (&"vision" if with_vision else &"strike") if voluntary else &"spotted"
 	combat_started.emit(voluntary)
 	roster_changed.emit()
 	if voluntary and with_vision:
@@ -505,6 +559,11 @@ func preview_attack(target: Node2D) -> Dictionary:
 	elif unaware:
 		result.note = "UNAWARE"
 	result.ok = points >= result.cost
+	# Out of reach only because he is crouched: say so, with the standing cost.
+	if not result.ok and player.is_crouching and not approach.is_empty():
+		var standing_cost: int = cost + approach.size() * TurnRules.MOVE_COST
+		if points >= standing_cost:
+			result.note = "CROUCHED: %d AP  ·  STAND (C): %d AP" % [result.cost, standing_cost]
 	return result
 
 
@@ -546,6 +605,9 @@ func command_attack(target: Node2D) -> void:
 	_face(player, target.global_position)
 	points -= attack_cost(plan.kind)
 	points_changed.emit()
+	if not is_instance_valid(target):
+		_after_hero_action(had_foes)
+		return
 	if plan.kind == TurnRules.Attack.FIRE:
 		await _hero_fire(target, plan.chance)
 	else:
@@ -565,6 +627,8 @@ func _hero_fire(target: Node2D, chance: float) -> void:
 		aim += Vector2(_rng.randf_range(-40, 40), _rng.randf_range(-30, 10))
 	CombatFx.tracer(level, muzzle, aim, Color(1.0, 0.85, 0.5))
 	await get_tree().create_timer(0.12).timeout
+	if not is_instance_valid(target):
+		return
 	if not hits:
 		CombatFx.float_text(level, target.global_position, "MISS", Color(0.8, 0.8, 0.8))
 	elif target is FuelTank:
@@ -581,6 +645,8 @@ func _hero_cut(enemy: EnemyCharacter, kind: TurnRules.Attack) -> void:
 	var unaware: bool = not aware.has(enemy)
 	var silent: bool = unaware and TurnRules.is_behind(player.global_position, enemy)
 	await _lunge(player, enemy.global_position)
+	if not is_instance_valid(enemy):
+		return
 	CombatFx.slash(level, player.global_position, player.global_position.direction_to(enemy.global_position), Color(0.95, 0.9, 0.7))
 	var chance: float = 100.0 if unaware else _hero_knife_chance(kind)
 	if _roll() >= chance:
@@ -659,12 +725,13 @@ func _after_hero_action(had_foes: bool) -> void:
 	if vision_fatal:
 		_prompt(&"")
 		return
-	if had_foes and _aware_living().is_empty():
-		if in_vision:
-			_prompt(&"finish")
-		else:
+	if _aware_living().is_empty():
+		if not in_vision:
 			_finish()
-		return
+			return
+		if had_foes:
+			_prompt(&"finish")
+			return
 	phase = Phase.PLAYER
 	points_changed.emit()
 	roster_changed.emit()
@@ -682,6 +749,8 @@ func _close_round() -> void:
 		_prompt(&"")
 	elif in_vision:
 		_prompt(&"finish" if _aware_living().is_empty() else &"player")
+	elif _aware_living().is_empty():
+		_finish()
 	else:
 		_start_player_turn()
 
@@ -695,7 +764,11 @@ func _enemy_phase() -> void:
 	for enemy in _aware_living():
 		if phase == Phase.EXPLORE or vision_fatal or (player.health.is_dead and not in_vision):
 			break
+		if not is_instance_valid(enemy) or enemy.health.is_dead:
+			continue
 		acting = enemy
+		# Each guard's turn restarts the stall clock.
+		_phase_since = Time.get_ticks_msec()
 		turn_changed.emit(enemy)
 		var camera: TacticalCamera = _camera()
 		if camera != null:
@@ -710,7 +783,7 @@ func _enemy_turn(enemy: EnemyCharacter) -> void:
 	var budget: int = TurnRules.ELITE_POINTS if enemy.ai.melee_only else TurnRules.GUARD_POINTS
 	_face(enemy, player.global_position)
 	var guard_rounds: int = 0
-	while budget > 0 and not enemy.health.is_dead and not vision_fatal and phase != Phase.EXPLORE:
+	while is_instance_valid(enemy) and budget > 0 and not enemy.health.is_dead and not vision_fatal and phase != Phase.EXPLORE:
 		if player.health.is_dead and not in_vision:
 			return
 		guard_rounds += 1
@@ -758,9 +831,10 @@ func _enemy_turn(enemy: EnemyCharacter) -> void:
 		for cell in path_in.slice(0, spend):
 			await _step(enemy, cell, ENEMY_WALK)
 			budget -= 1
-			if _enemy_can_shoot(enemy):
+			if not is_instance_valid(enemy) or _enemy_can_shoot(enemy):
 				break
-		enemy.velocity = Vector2.ZERO
+		if is_instance_valid(enemy):
+			enemy.velocity = Vector2.ZERO
 
 
 func _enemy_blade_cost(enemy: EnemyCharacter) -> int:
@@ -1033,15 +1107,16 @@ func _restore_combat_state(state: Dictionary) -> void:
 func _step(actor: Node2D, cell: Vector2i, speed: float) -> void:
 	var goal: Vector2 = IsoMath.cell_to_world(cell)
 	_face(actor, goal)
-	while actor.global_position.distance_to(goal) > 1.0:
-		if phase == Phase.EXPLORE or not is_instance_valid(actor):
+	while is_instance_valid(actor) and actor.global_position.distance_to(goal) > 1.0:
+		if phase == Phase.EXPLORE:
 			return
 		var delta: float = get_physics_process_delta_time()
 		var direction: Vector2 = actor.global_position.direction_to(goal)
 		actor.velocity = direction * speed
 		actor.global_position = actor.global_position.move_toward(goal, speed * delta)
 		await get_tree().physics_frame
-	actor.global_position = goal
+	if is_instance_valid(actor):
+		actor.global_position = goal
 
 
 func _lunge(actor: Node2D, toward: Vector2) -> void:
@@ -1050,7 +1125,8 @@ func _lunge(actor: Node2D, toward: Vector2) -> void:
 	var tween: Tween = actor.create_tween()
 	tween.tween_property(actor, "global_position", reach, 0.08)
 	tween.tween_property(actor, "global_position", home, 0.14)
-	await tween.finished
+	# A clock, not the tween: a tween dies with its actor and never finishes.
+	await get_tree().create_timer(0.23).timeout
 
 
 func _face(actor: Node2D, point: Vector2) -> void:

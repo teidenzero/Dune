@@ -17,6 +17,9 @@ const FADED: float = 0.26
 @export_multiline var layout: String = ""
 @export var player: PlayerController
 @export var navigation: NavigationRegion2D
+## Painted art (IsoKit): &"residency" for the Atreides Residency; empty keeps
+## the drawn look (the harvester's decks).
+@export var kit: StringName = &""
 
 var walls: Array[IsoWall] = []
 var doors: Array[IsoDoor] = []
@@ -52,6 +55,7 @@ func build() -> void:
 	built = true
 	floor_layer = IsoFloor.new()
 	floor_layer.name = "Floor"
+	floor_layer.kit = kit
 	add_child(floor_layer)
 	cursor = IsoTileCursor.new()
 	cursor.name = "TileCursor"
@@ -93,6 +97,7 @@ func _place(symbol: String, cell: Vector2i) -> void:
 			var wall: IsoWall = IsoWall.new()
 			wall.name = "Wall_%d_%d" % [cell.x, cell.y]
 			wall.position = at
+			wall.texture = _wall_art(cell)
 			wall_root.add_child(wall)
 			walls.append(wall)
 			_faders.append(wall)
@@ -104,6 +109,7 @@ func _place(symbol: String, cell: Vector2i) -> void:
 			door.position = at
 			# The wall line runs through the neighbours that are walls.
 			door.along_x = _wall_cells.has(cell + Vector2i(1, 0)) or _wall_cells.has(cell - Vector2i(1, 0))
+			door.kit = kit
 			prop_root.add_child(door)
 			doors.append(door)
 			_faders.append(door)
@@ -124,6 +130,28 @@ func _place(symbol: String, cell: Vector2i) -> void:
 				marks[symbol] = []
 			(marks[symbol] as Array).append(cell)
 	floor_cells.append(cell)
+
+
+## A lone block standing in a room is a pillar; a wall line is plain stone,
+## with a panel here and there and, where its lit face shows, a hanging.
+## Chosen by position, so a room looks the same every time.
+func _wall_art(cell: Vector2i) -> Texture2D:
+	if kit == &"":
+		return null
+	var neighbours: int = 0
+	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if _wall_cells.has(cell + offset):
+			neighbours += 1
+	if neighbours == 0:
+		return IsoKit.texture(kit, "pillar")
+	var pick: int = absi(cell.x * 73 + cell.y * 151) % 13
+	# The left face looks toward +y; a hanging needs open floor there.
+	var face_open: bool = cell.y + 1 < size.y and not _wall_cells.has(cell + Vector2i(0, 1))
+	if pick == 0 and face_open:
+		return IsoKit.texture(kit, "wall_hanging")
+	if pick == 4 or pick == 9:
+		return IsoKit.texture(kit, "wall_panel")
+	return IsoKit.texture(kit, "wall_plain")
 
 
 func door_at(cell: Vector2i) -> IsoDoor:

@@ -297,7 +297,14 @@ func _on_started(voluntary: bool) -> void:
 	tween.tween_property(_top, "offset_bottom", 92.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(_bottom, "offset_top", -176.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(_bottom, "offset_bottom", 0.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_show_banner("PRESCIENCE" if voluntary else "SPOTTED", Color(0.7, 0.85, 1.0) if voluntary else HudStyle.DANGER)
+	# The banner names how the fight really opened: a vision only for Q.
+	match combat.opening:
+		&"vision":
+			_show_banner("PRESCIENCE", Color(0.7, 0.85, 1.0))
+		&"strike":
+			_show_banner("YOU STRIKE FIRST", HudStyle.GOLD_LIGHT)
+		_:
+			_show_banner("SPOTTED", HudStyle.DANGER)
 
 
 func _on_ended() -> void:

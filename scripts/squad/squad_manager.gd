@@ -14,6 +14,8 @@ extends Node2D
 ##   C  R  H  G            sneak, reload, hold, follow
 ##   Space                 pause; orders can still be given while paused
 
+## F sent the plan: how many orders went.
+signal signal_given(count: int)
 signal selection_changed
 signal order_issued(order: int)
 signal command_rejected(allies: Array)
@@ -72,6 +74,14 @@ var _charge_start: int = 0
 ## The held blade will open a turn-based fight on release, not cut in real time.
 var _charge_opens_fight: bool = false
 var _drag_start: Vector2
+## Orders held for the signal, one per unit: {kind, point, target}. Kinds:
+## &"move", &"attack", &"melee" (Paul's knife), &"use". F sends them all at once.
+var staged: Dictionary = {}
+## How many orders the last signal sent (the tutorial reads it).
+var last_signal_count: int = 0
+## Fremen put on HOLD by crouching, with the discipline each had before:
+## standing gives it back; being spotted turns HOLD into RETURN.
+var _sneak_hold: Dictionary = {}
 var _marker_until: int = 0
 var _rejection_until: int = 0
 var _notice_until: int = 0
@@ -250,17 +260,22 @@ func issue_follow() -> void:
 		if not can_command(ally):
 			ally.flash_command_feedback("RECALLED")
 		ally.ai.issue_order(AllyAIController.Order.FOLLOW)
+		BarkLayer.say(ally, "WITH YOU.", BarkLayer.CALM)
 	if not recipients.is_empty():
 		order_issued.emit(AllyAIController.Order.FOLLOW)
 
 
 ## Fremen hold their ground; Paul simply stops.
 func issue_hold() -> void:
+	# Hold also calls off whatever the selection had planned.
+	for unit in selected_units():
+		staged.erase(unit)
 	if paul_selected and _paul_alive():
 		player.stop()
 	var recipients: Array[AllyCharacter] = _resolve_recipients()
 	for ally in recipients:
 		ally.ai.issue_order(AllyAIController.Order.HOLD, ally.global_position)
+		BarkLayer.say(ally, "HOLDING.", BarkLayer.CALM)
 	if not recipients.is_empty():
 		order_issued.emit(AllyAIController.Order.HOLD)
 
@@ -269,6 +284,9 @@ func issue_hold() -> void:
 func issue_context(point: Vector2, queue: bool = false, run: bool = false) -> void:
 	if not point.is_finite() or not has_selection():
 		return
+	# A direct order replaces a plan.
+	for unit in selected_units():
+		staged.erase(unit)
 	var enemy: Node2D = _click_target(point)
 	if hero_mode and enemy != null and _open_fight(enemy, TurnRules.Attack.FIRE):
 		return
@@ -294,8 +312,9 @@ func issue_context(point: Vector2, queue: bool = false, run: bool = false) -> vo
 	for ally in recipients:
 		if not ally.navigation_ready():
 			continue
-		if enemy != null and enemy.is_in_group("enemies"):
+		if enemy != null and ordered_target(enemy):
 			ally.ai.issue_order(AllyAIController.Order.ATTACK, point, enemy)
+			BarkLayer.say(ally, "ON HIM." if enemy.is_in_group("enemies") else "ON IT.", BarkLayer.CALM)
 		else:
 			# Fan out beside the click so nobody queues for the same spot. Paul
 			# takes the click itself, so the Fremen flank him: -1, +1, -2...
@@ -303,7 +322,14 @@ func issue_context(point: Vector2, queue: bool = false, run: bool = false) -> vo
 			if paul_ordered:
 				slot = float(floori(index / 2.0) + 1) * (-1.0 if index % 2 == 0 else 1.0)
 			var destination: Vector2 = NavigationServer2D.map_get_closest_point(ally.agent.get_navigation_map(), point + Vector2(slot * 60.0, 0.0))
+			if not reachable(ally, destination):
+				# Not a silent no: he says so, and the marker turns red.
+				BarkLayer.say(ally, "NO WAY THERE.", BarkLayer.WARN)
+				BarkLayer.ping(get_tree(), point, BarkLayer.WARN)
+				index += 1
+				continue
 			ally.ai.issue_order(AllyAIController.Order.MOVE_TO, destination)
+			BarkLayer.say(ally, "MOVING.", BarkLayer.CALM)
 		index += 1
 	if not paul_ordered and recipients.is_empty():
 		return
@@ -311,6 +337,132 @@ func issue_context(point: Vector2, queue: bool = false, run: bool = false) -> vo
 	marker_attack = enemy != null
 	_marker_until = Time.get_ticks_msec() + 850
 	order_issued.emit(AllyAIController.Order.ATTACK if marker_attack else AllyAIController.Order.MOVE_TO)
+
+
+## Ctrl + right-click: plan, do not act. Each selected unit keeps one order
+## for the signal; `melee` (Ctrl + left-click on a guard) plans Paul's knife.
+func stage_context(point: Vector2, melee: bool = false) -> void:
+	if not point.is_finite() or not has_selection():
+		return
+	var enemy: Node2D = _click_target(point)
+	var usable: Node2D = interactable_at(point) if enemy == null else null
+	var planned: int = 0
+	var fremen: Array[AllyCharacter] = []
+	for unit in selected_units():
+		if unit is AllyCharacter:
+			fremen.append(unit)
+	var paul_plans: bool = paul_selected and _paul_alive()
+	if paul_plans:
+		if melee and enemy != null and enemy.is_in_group("enemies") and player.melee.enabled:
+			staged[player] = {"kind": &"melee", "point": enemy.global_position, "target": enemy}
+		elif enemy != null:
+			staged[player] = {"kind": &"attack", "point": enemy.global_position, "target": enemy}
+		elif usable != null:
+			staged[player] = {"kind": &"use", "point": usable.global_position, "target": usable}
+		else:
+			staged[player] = {"kind": &"move", "point": _tile_point(point), "target": null}
+		planned += 1
+	var index: int = 0
+	for ally in fremen:
+		if enemy != null and ordered_target(enemy):
+			staged[ally] = {"kind": &"attack", "point": enemy.global_position, "target": enemy}
+		else:
+			# The same fan-out as a direct order, fixed now so the plan shows it.
+			var slot: float = index - (fremen.size() - 1) * 0.5
+			if paul_plans:
+				slot = float(floori(index / 2.0) + 1) * (-1.0 if index % 2 == 0 else 1.0)
+			var destination: Vector2 = point + Vector2(slot * 60.0, 0.0)
+			if ally.navigation_ready():
+				destination = NavigationServer2D.map_get_closest_point(ally.agent.get_navigation_map(), destination)
+			staged[ally] = {"kind": &"move", "point": destination, "target": null}
+		index += 1
+		planned += 1
+	if planned > 0:
+		var count: int = staged.size()
+		flash_notice("PLANNED - %d ORDER%s WAIT FOR YOUR SIGNAL (F)" % [count, "" if count == 1 else "S"], 2.4)
+		queue_redraw()
+
+
+## F: every planned order goes at the same instant. The command link still
+## decides who hears it; a Fremen out of range is told so, as with any order.
+func give_signal() -> void:
+	var plan: Dictionary = staged.duplicate()
+	staged.clear()
+	last_signal_count = 0
+	if plan.is_empty():
+		flash_notice("NOTHING PLANNED - CTRL + RIGHT-CLICK TO PLAN AN ORDER")
+		return
+	var blocked: Array[AllyCharacter] = []
+	for unit: Node2D in plan:
+		if not is_instance_valid(unit):
+			continue
+		var order: Dictionary = plan[unit]
+		var target: Node2D = order.target if is_instance_valid(order.target) else null
+		if order.kind != &"move" and target == null:
+			continue
+		if unit == player:
+			if not _paul_alive():
+				continue
+			match order.kind:
+				&"move":
+					player.move_to(order.point, false)
+				&"attack":
+					player.attack(target)
+				&"melee":
+					player.melee_strike(target, false)
+				&"use":
+					player.interact_with(target)
+			last_signal_count += 1
+			continue
+		var ally: AllyCharacter = unit as AllyCharacter
+		if ally == null or not _available(ally):
+			continue
+		if not can_command(ally):
+			blocked.append(ally)
+			continue
+		if order.kind == &"attack":
+			ally.ai.issue_order(AllyAIController.Order.ATTACK, target.global_position, target)
+		else:
+			ally.ai.issue_order(AllyAIController.Order.MOVE_TO, order.point)
+		BarkLayer.say(ally, "NOW!", BarkLayer.CALM)
+		last_signal_count += 1
+	if not blocked.is_empty():
+		_report_rejection(blocked)
+	if last_signal_count > 0:
+		flash_notice("ON MY SIGNAL - %d GO" % last_signal_count, 2.0)
+	else:
+		flash_notice("NOBODY HEARD THE SIGNAL", 2.0)
+	signal_given.emit(last_signal_count)
+	queue_redraw()
+
+
+## What a Fremen will shoot when told to: a Harkonnen, a training target, a
+## fuel tank. Never chosen on his own - only on the player's order.
+static func ordered_target(target: Node2D) -> bool:
+	if not is_instance_valid(target):
+		return false
+	if target is FuelTank:
+		return not (target as FuelTank).detonated
+	return target.is_in_group("enemies") or target.is_in_group("training_targets")
+
+
+## Whether a unit can walk to `point` at all: its navigation path ends there,
+## not at the edge of a section it cannot leave. Before the map is ready,
+## assume yes.
+func reachable(unit: Node2D, point: Vector2) -> bool:
+	var agent: NavigationAgent2D = unit.get_node_or_null("NavigationAgent2D") as NavigationAgent2D
+	if agent == null or NavigationServer2D.map_get_iteration_id(agent.get_navigation_map()) <= 0:
+		return true
+	var path: PackedVector2Array = NavigationServer2D.map_get_path(agent.get_navigation_map(), unit.global_position, point, true)
+	return not path.is_empty() and path[path.size() - 1].distance_to(point) <= 48.0
+
+
+## What `unit` is waiting to do on the signal, for its card ("" if nothing).
+func staged_kind(unit: Node2D) -> String:
+	if not staged.has(unit):
+		return ""
+	var names: Dictionary = {&"move": "MOVE", &"attack": "ATTACK", &"melee": "KNIFE", &"use": "USE"}
+	return names.get(staged[unit].kind, "")
 
 
 ## In an isometric interior a move goes to the centre of the clicked tile.
@@ -330,6 +482,7 @@ func toggle_sneak() -> void:
 
 
 func set_stance(low: bool) -> void:
+	var changed: bool = low != squad_low
 	squad_low = low
 	if _paul_alive():
 		player.set_crouching(low)
@@ -338,6 +491,67 @@ func set_stance(low: bool) -> void:
 			member.sneaking = low
 			if not member.health.is_dead:
 				member.is_crouching = low
+	if changed:
+		_sneak_discipline(low)
+
+
+## A crouching squad holds its fire until it is seen: getting into position
+## must not start the fight. Standing up gives each Fremen his own back.
+func _sneak_discipline(low: bool) -> void:
+	if low:
+		for member in members:
+			if is_instance_valid(member) and member.ai.fire_discipline != AllyAIController.Fire.HOLD:
+				_sneak_hold[member] = member.ai.fire_discipline
+				member.ai.fire_discipline = AllyAIController.Fire.HOLD
+		return
+	for member: AllyCharacter in _sneak_hold:
+		if is_instance_valid(member):
+			member.ai.fire_discipline = _sneak_hold[member]
+	_sneak_hold.clear()
+
+
+## Spotted while low: the ones holding because of the stance answer back now.
+func _spotted_while_low() -> void:
+	var holding: Array[AllyCharacter] = []
+	for member: AllyCharacter in _sneak_hold:
+		if is_instance_valid(member) and member.ai.fire_discipline == AllyAIController.Fire.HOLD:
+			holding.append(member)
+	if holding.is_empty():
+		return
+	for node: Node in get_tree().get_nodes_in_group("enemies"):
+		var enemy: EnemyCharacter = node as EnemyCharacter
+		if enemy != null and not enemy.health.is_dead and enemy.ai.state == EnemyAIController.State.COMBAT:
+			for member in holding:
+				member.ai.fire_discipline = AllyAIController.Fire.RETURN
+			flash_notice("SPOTTED - THE FREMEN RETURN FIRE")
+			return
+
+
+## B: the selected Fremen (or all of them, with only Paul selected) move to
+## the next fire discipline: HOLD, RETURN, AT WILL.
+func cycle_fire_discipline() -> void:
+	var chosen: Array[AllyCharacter] = []
+	for ally in selected_members:
+		if _available(ally):
+			chosen.append(ally)
+	if chosen.is_empty():
+		for ally in members:
+			if _available(ally):
+				chosen.append(ally)
+	if chosen.is_empty():
+		return
+	var next: AllyAIController.Fire = ((chosen[0].ai.fire_discipline + 1) % 3) as AllyAIController.Fire
+	var names: PackedStringArray = []
+	for ally in chosen:
+		ally.ai.fire_discipline = next
+		# The player's word replaces the stance's.
+		_sneak_hold.erase(ally)
+		BarkLayer.say(ally, ["HOLDING FIRE.", "ON RETURN FIRE.", "FIRE AT WILL."][next], BarkLayer.CALM)
+		names.append(ally.data.display_name.to_upper() if ally.data != null else str(ally.name))
+	var text: String = "%s: %s" % [", ".join(names), AllyAIController.FIRE_NAMES[next]]
+	if chosen[0].ai.hold_fire:
+		text += "  (THE DRILL: HOLDING FOR NOW)"
+	flash_notice(text, 2.4)
 
 
 func reload_selected() -> void:
@@ -544,15 +758,26 @@ func _click_target(point: Vector2) -> Node2D:
 	return enemy
 
 
+## The unit under the cursor: the nearest of Paul and the Fremen, measured to
+## the feet or to the body above them, since the player clicks the figure.
 func unit_at(point: Vector2) -> Node2D:
 	if hero_mode:
 		return null
-	var ally: Node2D = actor_at(point, "allies")
-	if ally != null and commands_enabled:
-		return ally
-	if _paul_alive() and point.distance_to(player.global_position) <= PICK_RADIUS:
-		return player
-	return null
+	var candidates: Array[Node2D] = []
+	if _paul_alive():
+		candidates.append(player)
+	if commands_enabled:
+		for ally in members:
+			if _available(ally):
+				candidates.append(ally)
+	var best: Node2D = null
+	var best_distance: float = PICK_RADIUS + 12.0
+	for unit in candidates:
+		var gap: float = minf(point.distance_to(unit.global_position), (point + Vector2(0, 40)).distance_to(unit.global_position))
+		if gap < best_distance:
+			best_distance = gap
+			best = unit
+	return best
 
 
 ## Spice machines and hold-to-use points (beacons, sabotage panels).
@@ -635,6 +860,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		issue_follow()
 	elif event.is_action_pressed("crouch"):
 		toggle_sneak()
+	elif event.is_action_pressed("fire_discipline"):
+		cycle_fire_discipline()
+	elif event.is_action_pressed("squad_signal"):
+		give_signal()
 	elif event.is_action_pressed("reload"):
 		reload_selected()
 	elif event.is_action_pressed("melee_attack"):
@@ -675,6 +904,12 @@ func _hero_key(event: InputEvent) -> bool:
 
 func _handle_mouse(event: InputEventMouseButton) -> void:
 	var point: Vector2 = get_canvas_transform().affine_inverse() * event.position
+	if event.ctrl_pressed and event.pressed and not hero_mode and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+		# Ctrl: plan for the signal instead of acting now. Ctrl + left-click on
+		# a guard plans Paul's knife; anything else is a plain plan.
+		stage_context(point, event.button_index == MOUSE_BUTTON_LEFT and hostile_at(point) != null)
+		get_viewport().set_input_as_handled()
+		return
 	if event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			var hostile: Node2D = hostile_at(point)
@@ -757,6 +992,7 @@ func _process(_delta: float) -> void:
 	# Anything that stands Paul up (a run order, a tutorial) stands everyone.
 	if _paul_alive() and player.is_crouching != squad_low:
 		set_stance(player.is_crouching)
+	_spotted_while_low()
 	_update_links()
 	queue_redraw()
 
@@ -775,6 +1011,7 @@ func _draw() -> void:
 		return
 	_draw_command_range()
 	_draw_links()
+	_draw_staged()
 	_draw_marker()
 	_draw_box()
 
@@ -823,6 +1060,88 @@ func _draw_dashes(from: Vector2, to: Vector2, dash: float, gap: float, color: Co
 		var end: float = minf(travelled + dash, total)
 		draw_line(from + step * travelled, from + step * end, color, width)
 		travelled = end + gap
+
+
+## The plan: a dashed line along the route each unit will walk (gold), red
+## where it crosses a guard's view as he stands now, and red rings on what it
+## will attack. In Paul's vision the plan is drawn by the vision, in time.
+func _draw_staged() -> void:
+	var font: Font = HudStyle.body_font(700)
+	var vision: bool = _paul_alive() and player.prescience != null and player.prescience.active
+	var watchers: Array[EnemyCharacter] = []
+	if not vision:
+		watchers = _known_guards()
+	var space: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	for unit: Node2D in staged:
+		if not is_instance_valid(unit):
+			continue
+		var order: Dictionary = staged[unit]
+		var target: Node2D = order.target if is_instance_valid(order.target) else null
+		var at: Vector2 = target.global_position if target != null else order.point
+		var hostile: bool = order.kind == &"attack" or order.kind == &"melee"
+		var color: Color = Color(1.0, 0.45, 0.3, 0.85) if hostile else Color(1.0, 0.82, 0.4, 0.85)
+		if not vision:
+			_draw_plan_route(plan_route(unit, at), watchers, space)
+		var number: String = "1" if unit == player else str((unit as AllyCharacter).selection_slot)
+		if hostile:
+			draw_arc(to_local(at), 26.0, 0, TAU, 32, color, 2.5, true)
+			var label: String = number + (" KNIFE" if order.kind == &"melee" else "")
+			draw_string(font, to_local(at) + Vector2(24, -24), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)
+		else:
+			draw_circle(to_local(at), 16.0, Color(color, 0.18))
+			draw_arc(to_local(at), 16.0, 0, TAU, 24, color, 2.0, true)
+			draw_string(font, to_local(at) + Vector2(-5, 6), number, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)
+
+
+## The route a planned unit will walk: a read-only navigation query.
+func plan_route(unit: Node2D, to: Vector2) -> PackedVector2Array:
+	var agent: NavigationAgent2D = unit.get_node_or_null("NavigationAgent2D") as NavigationAgent2D
+	if agent != null and NavigationServer2D.map_get_iteration_id(agent.get_navigation_map()) > 0:
+		var route: PackedVector2Array = NavigationServer2D.map_get_path(agent.get_navigation_map(), unit.global_position, to, true)
+		if route.size() >= 2:
+			return route
+	return PackedVector2Array([unit.global_position, to])
+
+
+## Guards the squad can see: only their views are shown, never a hidden one's.
+func _known_guards() -> Array[EnemyCharacter]:
+	var result: Array[EnemyCharacter] = []
+	var recon: ReconManager = get_tree().get_first_node_in_group("recon_manager") as ReconManager
+	for node: Node in get_tree().get_nodes_in_group("enemies"):
+		var enemy: EnemyCharacter = node as EnemyCharacter
+		if enemy == null or enemy.health.is_dead or enemy.get_meta("dormant", false) or not enemy.can_process():
+			continue
+		var known: bool = recon.is_enemy_visible(enemy) if is_instance_valid(recon) else (_paul_alive() and player.recon != null and player.recon.can_see(enemy))
+		if known:
+			result.append(enemy)
+	return result
+
+
+## Whether a point along a route is in a guard's view as he stands now.
+func in_view_now(point: Vector2, watchers: Array[EnemyCharacter], space: PhysicsDirectSpaceState2D) -> bool:
+	for enemy in watchers:
+		var facing: Vector2 = Vector2.RIGHT.rotated(enemy.aim_pivot.global_rotation)
+		if FuturePredictor.sees_from(enemy, enemy.global_position, facing, point, space):
+			return true
+	return false
+
+
+## Dashes along the route, each gold or red by whether that stretch is watched.
+func _draw_plan_route(route: PackedVector2Array, watchers: Array[EnemyCharacter], space: PhysicsDirectSpaceState2D) -> void:
+	var clear: Color = Color(1.0, 0.82, 0.4, 0.85)
+	var watched: Color = Color(1.0, 0.3, 0.25, 0.95)
+	for index in range(1, route.size()):
+		var a: Vector2 = route[index - 1]
+		var b: Vector2 = route[index]
+		var length: float = a.distance_to(b)
+		var travelled: float = 0.0
+		while travelled < length:
+			var end: float = minf(travelled + 12.0, length)
+			var from: Vector2 = a.lerp(b, travelled / maxf(length, 0.001))
+			var to: Vector2 = a.lerp(b, end / maxf(length, 0.001))
+			var seen: bool = not watchers.is_empty() and in_view_now(from.lerp(to, 0.5), watchers, space)
+			draw_line(to_local(from), to_local(to), watched if seen else clear, 3.0 if seen else 2.0)
+			travelled = end + 8.0
 
 
 func _draw_marker() -> void:

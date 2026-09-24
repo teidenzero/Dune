@@ -39,7 +39,8 @@ func _run() -> void:
 	await _ally_projection()
 	await _pause_interplay()
 	await _reset_safety()
-	_check(completed == 8, "all prescience scenarios completed")
+	await _plan_rehearsal()
+	_check(completed == 9, "all prescience scenarios completed")
 	_check(Engine.time_scale == 1.0, "suite leaves normal game speed")
 	_check(TimeScaleManager.holder() == TimeScaleManager.Source.NONE, "suite leaves the clock unheld")
 	print("PRESCIENCE SMOKE: %d failure(s)" % failures)
@@ -372,6 +373,59 @@ func _ally_projection() -> void:
 	_check(scout_track != null and scout_track.state_name == "MOVE_TO", "the ally projection reports its order")
 	_check(scout_track != null and scout_track.positions[2].distance_to(scout.global_position) > 20.0, "a moving ally is projected ahead of itself")
 	prescience.deactivate()
+	completed += 1
+
+
+# --------------------------------------------------------------------------
+# Scenario 9 - a planned order rehearsed in a vision
+# --------------------------------------------------------------------------
+
+func _plan_rehearsal() -> void:
+	await _load()
+	combatant.process_mode = Node.PROCESS_MODE_DISABLED
+	await _watch_from(Vector2(-1420, -600), patroller)
+	_check(await _await_patrolling(), "the subject patrols for the rehearsal")
+	_check(prescience.activate(), "a first look at where he goes")
+	var guard: FuturePredictor.FutureTrack = _track_for(patroller)
+	var heading: Vector2 = patroller.global_position.direction_to(guard.positions[1]) if guard != null else Vector2.RIGHT
+	var ahead: Vector2 = guard.positions[1] + heading * 140.0 if guard != null else Vector2.ZERO
+	prescience.deactivate()
+	await _ready_again()
+	# A Scout planned to stand where the guard will be looking.
+	scout.global_position = ahead
+	squad.select_slot(2)
+	squad.stage_context(ahead)
+	var order_before: Order = scout.ai.current_order
+	_check(prescience.activate(), "prescience with a plan waiting")
+	var plan: FuturePredictor.FutureTrack = _track_for(scout)
+	_check(plan != null and plan.planned and plan.state_name == "ON SIGNAL", "the planned order is rehearsed in the vision")
+	_check(plan != null and plan.seen_at >= 0, "a plan that walks into the guard's future cone is flagged SEEN")
+	_check(plan != null and plan.seen_time >= 0.0 and plan.seen_guard == patroller and plan.seen_point.is_finite(), "with the moment, the place, and the guard who sees it")
+	# Outside a vision the plan line itself shows a stretch in his view now.
+	var facing_now: Vector2 = Vector2.RIGHT.rotated(patroller.aim_pivot.global_rotation)
+	_check(squad.in_view_now(patroller.global_position + facing_now * 120.0, [patroller], mission.get_world_2d().direct_space_state), "the plan line knows a point in front of him is in view")
+	_check(not squad.in_view_now(patroller.global_position - facing_now * 120.0, [patroller], mission.get_world_2d().direct_space_state), "and one behind him is not")
+	_check(squad.staged.has(scout) and scout.ai.current_order == order_before, "rehearsing changes nothing: the plan still waits")
+	prescience.deactivate()
+	await _ready_again()
+	# The same Scout planned far out of his sight.
+	var away: Vector2 = patroller.global_position - heading * 900.0
+	scout.global_position = away
+	squad.stage_context(away)
+	_check(prescience.activate(), "prescience again")
+	plan = _track_for(scout)
+	_check(plan != null and plan.seen_at == -1 and plan.seen_time < 0.0, "a plan out of his sight stays clear")
+	prescience.deactivate()
+	await _ready_again()
+	# A planned attack shows where the shot would come from.
+	scout.global_position = patroller.global_position + Vector2(0, 250)
+	squad.stage_context(patroller.global_position)
+	energy.reset_energy()
+	_check(prescience.activate(), "and with an attack planned")
+	plan = _track_for(scout)
+	_check(plan != null and plan.fires and plan.strike_label == "FIRES" and plan.fire_delay < 1.0, "a planned attack shows its shot, from where he would open fire")
+	prescience.deactivate()
+	squad.staged.clear()
 	completed += 1
 
 

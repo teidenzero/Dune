@@ -10,6 +10,15 @@ var base_color: Color = Color("4a4038")
 var alt_color: Color = Color("433a33")
 var stain_color: Color = Color("6b4a2a")
 var line_color: Color = Color("2a241f")
+var kit: StringName = &"":
+	set(value):
+		kit = value
+		_stone_a = IsoKit.texture(kit, "floor_stone_a")
+		_stone_b = IsoKit.texture(kit, "floor_stone_b")
+		_mat = IsoKit.texture(kit, "floor_mat")
+var _stone_a: Texture2D
+var _stone_b: Texture2D
+var _mat: Texture2D
 
 
 func _ready() -> void:
@@ -17,6 +26,13 @@ func _ready() -> void:
 
 
 func _draw() -> void:
+	if _stone_a != null and _stone_b != null:
+		for cell in cells:
+			var art: Texture2D = _stone_a if (cell.x + cell.y) % 2 == 0 else _stone_b
+			if stained.has(cell) and _mat != null:
+				art = _mat
+			draw_texture(art, IsoMath.cell_to_world(cell) - IsoKit.FLOOR_ANCHOR)
+		return
 	var diamond: PackedVector2Array = IsoMath.diamond()
 	var inner: PackedVector2Array = IsoMath.diamond(0.72)
 	for cell in cells:

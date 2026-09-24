@@ -11,6 +11,8 @@ extends StaticBody2D
 @export var left_color: Color = Color("3a332c")
 @export var right_color: Color = Color("2c2621")
 @export var edge_color: Color = Color("1a1612")
+## Painted block (IsoKit), drawn with its footprint centre on the origin.
+var texture: Texture2D
 ## 1 = solid, lower = see-through.
 var fade: float = 1.0:
 	set(value):
@@ -28,6 +30,9 @@ func _ready() -> void:
 
 
 func _draw() -> void:
+	if texture != null:
+		draw_texture(texture, -IsoKit.BLOCK_ANCHOR)
+		return
 	var hw: float = IsoMath.TILE_W * 0.5
 	var hh: float = IsoMath.TILE_H * 0.5
 	var up: Vector2 = Vector2(0, -height)

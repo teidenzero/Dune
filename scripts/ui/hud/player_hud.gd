@@ -40,6 +40,7 @@ var cursor_label: Label
 var hints_label: Label
 
 var _cards: Array[HudUnitCard] = []
+var offscreen: OffscreenIndicators
 var _squad_box: VBoxContainer
 var _bar: HBoxContainer
 var _weapon_card: PanelContainer
@@ -73,6 +74,8 @@ var _shield_slot: HudSlot
 func setup(paul: PlayerController, manager: SquadManager) -> void:
 	player = paul
 	squad = manager
+	if is_instance_valid(offscreen):
+		offscreen.squad = manager
 	# SquadManager registers its members in its own _ready; build after it.
 	call_deferred("_build_squad_cards")
 
@@ -90,6 +93,10 @@ func _ready() -> void:
 	_build_action_bar()
 	_build_bottom_line()
 	_build_center()
+	offscreen = OffscreenIndicators.new()
+	offscreen.name = "Offscreen"
+	offscreen.squad = squad
+	add_child(offscreen)
 
 
 # --------------------------------------------------------------------------
@@ -360,11 +367,11 @@ func set_solo(value: bool, clicks: bool = false) -> void:
 
 
 func _squad_hints() -> String:
-	return "LEFT-CLICK select / knife an enemy (hold: slow strike)  ·  DRAG box  ·  RIGHT-CLICK move / fire / use  ·  DOUBLE RIGHT-CLICK run  ·  SHIFT queue  ·  WASD pan  ·  SPACE pause"
+	return "LEFT-CLICK select / knife an enemy (hold: slow strike)  ·  DRAG box  ·  RIGHT-CLICK move / fire / use  ·  DOUBLE RIGHT-CLICK run  ·  SHIFT queue  ·  CTRL plan, F signal  ·  B fire discipline  ·  WASD pan  ·  SPACE pause"
 
 
 func _build_bottom_line() -> void:
-	hints_label = HudStyle.label("LEFT-CLICK select / knife an enemy (hold: slow strike)  ·  DRAG box  ·  RIGHT-CLICK move / fire / use  ·  DOUBLE RIGHT-CLICK run  ·  SHIFT queue  ·  WASD pan  ·  SPACE pause", 14, HudStyle.MUTED)
+	hints_label = HudStyle.label(_squad_hints(), 14, HudStyle.MUTED)
 	hints_label.name = "Hints"
 	hints_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	hints_label.offset_bottom = -12.0

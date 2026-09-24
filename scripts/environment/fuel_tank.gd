@@ -20,8 +20,13 @@ var _flash: float = 0.0
 @onready var health: HealthComponent = $HealthComponent
 
 
+## The painted drum, loaded once (never inside a draw call).
+var _drum: Texture2D
+
+
 func _ready() -> void:
 	add_to_group("fuel_tanks")
+	_drum = IsoKit.texture(&"residency", "fuel_drum")
 	health.died.connect(detonate)
 
 
@@ -83,6 +88,10 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	if not detonated:
+		if _drum != null:
+			draw_circle(Vector2(4, 4), 22.0, Color(0.1, 0.08, 0.06, 0.35))
+			draw_texture(_drum, -IsoKit.DRUM_ANCHOR)
+			return
 		# Canister: a squat drum with hazard bands.
 		draw_circle(Vector2(4, 6), 20.0, Color(0.1, 0.08, 0.06, 0.35))
 		draw_circle(Vector2.ZERO, 18.0, Color(0.55, 0.32, 0.12))

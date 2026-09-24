@@ -101,7 +101,10 @@ func _draw() -> void:
 	var selected: bool = _selected() and not dead
 	var available: bool = unit == squad.player or squad.commands_enabled
 	var border: Color = HudStyle.GOLD if selected else HudStyle.LINE
-	var panel: StyleBoxFlat = HudStyle.panel_box(border, Color(HudStyle.PANEL, 0.92), 2 if selected else 1)
+	var alerted: bool = unit is AllyCharacter and unit.alert_active()
+	if alerted:
+		border = Color(HudStyle.DANGER, 0.55 + 0.45 * sin(Time.get_ticks_msec() / 110.0))
+	var panel: StyleBoxFlat = HudStyle.panel_box(border, Color(HudStyle.PANEL, 0.92), 2 if selected or alerted else 1)
 	if selected:
 		var halo: StyleBoxFlat = StyleBoxFlat.new()
 		halo.bg_color = Color(HudStyle.GOLD, 0.16)
@@ -126,19 +129,27 @@ func _draw() -> void:
 	var small: Font = HudStyle.body_font(600)
 	var name_at: Vector2 = box.position + Vector2(80, 22)
 	draw_string(font, name_at, display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, HudStyle.TEXT if not dead else HudStyle.MUTED)
+
 	var order_key: String = "DEAD" if dead else _order_key()
 	var status: String = ORDER_TEXT.get(order_key, order_key)
 	if not dead:
 		if unit is PlayerController and unit.is_crouching or unit is AllyCharacter and unit.sneaking:
 			status += " · LOW"
+		if unit is AllyCharacter and unit.alert_active():
+			status = unit.alert_text
 		if unit is AllyCharacter and unit.command_feedback_active():
 			status = unit.command_feedback_text
+		var planned: String = squad.staged_kind(unit)
+		if planned != "":
+			status = "ON SIGNAL: " + planned
 		if not available:
 			status = "NOT UNDER YOUR COMMAND YET"
-	var status_color: Color = HudStyle.DANGER if dead else HudStyle.MUTED
-	if unit is AllyCharacter and unit.command_feedback_active():
+	var status_color: Color = HudStyle.DANGER if dead else (HudStyle.GOLD if squad.staged_kind(unit) != "" else HudStyle.MUTED)
+	if unit is AllyCharacter and (unit.command_feedback_active() or unit.alert_active()):
 		status_color = HudStyle.DANGER
 	draw_string(small, box.position + Vector2(80, 40), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, status_color)
+	if unit is AllyCharacter and not dead and available:
+		_draw_discipline(Vector2(box.end.x - 44.0, box.position.y + 40.0))
 	_health_bar.visible = not dead
 	# Order glyph and command link on the right edge.
 	var right: float = box.end.x - 12.0
@@ -168,3 +179,18 @@ func _draw_link(top_right: Vector2, state: CommandLinkComponent.State) -> float:
 	if bars == 0:
 		draw_line(top_right + Vector2(-27, -1), top_right + Vector2(-1, 17), HudStyle.DANGER, 2.0)
 	return top_right.x
+
+
+## Fire discipline as a small tag beside the name: blue holds, gold answers
+## back, red fires at will.
+func _draw_discipline(at: Vector2) -> void:
+	var ai: AllyAIController = unit.ai
+	var text: String = ai.fire_name().replace("FIRE AT WILL", "AT WILL").replace("RETURN FIRE", "RETURN").replace("HOLD FIRE", "HOLD")
+	var color: Color = HudStyle.SPICE_BLUE if ai.holding_fire() else (HudStyle.GOLD if ai.fire_discipline == AllyAIController.Fire.RETURN else HudStyle.DANGER)
+	var small: Font = HudStyle.body_font(700)
+	var width: float = small.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x + 12.0
+	# Right-aligned on `at`, beside the order glyph.
+	var rect: Rect2 = Rect2(at + Vector2(-width, -13), Vector2(width, 17))
+	draw_rect(rect, Color(color, 0.18))
+	draw_rect(rect, color, false, 1.0)
+	draw_string(small, rect.position + Vector2(6, 13), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, color)
