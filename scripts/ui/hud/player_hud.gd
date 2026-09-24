@@ -560,17 +560,23 @@ func _refresh_orders() -> void:
 	_follow_slot.state = HudSlot.State.ACTIVE if all_follow else HudSlot.State.NORMAL
 
 
-## Stage first, number second, and nothing at all while the desert is calm.
+## Shown from the first real vibration; once the worm commits, the bar is its
+## approach and fills exactly when it surfaces.
 func _refresh_worm() -> void:
 	var worm: WormThreatManager = get_tree().get_first_node_in_group("worm_threat") as WormThreatManager
 	if worm == null or player.health.is_dead:
 		_worm_box.hide()
 		return
-	_worm_box.visible = worm.stage > WormThreatManager.Stage.CALM or worm.is_worm_approaching()
+	_worm_box.visible = worm.meter_visible()
 	var color: Color = WORM_COLORS[mini(int(worm.stage), WORM_COLORS.size() - 1)]
-	worm_label.text = worm.stage_text()
+	var text: String = worm.stage_text() if worm.stage > WormThreatManager.Stage.CALM else "WORM SIGN"
+	var eta: float = worm.arrival_eta()
+	if eta > 0.0:
+		text = "WORM APPROACHING  ·  %ds" % ceili(eta)
+		color = WORM_COLORS[WORM_COLORS.size() - 1]
+	worm_label.text = text
 	worm_label.add_theme_color_override("font_color", color)
-	_worm_bar.ratio = worm.ratio()
+	_worm_bar.ratio = worm.display_ratio()
 	_worm_bar.fill_color = color
 
 

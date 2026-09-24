@@ -5,12 +5,14 @@ extends Control
 const TUTORIAL: String = "res://scenes/missions/tutorial/tutorial_arrakeen.tscn"
 const RAID: String = "res://scenes/missions/harvester_raid/harvester_raid.tscn"
 const ARENA: String = "res://scenes/missions/harvester_raid_test.tscn"
+const COUNCIL: String = "res://scenes/campaign/council.tscn"
 
 
 func _ready() -> void:
 	$Rows/Buttons/Tutorial.pressed.connect(_open.bind(TUTORIAL))
 	$Rows/Buttons/Raid.pressed.connect(_open.bind(RAID))
 	$Rows/Buttons/Arena.pressed.connect(_open.bind(ARENA))
+	$Rows/Buttons/Council.pressed.connect(_open.bind(COUNCIL))
 	$Rows/Buttons/Tutorial.grab_focus()
 	var game: Node = get_node("/root/GameManager")
 	var campaign: CampaignState = game.campaign
@@ -28,6 +30,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_open(RAID)
 	elif event.physical_keycode == KEY_3:
 		_open(ARENA)
+	elif event.physical_keycode == KEY_4:
+		_open(COUNCIL)
 
 
 ## Launching anything starts it clean; checkpoints are for retrying in place.
@@ -35,4 +39,5 @@ func _open(path: String) -> void:
 	var game: Node = get_node("/root/GameManager")
 	game.tutorial_checkpoint = &""
 	game.mission_checkpoint = &""
+	game.return_scene = ""
 	get_tree().change_scene_to_file(path)

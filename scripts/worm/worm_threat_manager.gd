@@ -36,6 +36,9 @@ enum EventState { IDLE, BUILDING, APPROACHING, ARRIVAL, COOLDOWN }
 ## Sign left behind once an event resolves; the desert does not forget at once.
 @export var sign_after_event: float = 15.0
 @export var danger_radius: float = 260.0
+## The HUD shows the meter from this much sign, so the player sees their own
+## noise register long before the first stage.
+@export var visible_from: float = 8.0
 
 var worm_sign: float = 0.0
 var stage: Stage = Stage.CALM
@@ -49,6 +52,8 @@ var strongest_position: Vector2 = Vector2.INF
 var strongest_strength: float = 0.0
 
 var _stage_time: float = 0.0
+## The meter's fill when the worm committed; from there the bar tracks its travel.
+var _commit_ratio: float = 0.0
 
 
 func _ready() -> void:
@@ -155,6 +160,7 @@ func _commit() -> void:
 	if not target.is_finite():
 		return
 	state = EventState.APPROACHING
+	_commit_ratio = ratio()
 	worm_approach_started.emit(target)
 	if event != null:
 		event.begin(target, danger_radius)
@@ -300,6 +306,29 @@ func stage_text() -> String:
 
 func ratio() -> float:
 	return clampf(worm_sign / maxf(threshold, 1.0), 0.0, 1.0)
+
+
+## What the meter shows. Building up, it is the sign. Once the worm has
+## committed it becomes the approach: it fills with the worm's travel and is
+## full exactly when the worm surfaces, whichever comes first - the travel
+## ending or the sign reaching the threshold.
+func display_ratio() -> float:
+	if state == EventState.ARRIVAL or (event != null and event.erupting()):
+		return 1.0
+	if state == EventState.APPROACHING and event != null and event.active():
+		return maxf(ratio(), lerpf(_commit_ratio, 1.0, event.travel_ratio()))
+	return ratio()
+
+
+## Seconds until the committed worm surfaces; 0 when none is coming.
+func arrival_eta() -> float:
+	if state != EventState.APPROACHING or event == null:
+		return 0.0
+	return event.eta()
+
+
+func meter_visible() -> bool:
+	return worm_sign >= visible_from or stage > Stage.CALM or is_worm_approaching()
 
 
 func _now() -> float:

@@ -1,0 +1,1058 @@
+{
+  "character_name": "fremen_warrior",
+  "canonical_reference": "fremen_warrior_reference.png",
+  "frame_size": [
+    400,
+    336
+  ],
+  "reference_ground_anchor": [
+    200,
+    312
+  ],
+  "standing_reference_height": 280,
+  "generation_mode": "built-in image_gen",
+  "animations": [
+    {
+      "name": "idle",
+      "filename": "fremen_warrior_idle.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 6,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_idle_attempt1.png",
+      "source_dimensions": [
+        1369,
+        1149
+      ],
+      "source_grid": [
+        2,
+        2
+      ],
+      "packing_scale": 0.5463414634146342,
+      "source_ground_y": [
+        559.0,
+        544.0
+      ],
+      "source_row_edges": [
+        0,
+        574,
+        1149
+      ],
+      "source_column_offsets": [
+        0.0,
+        -40.0
+      ],
+      "low_alpha_noise_pixels_cleared": 28515,
+      "frame_bounds": [
+        [
+          85,
+          23,
+          383,
+          312
+        ],
+        [
+          85,
+          39,
+          380,
+          312
+        ],
+        [
+          85,
+          25,
+          383,
+          312
+        ],
+        [
+          92,
+          42,
+          383,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Minor height/proportion variation between breathing poses; review at game size."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "7f63933634b0671716c8a0ebd78e62bc667566846217cd082ade8afefebd3d59"
+    },
+    {
+      "name": "walk",
+      "filename": "fremen_warrior_walk.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 12,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_walk_attempt1.png",
+      "source_dimensions": [
+        1536,
+        1024
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.6854345165238678,
+      "source_ground_y": [
+        462.5,
+        454.0
+      ],
+      "source_row_edges": [
+        0,
+        512,
+        1024
+      ],
+      "source_column_offsets": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "low_alpha_noise_pixels_cleared": 57204,
+      "frame_bounds": [
+        [
+          76,
+          31,
+          330,
+          308
+        ],
+        [
+          78,
+          29,
+          329,
+          313
+        ],
+        [
+          77,
+          30,
+          330,
+          314
+        ],
+        [
+          78,
+          30,
+          331,
+          311
+        ],
+        [
+          74,
+          34,
+          331,
+          312
+        ],
+        [
+          77,
+          33,
+          329,
+          319
+        ],
+        [
+          78,
+          33,
+          329,
+          312
+        ],
+        [
+          75,
+          35,
+          331,
+          307
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Review alternating foot contacts and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "17144f1d20f791753182aaa94f2bd247624719421061f3eb0e6a91ceb9d797a2"
+    },
+    {
+      "name": "run",
+      "filename": "fremen_warrior_run.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 14,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_run_attempt1.png",
+      "source_dimensions": [
+        1536,
+        1024
+      ],
+      "source_grid": [
+        4,
+        2
+      ],
+      "packing_scale": 0.691358024691358,
+      "source_ground_y": [
+        490.5,
+        445.5
+      ],
+      "source_row_edges": [
+        0,
+        512,
+        1024
+      ],
+      "source_column_offsets": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "low_alpha_noise_pixels_cleared": 53754,
+      "frame_bounds": [
+        [
+          87,
+          52,
+          354,
+          312
+        ],
+        [
+          99,
+          53,
+          355,
+          313
+        ],
+        [
+          88,
+          53,
+          356,
+          297
+        ],
+        [
+          93,
+          52,
+          329,
+          313
+        ],
+        [
+          90,
+          61,
+          359,
+          313
+        ],
+        [
+          110,
+          60,
+          358,
+          311
+        ],
+        [
+          89,
+          62,
+          352,
+          302
+        ],
+        [
+          95,
+          61,
+          329,
+          314
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Review alternating foot contacts and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "599fd29a7b135cab2e85f5bca784a22385abbcc946866183fc975aec4a686067"
+    },
+    {
+      "name": "crouch_walk",
+      "filename": "fremen_warrior_crouch_walk.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 10,
+      "loop": true,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 2,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_crouch_walk_attempt2.png",
+      "source_dimensions": [
+        1095,
+        1437
+      ],
+      "source_grid": [
+        2,
+        4
+      ],
+      "packing_scale": 0.6951026856240127,
+      "source_ground_y": [
+        366.0,
+        348.0,
+        342.5,
+        322.0
+      ],
+      "source_row_edges": [
+        0,
+        367,
+        718,
+        1078,
+        1437
+      ],
+      "source_column_offsets": [
+        0.0,
+        -32.0
+      ],
+      "low_alpha_noise_pixels_cleared": 51902,
+      "frame_bounds": [
+        [
+          96,
+          90,
+          392,
+          312
+        ],
+        [
+          89,
+          90,
+          383,
+          312
+        ],
+        [
+          99,
+          91,
+          393,
+          312
+        ],
+        [
+          86,
+          91,
+          390,
+          312
+        ],
+        [
+          97,
+          93,
+          392,
+          313
+        ],
+        [
+          84,
+          92,
+          383,
+          312
+        ],
+        [
+          96,
+          96,
+          392,
+          313
+        ],
+        [
+          91,
+          96,
+          388,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Review alternating foot contacts and the loop seam in motion."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "a2bfaffa546c0b090c33781ef9f7983c48646bff1c46377de5102ad41348287a"
+    },
+    {
+      "name": "crouch_idle",
+      "filename": "fremen_warrior_crouch_idle.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 5,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_crouch_idle_attempt1.png",
+      "source_dimensions": [
+        1536,
+        1024
+      ],
+      "source_grid": [
+        2,
+        2
+      ],
+      "packing_scale": 0.5569620253164557,
+      "source_ground_y": [
+        477.5,
+        448.0
+      ],
+      "source_row_edges": [
+        0,
+        512,
+        1024
+      ],
+      "source_column_offsets": [
+        0.0,
+        -60.0
+      ],
+      "low_alpha_noise_pixels_cleared": 22058,
+      "frame_bounds": [
+        [
+          62,
+          89,
+          389,
+          312
+        ],
+        [
+          63,
+          95,
+          386,
+          313
+        ],
+        [
+          63,
+          100,
+          392,
+          311
+        ],
+        [
+          68,
+          91,
+          392,
+          313
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "df0d239e6951dd602368b889a73c19f014440542bad24cf76fa6ad2ea0cbe658"
+    },
+    {
+      "name": "aim",
+      "filename": "fremen_warrior_aim.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 6,
+      "loop": true,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_aim_attempt1.png",
+      "source_dimensions": [
+        1199,
+        1312
+      ],
+      "source_grid": [
+        2,
+        2
+      ],
+      "packing_scale": 0.5258215962441315,
+      "source_ground_y": [
+        611.0,
+        590.0
+      ],
+      "source_row_edges": [
+        0,
+        656,
+        1312
+      ],
+      "source_column_offsets": [
+        0.0,
+        0.0
+      ],
+      "low_alpha_noise_pixels_cleared": 33280,
+      "frame_bounds": [
+        [
+          68,
+          32,
+          357,
+          313
+        ],
+        [
+          60,
+          31,
+          347,
+          312
+        ],
+        [
+          74,
+          35,
+          361,
+          312
+        ],
+        [
+          63,
+          29,
+          348,
+          311
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "248b92fd1597f4e8c0628034b08f911f66ee5ed3698bbe8d643191c88a76f13f"
+    },
+    {
+      "name": "shoot",
+      "filename": "fremen_warrior_shoot.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 16,
+      "loop": false,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_shoot_attempt1.png",
+      "source_dimensions": [
+        1199,
+        1312
+      ],
+      "source_grid": [
+        2,
+        2
+      ],
+      "packing_scale": 0.5022421524663677,
+      "source_ground_y": [
+        615.0,
+        606.0
+      ],
+      "source_row_edges": [
+        0,
+        656,
+        1312
+      ],
+      "source_column_offsets": [
+        0.0,
+        0.0
+      ],
+      "low_alpha_noise_pixels_cleared": 44539,
+      "frame_bounds": [
+        [
+          64,
+          31,
+          346,
+          312
+        ],
+        [
+          64,
+          33,
+          327,
+          312
+        ],
+        [
+          63,
+          32,
+          349,
+          312
+        ],
+        [
+          55,
+          32,
+          339,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "4cc326307d68cb26a38d719fe41cf250ff439cd56b9e57e3d97a3870b8cc6dc1"
+    },
+    {
+      "name": "reload",
+      "filename": "fremen_warrior_reload.png",
+      "requested_frame_count": 10,
+      "actual_frame_count": 10,
+      "fps": 7,
+      "loop": false,
+      "dimensions": [
+        4000,
+        336
+      ],
+      "generation_attempt_count": 3,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_reload_attempt3.png",
+      "source_dimensions": [
+        979,
+        1606
+      ],
+      "source_grid": [
+        2,
+        5
+      ],
+      "packing_scale": 0.8945686900958466,
+      "source_ground_y": [
+        319.0,
+        321.0,
+        321.5,
+        316.5,
+        308.5
+      ],
+      "source_row_edges": [
+        0,
+        321,
+        644,
+        967,
+        1285,
+        1606
+      ],
+      "source_column_offsets": [
+        0.0,
+        -45.0
+      ],
+      "source_frame_playback_order": [
+        1,
+        2,
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "low_alpha_noise_pixels_cleared": 44173,
+      "frame_bounds": [
+        [
+          40,
+          37,
+          367,
+          312
+        ],
+        [
+          40,
+          37,
+          362,
+          312
+        ],
+        [
+          38,
+          28,
+          377,
+          312
+        ],
+        [
+          36,
+          30,
+          369,
+          312
+        ],
+        [
+          37,
+          30,
+          369,
+          313
+        ],
+        [
+          38,
+          29,
+          372,
+          312
+        ],
+        [
+          36,
+          31,
+          364,
+          312
+        ],
+        [
+          37,
+          33,
+          368,
+          313
+        ],
+        [
+          35,
+          40,
+          367,
+          312
+        ],
+        [
+          37,
+          39,
+          372,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Review hand and magazine continuity; internal loading mechanics are not fully visible in the reference.",
+        "Source poses reordered 1,2,5,3,4,6,7,8,9,10 so the pouch reach precedes magazine removal. The exchange between removed and replacement magazine is not explicitly shown; review or refine this transition before integration."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "b0613192a8b99d8610a50a928648c7da398822dffc2a7dc3ae45bafa13fb0e43"
+    },
+    {
+      "name": "crouch_shoot",
+      "filename": "fremen_warrior_crouch_shoot.png",
+      "requested_frame_count": 4,
+      "actual_frame_count": 4,
+      "fps": 16,
+      "loop": false,
+      "dimensions": [
+        1600,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_crouch_shoot_attempt1.png",
+      "source_dimensions": [
+        1369,
+        1149
+      ],
+      "source_grid": [
+        2,
+        2
+      ],
+      "packing_scale": 0.49162011173184356,
+      "source_ground_y": [
+        563.0,
+        495.0
+      ],
+      "source_row_edges": [
+        0,
+        574,
+        1149
+      ],
+      "source_column_offsets": [
+        0.0,
+        -50.0
+      ],
+      "source_frame_playback_order": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "low_alpha_noise_pixels_cleared": 28653,
+      "frame_bounds": [
+        [
+          67,
+          92,
+          364,
+          312
+        ],
+        [
+          64,
+          97,
+          361,
+          312
+        ],
+        [
+          67,
+          92,
+          365,
+          312
+        ],
+        [
+          73,
+          92,
+          369,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "ec41a1023cda7306b42ee6790f3bcce46ab1db524fc1742b5d2dfd49148c1f1d"
+    },
+    {
+      "name": "hit",
+      "filename": "fremen_warrior_hit.png",
+      "requested_frame_count": 3,
+      "actual_frame_count": 3,
+      "fps": 12,
+      "loop": false,
+      "dimensions": [
+        1200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_hit_attempt1.png",
+      "source_dimensions": [
+        1935,
+        813
+      ],
+      "source_grid": [
+        3,
+        1
+      ],
+      "packing_scale": 0.4236006051437216,
+      "source_ground_y": [
+        756.0
+      ],
+      "source_row_edges": [
+        0,
+        813
+      ],
+      "source_column_offsets": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "source_frame_playback_order": [
+        1,
+        2,
+        3
+      ],
+      "low_alpha_noise_pixels_cleared": 20467,
+      "frame_bounds": [
+        [
+          101,
+          26,
+          331,
+          312
+        ],
+        [
+          72,
+          53,
+          343,
+          312
+        ],
+        [
+          69,
+          32,
+          334,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "fd0164e1d8c7bccecd82daca3bd914f7e99d01ef4707e36a04c42908dadd5601"
+    },
+    {
+      "name": "death",
+      "filename": "fremen_warrior_death.png",
+      "requested_frame_count": 8,
+      "actual_frame_count": 8,
+      "fps": 10,
+      "loop": false,
+      "dimensions": [
+        3200,
+        336
+      ],
+      "generation_attempt_count": 2,
+      "generation_status": "generated",
+      "validation_status": "technical_checks_passed_static_review_completed_manual_playback_pending",
+      "source": "source\\fremen_warrior_death_attempt2.png",
+      "source_dimensions": [
+        1086,
+        1448
+      ],
+      "source_grid": [
+        2,
+        4
+      ],
+      "packing_scale": 0.6779661016949152,
+      "source_ground_y": [
+        443.0,
+        357.0,
+        241.5,
+        234.0
+      ],
+      "source_row_edges": [
+        0,
+        485,
+        893,
+        1180,
+        1448
+      ],
+      "source_column_offsets": [
+        0.0,
+        0.0
+      ],
+      "source_frame_playback_order": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "low_alpha_noise_pixels_cleared": 35471,
+      "frame_bounds": [
+        [
+          83,
+          32,
+          371,
+          313
+        ],
+        [
+          75,
+          71,
+          365,
+          312
+        ],
+        [
+          84,
+          102,
+          380,
+          306
+        ],
+        [
+          51,
+          136,
+          373,
+          318
+        ],
+        [
+          104,
+          177,
+          338,
+          311
+        ],
+        [
+          106,
+          184,
+          328,
+          313
+        ],
+        [
+          107,
+          184,
+          327,
+          312
+        ],
+        [
+          106,
+          185,
+          327,
+          312
+        ]
+      ],
+      "issues": [
+        "Live playback and in-game transitions require manual review; visual motion testing has not been completed.",
+        "Rifle rotates sharply between collapse and curled corpse poses; review the transition at 10 FPS."
+      ],
+      "technical_checks": {
+        "dimensions": true,
+        "rgba_transparency": true,
+        "nonempty_cells": true,
+        "clear_cell_boundaries": true,
+        "distinct_frames": true,
+        "runtime_playback_metadata": true
+      },
+      "sha256": "e56b8803431d4053e55b094ae59a7b0b0b2c7bfbc3bf77b0033203b30abcb637"
+    }
+  ],
+  "overall_result": "complete",
+  "total_animations": 11,
+  "total_frames": 65,
+  "review_status": "manual_playback_review_required",
+  "preview": "review/index.html",
+  "integration_status": "staged; no gameplay resources or runtime scripts changed",
+  "scope": "Shared 11-animation ranged set; additional weapon variants and melee/prescience animations are outside this specification.",
+  "reference_design_authorized": true,
+  "review_notes": [
+    "Generated detail can vary between frames; inspect cloth, facial proportions, and state transitions before runtime integration.",
+    "Technical checks do not establish perfect artistic or temporal consistency."
+  ]
+}

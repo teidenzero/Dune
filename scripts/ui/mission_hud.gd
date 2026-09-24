@@ -121,4 +121,6 @@ func _on_launcher() -> void:
 		# Leaving accepts the result, failure included.
 		mission.commit_outcome()
 		mission.clear_checkpoint()
-	get_tree().change_scene_to_file("res://scenes/missions/mission_select.tscn")
+	var game: Node = get_node_or_null("/root/GameManager")
+	var target: String = game.return_scene if game != null and game.return_scene != "" else "res://scenes/missions/mission_select.tscn"
+	get_tree().change_scene_to_file(target)

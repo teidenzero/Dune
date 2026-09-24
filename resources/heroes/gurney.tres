@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/hero_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"gurney"
+display_name = "Gurney Halleck"
+title = "Warmaster"
+glyph = "warrior"
+affinity = &"smugglers"
+affinity_bonus = 0.2
+general_bonus = 0.0
+political_trait = "Ran with smugglers once, and they remember. Operations through the smugglers go much better."

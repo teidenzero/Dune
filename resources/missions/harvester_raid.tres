@@ -1,7 +1,9 @@
-[gd_resource type="Resource" script_class="MissionDefinition" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="MissionDefinition" load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/campaign/mission_definition.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/campaign/objective_definition.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/campaign/political_approach.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/campaign/political_choice.gd" id="4"]
 
 [sub_resource type="Resource" id="obj_approach"]
 script = ExtResource("2")
@@ -40,6 +42,123 @@ id = &"fremen"
 title = "Keep both Fremen alive"
 description = "Optional."
 optional = true
+
+[sub_resource type="Resource" id="choam_pay"]
+script = ExtResource("4")
+text = "Pay for their passage off-world."
+chance_bonus = 0.1
+effects = {
+"resources": {
+&"solari": -15
+}
+}
+
+[sub_resource type="Resource" id="choam_threaten"]
+script = ExtResource("4")
+text = "Threaten the family instead."
+chance_bonus = 0.05
+effects = {
+"heat": 1,
+"standings": {
+&"choam": -1
+}
+}
+
+[sub_resource type="Resource" id="choam_bribe"]
+script = ExtResource("3")
+id = &"choam_bribe"
+title = "Bribe the crawler's foreman"
+description = "A CHOAM foreman runs the crawler. Enough Solari, and its engines seize at the worst possible moment."
+faction = &"choam"
+min_standing = -1
+base_chance = 0.5
+costs = {
+&"solari": 25
+}
+dilemma = "The foreman will do it, but he wants his family moved off Arrakis first. If the Harkonnen trace it back, they will be the ones who pay."
+choices = [SubResource("choam_pay"), SubResource("choam_threaten")]
+
+[sub_resource type="Resource" id="guild_share"]
+script = ExtResource("4")
+text = "Offer the Guild a share of the next harvest."
+chance_bonus = 0.1
+effects = {
+"resources": {
+&"spice": -10
+},
+"standings": {
+&"guild": 1
+}
+}
+
+[sub_resource type="Resource" id="guild_silent"]
+script = ExtResource("4")
+text = "Say nothing. Pay the fee and let them wonder."
+chance_bonus = 0.0
+effects = {
+"standings": {
+&"guild": -1
+}
+}
+
+[sub_resource type="Resource" id="guild_delay"]
+script = ExtResource("3")
+id = &"guild_delay"
+title = "Have the Guild delay the carryall"
+description = "Without its carryall the crawler cannot be lifted when the worm comes. The desert does the rest."
+faction = &"guild"
+min_standing = 0
+base_chance = 0.45
+costs = {
+&"spice": 15
+}
+effects = {
+"standings": {
+&"fremen": 1
+}
+}
+dilemma = "The Guild factor asks why anyone would pay to lose spice. The Guild does not like surprises in the spice flow."
+choices = [SubResource("guild_share"), SubResource("guild_silent")]
+
+[sub_resource type="Resource" id="smugglers_keep"]
+script = ExtResource("4")
+text = "Let them keep everything they strip."
+chance_bonus = 0.05
+effects = {
+"standings": {
+&"smugglers": 1
+}
+}
+
+[sub_resource type="Resource" id="smugglers_cut"]
+script = ExtResource("4")
+text = "Take a cut of the spice."
+chance_bonus = -0.05
+effects = {
+"resources": {
+&"spice": 15
+},
+"standings": {
+&"smugglers": -1
+}
+}
+
+[sub_resource type="Resource" id="smugglers_strip"]
+script = ExtResource("3")
+id = &"smugglers_strip"
+title = "Sell the schedule to the smugglers"
+description = "Give the smugglers the crawler's shift pattern. They will strip it bare between patrols; the Harkonnen will blame whoever they catch."
+faction = &"smugglers"
+min_standing = -1
+base_chance = 0.55
+costs = {
+&"intel": 1
+}
+effects = {
+"heat": 1
+}
+dilemma = "The smugglers want to keep everything they take, spice included. It would pay for a lot of water."
+choices = [SubResource("smugglers_keep"), SubResource("smugglers_cut")]
 
 [resource]
 script = ExtResource("1")
@@ -83,3 +202,4 @@ stakes = {
 }
 }
 squad_scene = "res://scenes/missions/harvester_raid/harvester_raid.tscn"
+political_approaches = Array[ExtResource("3")]([SubResource("choam_bribe"), SubResource("guild_delay"), SubResource("smugglers_strip")])

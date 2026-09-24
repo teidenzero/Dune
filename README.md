@@ -29,6 +29,7 @@ Running the project opens a small launcher. Press the number or click:
 | **1** | **Arrakeen Training** — nine-section tutorial. Start here; it teaches every mechanic in order. ~15 minutes. |
 | **2** | **Harvester Raid** — the actual mission. Cripple a spice harvester and get out before the worm arrives. ~10–20 minutes. |
 | **3** | **Test Arena** — a sandbox with isolated ranges for each system. Not a level; useful for poking at one thing at a time. |
+| **4** | **The Council** — the campaign: faction standings, Harkonnen heat, resources. Brief the Harvester Raid and choose to fight it as a squad or resolve it politically (approach, agent, Intel, a dilemma). Outcomes persist for the session. |
 
 ## Controls
 

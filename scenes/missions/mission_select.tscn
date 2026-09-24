@@ -72,6 +72,11 @@ custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 text = "3  -  Open Test Arena (technical sandbox)"
 
+[node name="Council" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+text = "4  -  The Council (campaign)"
+
 [node name="Footer" type="Label" parent="Rows"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.64, 0.66, 1)

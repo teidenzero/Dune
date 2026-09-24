@@ -1,0 +1,10 @@
+Use case: precise-object-edit. Image1 is the canonical Fremen Warrior design. Image2 is the RELOAD animation sheet to repair. Preserve image2's TEN poses, two-column/five-row layout, character design, body proportions, gear, rifle model, colours, transparent background and overall hand motions.
+Fix ONLY magazine continuity in the ten-frame reload (reading each row left-right):
+frames1-2 rifle has ONE seated short straight magazine.
+frame3 supporting hand grips that same seated magazine.
+frame4 supporting hand holds the REMOVED magazine CLEAR of the receiver: the magazine well on rifle must now be EMPTY, with NO second magazine sticking out.
+frame5 hand goes to pouch with rifle well still EMPTY.
+frame6 hand holds ONE replacement magazine below the EMPTY receiver well. NO seated duplicate.
+frame7 replacement is being inserted partway into the well as a SINGLE continuous object touching the hand.
+frames8-10 ONE seated magazine again, hand returns to fore-end.
+No floating parts, no extra ammo parts, no new weapon features. Keep rifle trigger hand attached appropriately. Retain the full weapon and body in every cell. Ensure a little empty transparent outer padding below boots and after rifle muzzle so nothing touches or clips the canvas. Genuine RGBA alpha=0 background, no backdrop glow, labels, effects or shadows. Output the corrected ten-frame sheet only.

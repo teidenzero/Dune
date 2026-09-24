@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/hero_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"thufir"
+display_name = "Thufir Hawat"
+title = "Mentat"
+glyph = "command"
+affinity = &""
+affinity_bonus = 0.0
+general_bonus = 0.12
+political_trait = "A mentat plans for every outcome. Every operation is safer with him, whoever it goes through."

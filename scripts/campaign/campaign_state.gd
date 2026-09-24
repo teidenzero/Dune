@@ -22,6 +22,8 @@ const STANDING_MIN: int = -2
 const STANDING_MAX: int = 3
 const STANDING_NAMES: Dictionary = {-2: "Hostile", -1: "Wary", 0: "Neutral", 1: "Friendly", 2: "Ally", 3: "Sworn"}
 const HEAT_MAX: int = 10
+## What House Atreides brings to Arrakis.
+const STARTING_RESOURCES: Dictionary = {&"spice": 20, &"solari": 40, &"water": 10, &"intel": 3, &"influence": 2}
 
 var resources: Dictionary = {}
 var standings: Dictionary = {}
@@ -37,7 +39,7 @@ func reset() -> void:
 	resources.clear()
 	standings.clear()
 	for key in RESOURCES:
-		resources[key] = 0
+		resources[key] = int(STARTING_RESOURCES.get(key, 0))
 	for key in FACTIONS:
 		standings[key] = 0
 	heat = 0

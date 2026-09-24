@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="HeroDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/hero_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/portraits/paul.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"paul"
+display_name = "Paul Atreides"
+title = "Heir of House Atreides"
+portrait = ExtResource("2")
+glyph = "paul"
+affinity = &"fremen"
+affinity_bonus = 0.15
+general_bonus = 0.0
+political_trait = "The sietch is starting to listen to him. Operations through the Fremen go better."

@@ -65,6 +65,11 @@ def pack(args):
     for row in range(1, rows):
         expected = row * image.height / rows
         candidates = empty_rows[np.abs(empty_rows - expected) < image.height / rows * 0.2]
+        if args.row_edges:
+            assert len(args.row_edges) == rows - 1, 'One boundary per adjacent source row required'
+            boundary = args.row_edges[row - 1]
+            assert boundary in empty_rows, 'Explicit row boundary must be fully transparent'
+            candidates = np.array([boundary])
         assert len(candidates), f'No transparent separation between source rows {row - 1} and {row}'
         row_edges.append(int(candidates[np.argmin(np.abs(candidates - expected))]))
     row_edges.append(image.height)
@@ -135,6 +140,13 @@ def pack(args):
         strip.alpha_composite(frame, (400 * i, 0))
         frames.append(frame)
         output_bounds.append(bbox)
+    frame_order = args.frame_order or list(range(1, count + 1))
+    assert sorted(frame_order) == list(range(1, count + 1)), 'Frame order must use every source pose exactly once'
+    frames = [frames[i - 1] for i in frame_order]
+    output_bounds = [output_bounds[i - 1] for i in frame_order]
+    strip = Image.new('RGBA', (400 * count, 336))
+    for i, frame in enumerate(frames):
+        strip.alpha_composite(frame, (400 * i, 0))
     filename = f'{args.character}_{args.name}.png'
     strip.save(out / filename)
     preview_frames = []
@@ -173,6 +185,7 @@ def pack(args):
                   validation_status='technical_checks_passed_visual_review_pending',
                   source=str(source.relative_to(out)), source_dimensions=list(image.size), source_grid=[cols, rows],
                   packing_scale=factor, source_ground_y=row_grounds, source_row_edges=row_edges, source_column_offsets=column_offsets,
+                  source_frame_playback_order=frame_order,
                   low_alpha_noise_pixels_cleared=cleared, frame_bounds=output_bounds,
                   issues=[])
     manifest['animations'] = [r for r in manifest['animations'] if r['name'] != args.name] + [record]
@@ -191,6 +204,8 @@ if __name__ == '__main__':
     parser.add_argument('--attempt', type=int, default=1)
     parser.add_argument('--columns', type=int)
     parser.add_argument('--row-grounds', nargs='+', type=float)
+    parser.add_argument('--row-edges', nargs='+', type=int, help='Explicit transparent source row boundaries')
     parser.add_argument('--register-rows', action='store_true', help='Align planted-foot baseline independently for each source row')
     parser.add_argument('--column-offsets', nargs='+', type=float, help='Horizontal registration corrections per source column')
+    parser.add_argument('--frame-order', nargs='+', type=int, help='Playback order of one-based source poses, each used once')
     pack(parser.parse_args())

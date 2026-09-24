@@ -19,8 +19,9 @@ extends Resource
 ## Map scene for the squad scope (and, later, the solo scope).
 @export_file("*.tscn") var squad_scene: String = ""
 @export_file("*.tscn") var solo_scene: String = ""
-## Political approaches arrive with the Council of Factions milestone.
-@export var political_available: bool = false
+## Ways to resolve the mission through the Council. The Political scope is
+## available when there is at least one.
+@export var political_approaches: Array[PoliticalApproach] = []
 
 
 func objective(id_wanted: StringName) -> ObjectiveDefinition:
@@ -50,7 +51,7 @@ func stakes_for(tier: MissionOutcome.Tier) -> Dictionary:
 
 func available_scopes() -> Array[MissionOutcome.Scope]:
 	var scopes: Array[MissionOutcome.Scope] = []
-	if political_available:
+	if not political_approaches.is_empty():
 		scopes.append(MissionOutcome.Scope.POLITICAL)
 	if squad_scene != "":
 		scopes.append(MissionOutcome.Scope.SQUAD)

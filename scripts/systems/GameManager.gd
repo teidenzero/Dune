@@ -14,6 +14,10 @@ var mission_checkpoint: StringName = &""
 ## Session-only until the campaign loop brings a save game.
 var campaign: CampaignState = CampaignState.new()
 
+## Where a mission's "leave" goes back to: the Council when it was launched
+## from there, the developer launcher otherwise.
+var return_scene: String = ""
+
 var debug_visible: bool = false:
 	set(value):
 		if debug_visible == value:

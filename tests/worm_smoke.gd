@@ -43,7 +43,8 @@ func _run() -> void:
 	await _safe_rock_and_arrival()
 	await _caught_on_open_sand()
 	await _allies_and_reset()
-	_check(completed == 8, "all worm scenarios completed")
+	await _meter_and_countdown()
+	_check(completed == 9, "all worm scenarios completed")
 	_check(Engine.time_scale == 1.0, "suite leaves normal game speed")
 	print("WORM SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
@@ -52,6 +53,39 @@ func _run() -> void:
 # --------------------------------------------------------------------------
 # Harness
 # --------------------------------------------------------------------------
+
+## The HUD meter: visible from the first real vibration, and once the worm
+## commits it becomes the approach - full exactly when the worm surfaces.
+func _meter_and_countdown() -> void:
+	await _load()
+	var hud: PlayerHud = mission.get_node("UI/Screen/HUD")
+	worm.reset_threat()
+	await _frames(2)
+	_check(not worm.meter_visible(), "a calm desert shows no meter")
+	worm.report_sign(player.global_position, worm.visible_from + 1.0, "test")
+	await _frames(3)
+	_check(worm.stage == WormThreatManager.Stage.CALM and worm.meter_visible() and hud.worm_label.is_visible_in_tree(), "the meter appears before the first stage")
+	# Commit: push the sign into the approach band.
+	worm.report_sign(player.global_position + Vector2(400, 0), worm.stage_thresholds[2] - worm.worm_sign + 1.0, "test")
+	await _frames(3)
+	_check(worm.is_worm_approaching(), "enough sign commits the worm")
+	var committed: float = worm.display_ratio()
+	_check(worm.arrival_eta() > 0.0 and hud.worm_label.text.contains("APPROACHING"), "the HUD counts down to its arrival")
+	var rising: bool = true
+	var last: float = committed
+	var arrived_at: float = -1.0
+	for index in range(900):
+		await _frames(1)
+		var now: float = worm.display_ratio()
+		rising = rising and now >= last - 0.0001
+		last = now
+		if event.erupting():
+			arrived_at = now
+			break
+	_check(rising and committed < 1.0, "the bar only rises during the approach")
+	_check(is_equal_approx(arrived_at, 1.0), "and is full exactly when the worm surfaces")
+	completed += 1
+
 
 func _load() -> void:
 	if is_instance_valid(mission):
