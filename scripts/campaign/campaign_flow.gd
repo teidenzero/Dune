@@ -37,8 +37,12 @@ const CHAPTERS: Array[Dictionary] = [
 		"text": "The first night. Paul cannot sleep; the house is too strange, too quiet. Then it is not quite quiet at all."},
 	{"id": "hunter_seeker", "kind": "scene", "title": "The Hunter-Seeker",
 		"path": "res://scenes/missions/act1/hunter_seeker.tscn"},
+	{"id": "banquet_card", "kind": "card", "image": "card_banquet", "heading": "ACT I  ·  1.2", "title": "The Banquet",
+		"text": "A week in Arrakeen. The Lady Jessica has invited the town's notables to dine: the water-sellers, a trader of no fixed trade, CHOAM, the Guild's banker, and the Emperor's planetologist.\n\nEvery one of them has come to take the measure of House Atreides. Tonight, House Atreides takes theirs."},
+	{"id": "banquet", "kind": "scene", "title": "The Banquet",
+		"path": "res://scenes/campaign/banquet.tscn"},
 	{"id": "to_be_continued", "kind": "card", "image": "menu_background", "heading": "ACT I", "title": "To Be Continued",
-		"text": "The next story mission, 1.2 The Banquet, is being built.\n\nThank you for playing this far."},
+		"text": "The next story mission, 1.3 The Harvester in the Open, is being built.\n\nThank you for playing this far."},
 ]
 
 var active: bool = false

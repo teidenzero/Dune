@@ -87,6 +87,11 @@ custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 text = "8  -  Act I, 1.1: The Hunter-Seeker"
 
+[node name="Banquet" type="Button" parent="Rows/Buttons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+text = "9  -  Act I, 1.2: The Banquet"
+
 [node name="MainMenu" type="Button" parent="Rows/Buttons"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
