@@ -66,8 +66,10 @@ func _travel(motion: Vector2) -> bool:
 			# Faction filtering and shield evaluation both live in the resolver,
 			# so a bullet and a blade reach health through the same gate.
 			var source: Node = owner_actor if is_instance_valid(owner_actor) else null
+			Sound.play(&"hit_body", global_position, -4.0)
 			DamageResolver.resolve(actor, HitContext.ranged(damage, speed, source, source_team, weapon_name, global_position, direction))
 		else:
+			Sound.play(&"hit_stone", global_position, -6.0)
 			var bus: DisturbanceBus = get_tree().get_first_node_in_group("disturbance_bus") as DisturbanceBus
 			if bus != null:
 				var noise_source: Node = owner_actor if is_instance_valid(owner_actor) else null

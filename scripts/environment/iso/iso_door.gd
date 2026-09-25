@@ -70,6 +70,9 @@ func _physics_process(delta: float) -> void:
 	if wants != is_open:
 		is_open = wants
 		_shape.set_deferred("disabled", is_open)
+		if is_open:
+			# Heard through the walls: someone is coming through.
+			Sound.play(&"door_open", global_position, -6.0)
 	var target: float = 1.0 if is_open else 0.0
 	if not is_equal_approx(_slide, target):
 		_slide = move_toward(_slide, target, delta * 5.0)

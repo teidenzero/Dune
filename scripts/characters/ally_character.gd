@@ -19,6 +19,8 @@ var move_speed: float = 0.0
 var face_travel: bool = true
 ## Set by the AI: Fremen match Paul's stance and go low when holding.
 var is_crouching: bool = false
+## Below 1 while carrying someone: the whole walk slows.
+var load_multiplier: float = 1.0
 var command_feedback_text: String = ""
 var _command_feedback_until: int = 0
 ## Something the player must see: hit, spotted, fighting on his own. The card
@@ -73,7 +75,7 @@ func _physics_process(delta: float) -> void:
 	if has_destination:
 		var next: Vector2 = agent.get_next_path_position()
 		if not agent.is_navigation_finished():
-			desired = global_position.direction_to(next) * move_speed
+			desired = global_position.direction_to(next) * move_speed * load_multiplier
 	var separation: Vector2 = Vector2.ZERO
 	for friend: Node2D in get_tree().get_nodes_in_group("allies"):
 		if friend == self or not friend.can_process() or HealthComponent.find_on(friend).is_dead:

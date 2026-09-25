@@ -93,6 +93,12 @@ func _ready() -> void:
 	show_view("council")
 	if game != null and game.get("flow") != null and game.flow.is_lesson():
 		lesson_mission = load(game.flow.current().mission) as MissionDefinition
+		# The briefing first, before the Duke walks Paul through the table.
+		var briefing: MissionBriefing = MissionBriefing.new()
+		briefing.name = "BriefingHost"
+		briefing.definition = lesson_mission
+		briefing.scene_path = SCENE_PATH
+		add_child(briefing)
 		var lesson: CouncilLesson = CouncilLesson.new()
 		lesson.name = "Lesson"
 		lesson.council = self

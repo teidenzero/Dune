@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="player"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="ui"]
 [ext_resource type="PackedScene" path="res://scenes/ui/tutorial_prompt.tscn" id="prompt"]
+[ext_resource type="Script" path="res://scripts/ui/briefing/mission_briefing.gd" id="briefing_host"]
+[ext_resource type="Resource" path="res://resources/missions/prologue_training_hall.tres" id="briefing_def"]
 
 [node name="SoloTraining" type="Node2D"]
 
@@ -71,3 +73,7 @@ text = "SOLO TRAINING - the lower levels of the Arrakeen Residency"
 manager = NodePath("../Tutorial")
 next_scene = "res://scenes/missions/harvester_raid/harvester_interior.tscn"
 next_label = "Inside the Harvester"
+
+[node name="BriefingHost" type="Node" parent="."]
+script = ExtResource("briefing_host")
+definition = ExtResource("briefing_def")

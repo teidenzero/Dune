@@ -336,6 +336,9 @@ collision_layer = 1
 collision_mask = 2
 script = ExtResource("harvester")
 sabotaged_sign = 10.0
+metadata/iso_art = "res://assets/environment/squad/harvester_iso.png"
+metadata/iso_art_anchor = Vector2(512, 560)
+metadata/iso_art_destroyed = "res://assets/environment/squad/harvester_iso_swallowed.png"
 
 [node name="Shadow" type="Polygon2D" parent="Harvester"]
 position = Vector2(26, 30)

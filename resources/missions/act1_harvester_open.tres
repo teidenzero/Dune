@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="MissionDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/mission_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/campaign/objective_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="obj_crew"]
+script = ExtResource("2")
+id = &"crew"
+title = "Get the crew to the ornithopters"
+description = "Eight men on and around the crawler. Two men per squad member; the injured one must be carried. The ornithopters seat nine of them."
+primary = true
+
+[sub_resource type="Resource" id="obj_spice"]
+script = ExtResource("2")
+id = &"spice"
+title = "Load the spice"
+description = "CHOAM counts every gram. It takes three of the seats, and loading it is loud."
+optional = true
+
+[sub_resource type="Resource" id="obj_liftoff"]
+script = ExtResource("2")
+id = &"liftoff"
+title = "Lift off"
+description = "From the rock, when you have everyone you can get."
+
+[resource]
+script = ExtResource("1")
+id = &"act1_harvester_open"
+title = "The Harvester in the Open"
+briefing = "Word from the spice fields: a crawler working the open sand beyond the Shield Wall, and its carryall has not come. Eight men are out there, and there is worm sign. We fly out now, and Kynes comes with us. He wants to see what this House values."
+faction_at_stake = &"fremen"
+objectives = Array[ExtResource("2")]([SubResource("obj_crew"), SubResource("obj_spice"), SubResource("obj_liftoff")])
+stakes = {
+"clean": {
+"resources": {
+&"influence": 1
+}
+},
+"noisy": {},
+"partial": {
+"heat": 1
+},
+"failure": {
+"heat": 1,
+"standings": {
+&"fremen": -1
+}
+}
+}
+squad_scene = "res://scenes/missions/act1/harvester_open.tscn"
+heading = "ACT I  ·  1.3"
+briefing_speaker = "DUKE LETO"
+briefing_image = "card_harvester"
+intel = PackedStringArray("SPACE stops the world. Pause, look over the field, plan every man's route, then let it run: planning never needs fast hands.", "A worm is already coming for the crawler. It turns toward whatever is loudest on the sand; its arrival time is on your objectives.", "While the crawler's engine runs, the worm goes to it. Shut the engine down and it hunts the next loudest thing, perhaps your men. It can be restarted.", "Each of us can lead two men at a time. The injured man must be carried, slowly, and alone.", "Waiting men are silent; walking men are not. Crouch, and the men behind you keep low. A nervous man left alone may bolt when the worm comes near, and a running man is the loudest thing out there.", "The ornithopters on the south rock seat nine of the crew. The crawler's spice, if loaded, takes three of those seats.", "Rock is safe: wait on the outcrops while the worm passes. If Kynes trusts us, he may lend you a thumper (K). Nothing on the sand is louder.", "Shift + right-click gives a man a whole route. He walks it even beyond your command range.")

@@ -1,5 +1,7 @@
 # Portrait fix: Duncan Idaho
 
+**Done (2026-09-24):** the new `duncan.png` is delivered and in the game. Kept for the record.
+
 Replace one delivered file. Everything in the prologue brief (`docs/art/tutorial_assets_brief.md`, section 4 "Speaker portraits") still applies: same format, size, framing and style as the other portraits.
 
 ## The problem

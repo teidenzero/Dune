@@ -91,6 +91,8 @@ const GUARDS: Dictionary = {
 @export var prompt: CanvasLayer
 @export var hero: HeroDefinition = preload("res://resources/heroes/paul.tres")
 @export var guard_scene: PackedScene = preload("res://scenes/characters/enemies/harkonnen_guard.tscn")
+## Gurney's sparring partners are Atreides soldiers, drawn as such.
+@export var drill_art: CharacterArt = preload("res://resources/characters/atreides_drill_soldier_art.tres")
 
 var steps: Array[TutorialStep] = []
 var index: int = -1
@@ -111,6 +113,11 @@ var _failing: bool = false
 
 func _ready() -> void:
 	add_to_group("solo_tutorial")
+	# F10: jump to any lesson.
+	var jump: TrainingJumpMenu = TrainingJumpMenu.new()
+	jump.name = "JumpMenu"
+	jump.host = self
+	add_child(jump)
 	level.layout = LAYOUT
 	level.kit = &"residency"
 	level.build()
@@ -206,6 +213,7 @@ func _spawn_guards() -> void:
 			enemy.patrol_route = route
 		enemy.initial_facing_degrees = spec.facing
 		enemy.display_name = spec.name
+		enemy.art = drill_art
 		enemy.position = level.mark(symbol)
 		if spec.kind == "shielded":
 			var shield: ShieldComponent = ShieldComponent.new()

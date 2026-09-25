@@ -113,3 +113,10 @@ stakes = {
 }
 }
 political_approaches = Array[ExtResource("3")]([SubResource("confirm_charter"), SubResource("public_stations")])
+heading = "PROLOGUE"
+lore = "Duke Leto rules through his council as much as through his soldiers. Around its table sit the powers of Arrakis: the guilds of the town, CHOAM's traders, the Spacing Guild, the smugglers, and the Fremen who watch it all from the desert. Each wants something, and each remembers how the House treated it. Tonight the Duke lets Paul watch, and then decide."
+objectives_caption = "THE DECISION"
+show_party = false
+briefing_speaker = ""
+briefing_image = "card_council"
+intel = PackedStringArray("This is the Political scope: the House's council. Nothing here is fought; everything is chosen.", "Every way of answering the petition has a price, in Solari, water or a faction's goodwill, and the table shows it before you commit.", "Standings with the factions carry forward. Who trusts the House decides who helps it later.", "The Duke walks you through the table the first time. Take your time: nothing moves until you choose.")

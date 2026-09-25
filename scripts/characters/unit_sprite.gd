@@ -52,6 +52,10 @@ func setup(owner_actor: CharacterBody2D, sheets: Dictionary, frame_size: Vector2
 	animation_finished.connect(_on_animation_finished)
 	_bind_signals()
 	_play(&"idle")
+	# Face the way the unit faces from the first frame, even one that is not
+	# processing yet (a guard asleep in the next room).
+	if actor.is_inside_tree():
+		_update_facing(false)
 
 
 func _add_strip(frames: SpriteFrames, animation: StringName, strip: Texture2D, frame_size: Vector2i, fps: float, loop: bool) -> void:
@@ -188,6 +192,8 @@ func _in_combat() -> bool:
 	var ai: Node = actor.get("ai") as Node
 	if ai != null and ai.get("behavior") != null:
 		return ai.get("behavior") == AllyAIController.Behavior.COMBAT
+	if ai is EnemyAIController:
+		return (ai as EnemyAIController).state == EnemyAIController.State.COMBAT
 	return actor.get("order") == PlayerController.Order.ATTACK
 
 

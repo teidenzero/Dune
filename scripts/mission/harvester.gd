@@ -24,6 +24,8 @@ func _ready() -> void:
 	add_to_group("harvester")
 	add_to_group("worm_machines")
 	emitter.set_continuous(running)
+	if running:
+		Sound.loop(&"harvester_engine", self, -4.0)
 	for point: Node in get_tree().get_nodes_in_group("sabotage_points"):
 		sabotage_total += 1
 		(point as InteractionPoint).interaction_completed.connect(_on_point_used)
@@ -32,6 +34,11 @@ func _ready() -> void:
 func set_running(value: bool) -> void:
 	running = value
 	emitter.set_continuous(running)
+	# The engine you can hear is the engine the worm hears.
+	if running:
+		Sound.loop(&"harvester_engine", self, -4.0)
+	else:
+		Sound.stop_loop(&"harvester_engine", self)
 
 
 func _on_point_used(_id: StringName) -> void:
@@ -55,6 +62,10 @@ func destroy() -> void:
 		return
 	destroyed = true
 	set_running(false)
+	# The painted crawler, half swallowed.
+	var art: Sprite2D = get_node_or_null("IsoArt") as Sprite2D
+	if art != null and has_meta("iso_art_destroyed") and ResourceLoader.exists(String(get_meta("iso_art_destroyed"))):
+		art.texture = load(String(get_meta("iso_art_destroyed")))
 	queue_redraw()
 
 

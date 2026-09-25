@@ -575,7 +575,27 @@ func _recon_section() -> void:
 			break
 		await _frames(1)
 	_check(squad.link_state(scout) != Link.OUT_OF_RANGE, "closing the distance restored the link")
-	_check(await _await_step(&"presc_observe", 400), "restoring the link completes the reconnection step")
+	_check(await _await_step(&"route_plan", 400), "restoring the link completes the reconnection step")
+	# Routes: two stops, one dragged, carried beyond command range.
+	player.stop()
+	await _frames(5)
+	await _tap(KEY_2)
+	await _right_click(tutorial.actor(&"Marker_Route1").global_position)
+	squad.issue_context(tutorial.actor(&"Marker_Route2").global_position, true)
+	_check(scout.ai.waypoints().size() == 2, "SHIFT + right-click adds a second stop")
+	_check(await _await_step(&"route_change", 300), "a two-stop route completes the planning step")
+	var stops: Array[Vector2] = scout.ai.waypoints()
+	_check(squad.grab_waypoint(stops.back()) and squad.drop_waypoint(stops.back() + Vector2(40, -40)), "a stop is dragged somewhere new")
+	_check(await _await_step(&"route_carry", 300), "changing a stop completes the change step")
+	var carried: bool = false
+	for index in range(2400):
+		if squad.link_state(scout) == Link.OUT_OF_RANGE and scout.ai.current_order == Order.MOVE_TO:
+			carried = true
+		if _step_id() == &"presc_observe":
+			break
+		await _frames(1)
+	_check(carried, "out of range, he kept walking his route")
+	_check(_step_id() == &"presc_observe", "the route walked to its end completes the lesson")
 	_check(tutorial.current_section() == &"prescience", "the tutorial advanced into the prescience yard")
 	await _tap(KEY_H)
 	completed += 1

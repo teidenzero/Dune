@@ -53,6 +53,8 @@ var selected: bool = false:
 		queue_redraw()
 var is_sprinting: bool = false
 var is_crouching: bool = false
+## Below 1 while carrying someone (1.3's injured crewman): slower, and no running.
+var load_multiplier: float = 1.0
 var current_speed: float = 0.0
 var aim_direction: Vector2 = Vector2.RIGHT
 var equipped_slot: int = 0
@@ -417,8 +419,11 @@ func fit_shield() -> void:
 
 func set_shield(active: bool) -> void:
 	if shield != null:
+		var was: bool = shield.enabled
 		shield.enabled = active and not health.is_dead
 		_shield_sign_elapsed = 0.0
+		if shield.enabled != was:
+			Sound.play(&"shield_on" if shield.enabled else &"shield_down", global_position, -4.0)
 
 
 func shield_active() -> bool:
@@ -445,7 +450,7 @@ func _direct_control(delta: float) -> void:
 		is_crouching = false
 	if Input.is_action_just_pressed("dodge"):
 		try_dodge(direction)
-	var running: bool = Input.is_action_pressed("sprint") and not direction.is_zero_approx() and not prescience.blocks_sprint()
+	var running: bool = Input.is_action_pressed("sprint") and not direction.is_zero_approx() and not prescience.blocks_sprint() and load_multiplier >= 1.0
 	if dodging:
 		_dodge_time -= delta
 		velocity = _dodge_direction * dodge_speed
@@ -453,7 +458,7 @@ func _direct_control(delta: float) -> void:
 			dodging = false
 	else:
 		var speed: float = crouch_speed if is_crouching else (sprint_speed if running else walk_speed)
-		speed *= melee.get_move_speed_multiplier() * prescience.get_move_speed_multiplier()
+		speed *= melee.get_move_speed_multiplier() * prescience.get_move_speed_multiplier() * load_multiplier
 		var rate: float = deceleration if direction.is_zero_approx() else acceleration
 		velocity = velocity.move_toward(direction * speed, rate * delta)
 	move_and_slide()

@@ -339,6 +339,46 @@ static func _recon(t: TutorialManager) -> Array:
 				var scout: AllyCharacter = t.ally(2)
 				return scout != null and t.squad.link_state(scout) != Link.OUT_OF_RANGE,
 		},
+		{
+			"id": &"route_plan", "section": &"recon", "title": "A route",
+			"speaker": "DUKE LETO",
+			"instruction": "So give him the whole road while he can still hear you. Select the Scout, right-click STOP 1, then hold SHIFT and right-click STOP 2.",
+			"hint": "SHIFT + right-click adds a stop to the end of his route. A plain right-click throws the route away and starts a new one; H stops him where he is.",
+			"markers": ["Marker_Route1", "Marker_Route2", "Highlight_Scout"],
+			"note": "Each stop is numbered on the ground, and he walks them in order.",
+			"delay_after": 1.2,
+			"completion": func() -> bool:
+				var scout: AllyCharacter = t.ally(2)
+				var first: Node2D = t.actor(&"Marker_Route1")
+				var last: Node2D = t.actor(&"Marker_Route2")
+				if scout == null or first == null or last == null:
+					return false
+				var points: Array[Vector2] = scout.ai.waypoints()
+				if points.size() < 2:
+					return false
+				return points[points.size() - 1].distance_to(last.global_position) < 160.0,
+		},
+		{
+			"id": &"route_change", "section": &"recon", "title": "A change of plan",
+			"speaker": "DUKE LETO",
+			"instruction": "Plans change. Drag one of his stops somewhere else: hold the left mouse button on a numbered stop and move it.",
+			"hint": "A stop rings when the cursor is over it. SPACE stops the world if you want time. If he has already gone out of earshot, walk Paul closer, give him a new route, and change that.",
+			"hint_delay": 5.0,
+			"note": "You can change a route only while he can hear you.",
+			"delay_after": 1.2,
+			"completion": func() -> bool: return t.happened(&"route_changed"),
+		},
+		{
+			"id": &"route_carry", "section": &"recon", "title": "He carries it",
+			"speaker": "DUKE LETO",
+			"instruction": "Now keep Paul where he is and let him walk it. Watch his link as he passes out of your range.",
+			"hint": "His link goes red, and he keeps walking. A route he was given is a plan he carries; only new orders need your voice.",
+			"note": "Plan the whole road before a man leaves your range. He will walk it where he cannot hear you.",
+			"delay_after": 2.0,
+			"completion": func() -> bool:
+				var scout: AllyCharacter = t.ally(2)
+				return scout != null and scout.ai.current_order == Order.HOLD and scout.ai.waypoints().is_empty(),
+		},
 	]
 
 

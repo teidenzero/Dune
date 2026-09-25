@@ -11,10 +11,7 @@ const STORY: String = "res://assets/ui/story/"
 ## Spoken names as they appear in dialogue and tutorial prompts.
 const SPEAKERS: Dictionary = {
 	"PAUL": "paul", "DUKE LETO": "duke_leto", "JESSICA": "jessica", "GURNEY": "gurney",
-	"THUFIR": "thufir", "KYNES": "kynes",
-	# DUNCAN is left out until duncan.png is redone: the delivered one draws
-	# him as Paul (docs/art/portrait_fixes_brief.md). Unmapped, his lines show
-	# no portrait rather than the wrong face. Put "DUNCAN": "duncan" back then.
+	"THUFIR": "thufir", "KYNES": "kynes", "DUNCAN": "duncan", "MAPES": "mapes",
 }
 
 

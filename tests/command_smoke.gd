@@ -30,7 +30,8 @@ func _run() -> void:
 	await _command_gating()
 	await _reconnection_and_group_orders()
 	await _recon_foundation()
-	_check(completed == 7, "all command scenarios completed")
+	await _routes()
+	_check(completed == 8, "all command scenarios completed")
 	_check(Engine.time_scale == 1.0, "suite leaves normal game speed")
 	print("COMMAND SMOKE: %d failure(s)" % failures)
 	quit(0 if failures == 0 else 1)
@@ -468,6 +469,43 @@ func _reconnection_and_group_orders() -> void:
 	await _frames(150)
 	_check(squad.link_state(scout) == Link.OUT_OF_RANGE, "the ally is still disconnected while returning")
 	_check(scout.has_destination and scout.global_position.distance_to(player.global_position) < opening - 250, "a disconnected FOLLOW keeps navigating back to Paul")
+	completed += 1
+
+
+## Shift + right-click builds a route; a waypoint can be dragged while he is
+## in range; a plain order replaces the route; a route is walked through to
+## the last waypoint, beyond command range too, where it can't be changed.
+func _routes() -> void:
+	await _load()
+	_freeze(warrior)
+	player.global_position = Vector2(-600, 280)
+	_place(scout, Vector2(-480, 280))
+	await _frames(6)
+	squad.select_slot(2)
+	squad.issue_context(Vector2(-400, 280))
+	squad.issue_context(Vector2(-400, 400), true)
+	squad.issue_context(Vector2(-300, 400), true)
+	var points: Array[Vector2] = scout.ai.waypoints()
+	_check(points.size() == 3, "Shift + right-click adds waypoints: three in the route")
+	var found: Dictionary = squad.waypoint_at(points[1])
+	_check(not found.is_empty() and found.ally == scout and int(found.index) == 1, "a waypoint can be picked under the cursor")
+	_check(squad.grab_waypoint(points[1]) and not squad.waypoint_drag.is_empty(), "and taken hold of")
+	_check(squad.drop_waypoint(Vector2(-470, 430)) and scout.ai.waypoints()[1].distance_to(Vector2(-470, 430)) < 40.0, "dragged, it moves")
+	squad.issue_context(Vector2(-420, 300))
+	_check(scout.ai.waypoints().size() == 1, "a plain right-click replaces the route")
+	squad.issue_context(Vector2(-420, 420), true)
+	await _frames(200)
+	_check(scout.ai.current_order == Order.HOLD and scout.global_position.distance_to(Vector2(-420, 420)) < 40.0, "the route is walked to its last waypoint, and held")
+	# Given in range, carried out of it.
+	squad.issue_context(Vector2(-420, 200))
+	squad.issue_context(Vector2(-300, 200), true)
+	_freeze(scout)
+	_place(scout, Vector2(600, -700))
+	await _frames(6)
+	_check(squad.link_state(scout) == Link.OUT_OF_RANGE, "the Scout is out of range")
+	var far: Array[Vector2] = scout.ai.waypoints()
+	_check(squad.grab_waypoint(far[1]) and squad.waypoint_drag.is_empty() and squad.rejection_active(), "out of range, his route can't be changed - and it says so")
+	_check(scout.ai.waypoints() == far and scout.ai.current_order == Order.MOVE_TO, "but it stands, and he keeps to it")
 	completed += 1
 
 

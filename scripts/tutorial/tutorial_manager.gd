@@ -42,6 +42,11 @@ var _section_start: Dictionary = {}
 
 func _ready() -> void:
 	add_to_group("tutorial_manager")
+	# F10: jump to any lesson.
+	var jump: TrainingJumpMenu = TrainingJumpMenu.new()
+	jump.name = "JumpMenu"
+	jump.host = self
+	add_child(jump)
 	steps = TutorialScript.build(self)
 	for step in steps:
 		if not _section_start.has(step.section):
@@ -132,6 +137,7 @@ func _bind_signals() -> void:
 		squad.pause_changed.connect(_on_pause_changed)
 		squad.order_issued.connect(func(_order: int) -> void: note_event(&"order_issued"))
 		squad.command_rejected.connect(func(_allies: Array) -> void: note_event(&"command_rejected"))
+		squad.route_changed.connect(func(_ally: AllyCharacter) -> void: note_event(&"route_changed"))
 	for node: Node in get_tree().get_nodes_in_group("tutorial_triggers"):
 		var trigger: TutorialTriggerArea = node as TutorialTriggerArea
 		if trigger != null:

@@ -22,6 +22,35 @@ extends Resource
 ## Ways to resolve the mission through the Council. The Political scope is
 ## available when there is at least one.
 @export var political_approaches: Array[PoliticalApproach] = []
+@export_group("Briefing")
+## The pre-mission briefing. `briefing` above is the situation, read aloud;
+## these add who gives it, where the story stands, and what the player needs
+## to know to make a plan - the rules of this place, never the plan itself.
+@export var heading: String = ""
+## Background, in the narrator's voice: who is who, a little of the world.
+@export_multiline var lore: String = ""
+## What the objectives list is called ("WHAT YOU WILL PRACTISE" for training).
+@export var objectives_caption: String = ""
+## The party and quartermaster column; off for scenes with no field party
+## (a council, a dinner).
+@export var show_party: bool = true
+@export var briefing_speaker: String = ""
+## A story image (assets/ui/story/<name>.png) behind the briefing.
+@export var briefing_image: String = ""
+## What we know, one point each: for the squad scene, and for the solo scene.
+@export var intel: PackedStringArray = []
+@export var solo_intel: PackedStringArray = []
+
+
+## The intel for the scene being played: the solo scene has its own.
+func intel_for(scene_path: String) -> PackedStringArray:
+	if scene_path != "" and scene_path == solo_scene and not solo_intel.is_empty():
+		return solo_intel
+	return intel if not intel.is_empty() else solo_intel
+
+
+func has_briefing(scene_path: String) -> bool:
+	return not intel_for(scene_path).is_empty()
 
 
 func objective(id_wanted: StringName) -> ObjectiveDefinition:

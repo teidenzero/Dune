@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MissionDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/mission_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/campaign/objective_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="obj_0"]
+script = ExtResource("2")
+id = &"agendas"
+title = "Learn what the guests want"
+description = "Each guest has a hidden agenda. Answer what he really wants."
+primary = true
+
+[sub_resource type="Resource" id="obj_1"]
+script = ExtResource("2")
+id = &"table"
+title = "Keep the table"
+description = "If the table's composure runs out, the Duke ends the evening early."
+
+[sub_resource type="Resource" id="obj_2"]
+script = ExtResource("2")
+id = &"informant"
+title = "Name the informant"
+description = "One guest reports to the Harkonnen. Naming no one is better than naming the wrong man."
+
+[resource]
+script = ExtResource("1")
+id = &"act1_banquet"
+title = "The Banquet"
+briefing = "Tonight you answer them, Paul - not your father, not I. Five guests, and every one of them wants something from this House; some of them more than they will say. It shows, if you look. If you are unsure, look at me, or remember how your father handled such a man. And keep the table easy: if it turns cold, your father will end the evening, and we will have learned nothing."
+objectives = Array[ExtResource("2")]([SubResource("obj_0"), SubResource("obj_1"), SubResource("obj_2")])
+heading = "ACT I  ·  1.2"
+lore = "The Lady Jessica is the Duke's bound concubine, Paul's mother, and a Bene Gesserit: trained since childhood to read the smallest movement of a face, a voice, a hand. She has taught Paul the beginning of that art. Tonight she will need it, and so will he."
+objectives_caption = "TONIGHT"
+show_party = false
+briefing_speaker = "JESSICA"
+briefing_image = "card_banquet"
+intel = PackedStringArray("Five notables dine tonight: the water-sellers' master, a banker of the Spacing Guild, CHOAM's factor, a trader of no fixed trade, and the planetologist Kynes.", "Paul answers every guest, choosing one of three replies. Which reply is right depends on what that guest secretly wants - and that changes from one dinner to the next.", "Watch each guest: something in how he sits, looks or speaks gives away what he wants. Read him yourself if you can.", "Look at your mother (twice tonight): her face tells you how this guest will take each reply. Remember your father (twice tonight): his lessons tell you what each reply means around the rest of the table.", "Your parents will react to what you say - a look when you do well, a word when you could do better, and your father stepping in if you misstep.", "Every word is heard by everyone. Even a good answer can cost you someone else at the table.", "One guest reports to the Harkonnen. At the end Thufir will ask you to name him. Naming no one is safer than naming the wrong man.")

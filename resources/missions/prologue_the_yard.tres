@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="MissionDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/mission_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/campaign/objective_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="obj_0"]
+script = ExtResource("2")
+id = &"squad"
+title = "Leading a squad"
+description = "Select, move and hold your Fremen; give them routes; set their fire discipline; strike together on your signal."
+
+[sub_resource type="Resource" id="obj_1"]
+script = ExtResource("2")
+id = &"weapons"
+title = "Weapons and shields"
+description = "Gurney and Duncan: the rifle, the fast strike, and the slow blade against a shield."
+
+[sub_resource type="Resource" id="obj_2"]
+script = ExtResource("2")
+id = &"unseen"
+title = "Staying unseen"
+description = "Crouch and keep to cover; read a watch post before you walk into it."
+
+[sub_resource type="Resource" id="obj_3"]
+script = ExtResource("2")
+id = &"range"
+title = "Reconnaissance and command range"
+description = "Your orders reach only so far. Keep the link, or lose control of your men."
+
+[sub_resource type="Resource" id="obj_4"]
+script = ExtResource("2")
+id = &"prescience"
+title = "Prescience"
+description = "The Lady Jessica: see what the enemy will do, and rehearse your own plan."
+
+[sub_resource type="Resource" id="obj_5"]
+script = ExtResource("2")
+id = &"desert"
+title = "The desert"
+description = "Kynes: open sand, rhythm, and the worm."
+
+[resource]
+script = ExtResource("1")
+id = &"prologue_the_yard"
+title = "The Yard"
+briefing = "Gurney makes fighters. A duke makes fighters into a force. Today you command: two Fremen guides who have agreed to learn our ways while we learn theirs. Watch Gurney and Duncan, listen to your mother, and when Kynes speaks of the desert, believe him."
+objectives = Array[ExtResource("2")]([SubResource("obj_0"), SubResource("obj_1"), SubResource("obj_2"), SubResource("obj_3"), SubResource("obj_4"), SubResource("obj_5")])
+squad_scene = "res://scenes/missions/tutorial/tutorial_arrakeen.tscn"
+heading = "PROLOGUE"
+lore = "Duke Leto Atreides was given Arrakis by the Emperor, and every soldier in his house knows the gift is a trap. His strength has never been the size of his armies. It is the loyalty of the people who serve him: Gurney Halleck, the swordmaster Duncan Idaho, the Mentat Thufir Hawat. Now he means to win the Fremen, the desert people no Harkonnen ever understood."
+objectives_caption = "WHAT YOU WILL PRACTISE"
+show_party = true
+briefing_speaker = "DUKE LETO"
+briefing_image = "card_yard"
+intel = PackedStringArray("This is the Squad scope, seen from above: Paul and his Fremen move in real time. Space pauses the world, so you can plan and give orders without hurrying.", "Your Fremen hold their fire until you tell them otherwise. Nothing they do in a fight should surprise you.", "Each lesson waits for you to read it. Tab hides the lesson panel; L shows everything said so far.", "It ends with a final exercise that puts it all together, and a run to the extraction point.")

@@ -10,6 +10,9 @@ extends Node
 ## is both a sound a guard can hear and a vibration the desert feels, and the
 ## two travel by different rules.
 
+## Every step, as the worm would feel it: footstep sounds follow it.
+signal stepped(at: Vector2, profile: String, on_sand: bool)
+
 @export var actor: Node2D
 @export var terrain: TerrainSafetyComponent
 @export var label: String = "Actor"
@@ -90,6 +93,7 @@ func _movement(delta: float) -> void:
 	if _pulse_elapsed < maxf(interval, 0.05):
 		return
 	_pulse_elapsed = 0.0
+	stepped.emit(actor.global_position, last_profile, terrain != null and terrain.carries_sign())
 	_report(amount * movement_multiplier, "%s %s" % [label, last_profile.to_lower()])
 
 

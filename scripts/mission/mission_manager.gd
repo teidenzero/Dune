@@ -46,6 +46,39 @@ var _order: Array[StringName] = []
 
 func _ready() -> void:
 	add_to_group("mission_manager")
+	# Launched on purpose (not a retry): the briefing comes first, and the
+	# world waits from this very frame so no clock starts behind it.
+	var game: Node = _gm()
+	if game != null and game.pending_briefing:
+		game.pending_briefing = false
+		if has_briefing():
+			get_tree().paused = true
+			call_deferred("show_briefing", true)
+
+
+func has_briefing() -> bool:
+	return definition != null and definition.has_briefing(_scene_path())
+
+
+## The briefing, at the start or again with I during the mission.
+func show_briefing(at_start: bool = false) -> BriefingScreen:
+	if not has_briefing() or get_tree().get_first_node_in_group("briefing_screen") != null:
+		return null
+	return BriefingScreen.show_for(self, _scene_path(), at_start)
+
+
+## The scene this mission lives in: its own root, never whatever was current.
+func _scene_path() -> String:
+	if owner != null and owner.scene_file_path != "":
+		return owner.scene_file_path
+	var scene: Node = get_tree().current_scene if is_inside_tree() else null
+	return scene.scene_file_path if scene != null else ""
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("show_briefing") and not event.is_echo() and running() and has_briefing():
+		get_viewport().set_input_as_handled()
+		show_briefing()
 
 
 # --------------------------------------------------------------------------

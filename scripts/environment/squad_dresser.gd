@@ -70,6 +70,9 @@ static func _rock(body: StaticBody2D, footprint: Polygon2D, faces: Array) -> voi
 	sprite.position = bounds.get_center() - Vector2(0, bounds.size.y * 0.18)
 	sprite.z_index = footprint.z_index
 	body.add_child(sprite)
+	# In the isometric view the painted rock stands up over its footprint and
+	# sorts by depth like any figure, instead of lying sheared on the ground.
+	body.add_to_group("iso_sorted")
 	for face: String in faces:
 		var drawn: CanvasItem = body.get_node_or_null(face) as CanvasItem
 		if drawn != null:

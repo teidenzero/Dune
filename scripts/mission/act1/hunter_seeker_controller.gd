@@ -117,8 +117,7 @@ func _begin() -> void:
 	mission.record("Operator", "-")
 	mission.record("Spoke with Mapes", "NO")
 	_release_seeker()
-	dialogue.say("", "Night, the first in the Residency. Something hums at the edge of hearing.")
-	dialogue.say("PAUL", "A hunter-seeker. It goes for whatever moves. Be still. Let it come close. Then take it.")
+	dialogue.say("PAUL", "A hunter-seeker. Be still.")
 
 
 func _furnish() -> void:

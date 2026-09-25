@@ -1,0 +1,412 @@
+[
+  {
+    "slot": "pistol_shot",
+    "file": "weapons/pistol_shot_01.ogg",
+    "source_pack_or_title": "OpenGameArt - The Free Firearm Sound Library (Prepared SFX Library)",
+    "author": "The Free Firearm Sound Library team (freefirearmsfx.com), uploaded by bart",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'Our team holds CC0 NO RIGHTS RESERVED for this library'",
+    "source_page_url": "https://opengameart.org/content/the-free-firearm-sound-library",
+    "original_filename": "Prepared SFX Library/Walther PPQ/X_39P.wav",
+    "notes": "Walther PPQ 9mm, near distance. First shot trimmed to 1.2s, fade-out, mono, peak-normalized, re-encoded ogg."
+  },
+  {
+    "slot": "pistol_shot",
+    "file": "weapons/pistol_shot_02.ogg",
+    "source_pack_or_title": "OpenGameArt - The Free Firearm Sound Library (Prepared SFX Library)",
+    "author": "The Free Firearm Sound Library team (freefirearmsfx.com), uploaded by bart",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'Our team holds CC0 NO RIGHTS RESERVED for this library'",
+    "source_page_url": "https://opengameart.org/content/the-free-firearm-sound-library",
+    "original_filename": "Prepared SFX Library/Bersa/F_47P.wav",
+    "notes": "Bersa .380, near distance. First shot trimmed to 1.2s, fade-out, mono, normalized, ogg."
+  },
+  {
+    "slot": "lasgun_shot",
+    "file": "weapons/lasgun_shot_01.ogg",
+    "source_pack_or_title": "Kenney - Sci-Fi Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/sci-fi-sounds",
+    "original_filename": "Audio/laserLarge_001.ogg",
+    "notes": "Unmodified. Heaviest/lowest of the laserLarge set."
+  },
+  {
+    "slot": "lasgun_shot",
+    "file": "weapons/lasgun_shot_02.ogg",
+    "source_pack_or_title": "Kenney - Sci-Fi Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/sci-fi-sounds",
+    "original_filename": "Audio/laserLarge_000.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "reload",
+    "file": "weapons/reload.ogg",
+    "source_pack_or_title": "OpenGameArt - Handgun Reload Sound Effect",
+    "author": "zer0_sol",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0')",
+    "source_page_url": "https://opengameart.org/content/handgun-reload-sound-effect",
+    "original_filename": "reload.wav",
+    "notes": "Mag drop, insert, slide rack. Mono, normalized to -4 dBFS, ogg."
+  },
+  {
+    "slot": "empty_click",
+    "file": "weapons/empty_click.ogg",
+    "source_pack_or_title": "Kenney - RPG Audio",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/rpg-audio",
+    "original_filename": "Audio/metalLatch.ogg",
+    "notes": "Single sharp metal latch used as dry-fire click. Mono, normalized, ogg."
+  },
+  {
+    "slot": "knife_swing",
+    "file": "melee/knife_swing_01.ogg",
+    "source_pack_or_title": "Kenney - RPG Audio",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/rpg-audio",
+    "original_filename": "Audio/knifeSlice.ogg",
+    "notes": "Unmodified. Blade slice/whoosh."
+  },
+  {
+    "slot": "knife_swing",
+    "file": "melee/knife_swing_02.ogg",
+    "source_pack_or_title": "Kenney - RPG Audio",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/rpg-audio",
+    "original_filename": "Audio/knifeSlice2.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "knife_hit",
+    "file": "melee/knife_hit_01.ogg",
+    "source_pack_or_title": "Kenney - Impact Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/impact-sounds",
+    "original_filename": "Audio/impactPunch_medium_000.ogg",
+    "notes": "Unmodified. Body/cloth thud."
+  },
+  {
+    "slot": "knife_hit",
+    "file": "melee/knife_hit_02.ogg",
+    "source_pack_or_title": "Kenney - Impact Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/impact-sounds",
+    "original_filename": "Audio/impactPunch_medium_001.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "shield_on",
+    "file": "shield/shield_on.ogg",
+    "source_pack_or_title": "Kenney - Sci-Fi Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/sci-fi-sounds",
+    "original_filename": "Audio/forceField_000.ogg",
+    "notes": "Unmodified. Low energy hum with decay (not a slow ramp-up)."
+  },
+  {
+    "slot": "shield_block",
+    "file": "shield/shield_block.ogg",
+    "source_pack_or_title": "Kenney - Sci-Fi Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/sci-fi-sounds",
+    "original_filename": "Audio/forceField_001.ogg + Audio/impactMetal_004.ogg",
+    "notes": "Derived mix of two CC0 Kenney files: first 0.45s of forceField_001 layered with impactMetal_004. Mono, ogg."
+  },
+  {
+    "slot": "shield_down",
+    "file": "shield/shield_down.ogg",
+    "source_pack_or_title": "Kenney - Digital Audio",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/digital-audio",
+    "original_filename": "Audio/lowDown.ogg",
+    "notes": "Unmodified. Low descending power-down tone; somewhat synthetic."
+  },
+  {
+    "slot": "hit_body",
+    "file": "impacts/hit_body.ogg",
+    "source_pack_or_title": "Kenney - Impact Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/impact-sounds",
+    "original_filename": "Audio/impactPunch_heavy_000.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "hit_stone",
+    "file": "impacts/hit_stone_01.ogg",
+    "source_pack_or_title": "Kenney - Impact Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/impact-sounds",
+    "original_filename": "Audio/impactMining_000.ogg",
+    "notes": "Unmodified. Stone/pick hit; no ricochet whine available."
+  },
+  {
+    "slot": "hit_stone",
+    "file": "impacts/hit_stone_02.ogg",
+    "source_pack_or_title": "Kenney - Impact Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/impact-sounds",
+    "original_filename": "Audio/impactMining_001.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "step_sand",
+    "file": "footsteps/step_sand_01.ogg",
+    "source_pack_or_title": "OpenGameArt - Fantozzi's Footsteps (Grass/Sand & Stone)",
+    "author": "Fantozzi (freesound.org/people/Fantozzi), sliced/uploaded by qubodup",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'taken from freesound.org/people/Fantozzi/packs/10338/ under CC0'",
+    "source_page_url": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+    "original_filename": "Fantozzi-footsteps/ogg/Fantozzi-SandL1.ogg",
+    "notes": "Unmodified. Uploader notes 'Sand' also sounds like grass."
+  },
+  {
+    "slot": "step_sand",
+    "file": "footsteps/step_sand_02.ogg",
+    "source_pack_or_title": "OpenGameArt - Fantozzi's Footsteps (Grass/Sand & Stone)",
+    "author": "Fantozzi (freesound.org/people/Fantozzi), sliced/uploaded by qubodup",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'taken from freesound.org/people/Fantozzi/packs/10338/ under CC0'",
+    "source_page_url": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+    "original_filename": "Fantozzi-footsteps/ogg/Fantozzi-SandR1.ogg",
+    "notes": "Unmodified. Uploader notes 'Sand' also sounds like grass."
+  },
+  {
+    "slot": "step_sand",
+    "file": "footsteps/step_sand_03.ogg",
+    "source_pack_or_title": "OpenGameArt - Fantozzi's Footsteps (Grass/Sand & Stone)",
+    "author": "Fantozzi (freesound.org/people/Fantozzi), sliced/uploaded by qubodup",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'taken from freesound.org/people/Fantozzi/packs/10338/ under CC0'",
+    "source_page_url": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+    "original_filename": "Fantozzi-footsteps/ogg/Fantozzi-SandL2.ogg",
+    "notes": "Unmodified. Uploader notes 'Sand' also sounds like grass."
+  },
+  {
+    "slot": "step_sand",
+    "file": "footsteps/step_sand_04.ogg",
+    "source_pack_or_title": "OpenGameArt - Fantozzi's Footsteps (Grass/Sand & Stone)",
+    "author": "Fantozzi (freesound.org/people/Fantozzi), sliced/uploaded by qubodup",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'taken from freesound.org/people/Fantozzi/packs/10338/ under CC0'",
+    "source_page_url": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+    "original_filename": "Fantozzi-footsteps/ogg/Fantozzi-SandR2.ogg",
+    "notes": "Unmodified. Uploader notes 'Sand' also sounds like grass."
+  },
+  {
+    "slot": "step_stone",
+    "file": "footsteps/step_stone_01.ogg",
+    "source_pack_or_title": "OpenGameArt - Fantozzi's Footsteps (Grass/Sand & Stone)",
+    "author": "Fantozzi (freesound.org/people/Fantozzi), sliced/uploaded by qubodup",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'taken from freesound.org/people/Fantozzi/packs/10338/ under CC0'",
+    "source_page_url": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+    "original_filename": "Fantozzi-footsteps/ogg/Fantozzi-StoneL1.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "step_stone",
+    "file": "footsteps/step_stone_02.ogg",
+    "source_pack_or_title": "OpenGameArt - Fantozzi's Footsteps (Grass/Sand & Stone)",
+    "author": "Fantozzi (freesound.org/people/Fantozzi), sliced/uploaded by qubodup",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'taken from freesound.org/people/Fantozzi/packs/10338/ under CC0'",
+    "source_page_url": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+    "original_filename": "Fantozzi-footsteps/ogg/Fantozzi-StoneR1.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "step_stone",
+    "file": "footsteps/step_stone_03.ogg",
+    "source_pack_or_title": "OpenGameArt - Fantozzi's Footsteps (Grass/Sand & Stone)",
+    "author": "Fantozzi (freesound.org/people/Fantozzi), sliced/uploaded by qubodup",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'taken from freesound.org/people/Fantozzi/packs/10338/ under CC0'",
+    "source_page_url": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+    "original_filename": "Fantozzi-footsteps/ogg/Fantozzi-StoneL2.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "step_stone",
+    "file": "footsteps/step_stone_04.ogg",
+    "source_pack_or_title": "OpenGameArt - Fantozzi's Footsteps (Grass/Sand & Stone)",
+    "author": "Fantozzi (freesound.org/people/Fantozzi), sliced/uploaded by qubodup",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0') ; page text: 'taken from freesound.org/people/Fantozzi/packs/10338/ under CC0'",
+    "source_page_url": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+    "original_filename": "Fantozzi-footsteps/ogg/Fantozzi-StoneR2.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "worm_rumble",
+    "file": "worm/worm_rumble_loop.ogg",
+    "source_pack_or_title": "OpenGameArt - rumble fx",
+    "author": "cinameng",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0')",
+    "source_page_url": "https://opengameart.org/content/rumble-fx",
+    "original_filename": "rumble.wav",
+    "notes": "Took 3.0-16.0s (skipping source fades), equal-power 2s crossfade of tail into head for a seamless 11s loop. Mono, -3 dBFS, ogg."
+  },
+  {
+    "slot": "worm_erupt",
+    "file": "worm/worm_erupt.ogg",
+    "source_pack_or_title": "OpenGameArt - Earthquake and Open sesame",
+    "author": "mieki256",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0')",
+    "source_page_url": "https://opengameart.org/content/earthquake-and-open-sesame",
+    "original_filename": "shake.flac (+ Kenney Sci-Fi Sounds lowFrequency_explosion_000.ogg and explosionCrunch_004.ogg, CC0, https://kenney.nl/assets/sci-fi-sounds)",
+    "notes": "Derived mix of three CC0 sources: earthquake shake layered with a low-frequency boom and crunch. Mono, 5.3s, ogg. Not a creature roar."
+  },
+  {
+    "slot": "thumper_thump",
+    "file": "world/thumper_thump.ogg",
+    "source_pack_or_title": "Kenney - Impact Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/impact-sounds",
+    "original_filename": "Audio/impactWood_heavy_000.ogg",
+    "notes": "Unmodified single deep knock; game should repeat it rhythmically."
+  },
+  {
+    "slot": "harvester_engine",
+    "file": "world/harvester_engine_loop.ogg",
+    "source_pack_or_title": "Kenney - Sci-Fi Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/sci-fi-sounds",
+    "original_filename": "Audio/spaceEngineLow_000.ogg",
+    "notes": "Unmodified 5s low engine loop."
+  },
+  {
+    "slot": "ornithopter",
+    "file": "world/ornithopter_loop.ogg",
+    "source_pack_or_title": "OpenGameArt - Helicopter Sounds",
+    "author": "aquinn",
+    "license": "CC0 1.0 (OpenGameArt item page 'License(s): CC0')",
+    "source_page_url": "https://opengameart.org/content/helicopter-sounds",
+    "original_filename": "helicopter_0.mp3",
+    "notes": "Took 6-18s, 1.5s equal-power crossfade for a 10.5s loop. Mono, ogg. Rotor thump stands in for ornithopter wings."
+  },
+  {
+    "slot": "door_open",
+    "file": "world/door_open.ogg",
+    "source_pack_or_title": "Kenney - Sci-Fi Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/sci-fi-sounds",
+    "original_filename": "Audio/doorOpen_000.ogg",
+    "notes": "Unmodified. Sci-fi sliding door."
+  },
+  {
+    "slot": "console_beep",
+    "file": "world/console_beep.ogg",
+    "source_pack_or_title": "Kenney - Digital Audio",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/digital-audio",
+    "original_filename": "Audio/twoTone1.ogg",
+    "notes": "Unmodified two-tone beep."
+  },
+  {
+    "slot": "explosion",
+    "file": "world/explosion.ogg",
+    "source_pack_or_title": "Kenney - Sci-Fi Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/sci-fi-sounds",
+    "original_filename": "Audio/explosionCrunch_004.ogg",
+    "notes": "Unmodified. Longest/lowest of the crunch set."
+  },
+  {
+    "slot": "click",
+    "file": "ui/click.ogg",
+    "source_pack_or_title": "Kenney - Interface Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/interface-sounds",
+    "original_filename": "Audio/click_001.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "hover",
+    "file": "ui/hover.ogg",
+    "source_pack_or_title": "Kenney - UI Audio",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/ui-audio",
+    "original_filename": "Audio/rollover2.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "confirm",
+    "file": "ui/confirm.ogg",
+    "source_pack_or_title": "Kenney - Interface Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/interface-sounds",
+    "original_filename": "Audio/confirmation_001.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "cancel",
+    "file": "ui/cancel.ogg",
+    "source_pack_or_title": "Kenney - Interface Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/interface-sounds",
+    "original_filename": "Audio/back_002.ogg",
+    "notes": "Unmodified."
+  },
+  {
+    "slot": "objective_complete",
+    "file": "ui/objective_complete.ogg",
+    "source_pack_or_title": "Kenney - Music Jingles",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/music-jingles",
+    "original_filename": "Audio/Pizzicato jingles/jingles_PIZZI01.ogg",
+    "notes": "Unmodified 1s pizzicato sting. Alternative: interface-sounds confirmation_004.ogg."
+  },
+  {
+    "slot": "alert_spotted",
+    "file": "ui/alert_spotted.ogg",
+    "source_pack_or_title": "Kenney - Interface Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/interface-sounds",
+    "original_filename": "Audio/error_003.ogg",
+    "notes": "Unmodified sharp warning."
+  },
+  {
+    "slot": "dialogue_blip",
+    "file": "ui/dialogue_blip.ogg",
+    "source_pack_or_title": "Kenney - Interface Sounds",
+    "author": "Kenney (www.kenney.nl)",
+    "license": "CC0 1.0 (pack page: 'Creative Commons CC0'; License.txt: 'License: (Creative Commons Zero, CC0)')",
+    "source_page_url": "https://kenney.nl/assets/interface-sounds",
+    "original_filename": "Audio/tick_002.ogg",
+    "notes": "Unmodified, 20ms soft tick."
+  },
+  {
+    "slot": "prescience_on",
+    "file": "ui/prescience_on.ogg",
+    "source_pack_or_title": "Generated for this project: a swelling glassy D minor chord with a rising glint, pure tones only",
+    "author": "Project (synthesized with Python/numpy)",
+    "license": "CC0 1.0 (generated, CC0 by us)",
+    "source_page_url": "",
+    "original_filename": "(none - synthesized)",
+    "notes": "Replaced 2026-09-25: the first version (a noise whoosh) sounded like an engine."
+  },
+  {
+    "slot": "prescience_rewind",
+    "file": "ui/prescience_rewind.ogg",
+    "source_pack_or_title": "Generated for this project: the same chord reversed, with a falling glint",
+    "author": "Project (synthesized with Python/numpy)",
+    "license": "CC0 1.0 (generated, CC0 by us)",
+    "source_page_url": "",
+    "original_filename": "(none - synthesized)",
+    "notes": "Replaced 2026-09-25 with the pure-tone version."
+  }
+]

@@ -1,22 +1,34 @@
 class_name Banquet
 extends RefCounted
-## The rules of 1.2 The Banquet. Five courses, a guest each; a reply is chosen,
-## its certain effects land, and its hidden part lands by the guest's secret
-## agenda. Jessica's readings reveal a guest's agenda (and whether he is the
-## Harkonnen informant); Paul's glimpses show one course's reactions. The
-## table's composure falls with every blunder: at zero the Duke ends the
-## dinner early. At the end, Thufir's note: name the informant, or not.
+## The rules of 1.2 The Banquet, played as Paul. Five courses, a guest each;
+## Paul chooses one of three replies. What it does around the table (`beyond`)
+## always lands, and how the guest takes it lands by his secret agenda.
 ##
-## Nothing is decided by dice. The seed only sets who wants what; what the
-## player knows decides how well the evening goes.
+## Two helps, a few of each per evening:
+##   Jessica's face    how this guest will take each reply (and what he wants)
+##   the Duke's memory what each reply means around the table
+## Both on one course show every pro and con exactly. Paul's own prescience,
+## once grown, glimpses everything at once. Otherwise the player reads the
+## guest himself: every guest shows a small, fair tell of what he wants.
+##
+## A good reply earns a look from a parent; a poor one, a parent stepping in
+## to smooth it - in words fitted to what Paul said. A good reply found with
+## no help is Paul learning: it grows his statecraft.
+##
+## The table's composure falls with every blunder: at zero the Duke ends the
+## dinner early. At the end, Thufir's note: name the informant, or not.
+## Nothing is decided by dice: the seed only sets who wants what.
 
 enum Phase { COURSE, REACTION, ACCUSE, DONE }
 
 var agendas: Dictionary = {}
 var informant: StringName = &""
+## Guests whose agenda is known (a glance at Jessica, or a reply that showed it).
 var revealed: Dictionary = {}
-var glimpsed: Dictionary = {}
-var readings_left: int = BanquetScript.READINGS
+## Per course: which helps were used. {course_index: {"face": bool, "memory": bool, "glimpse": bool}}
+var helped: Dictionary = {}
+var faces_left: int = BanquetScript.FACES
+var memories_left: int = BanquetScript.MEMORIES
 var glimpses_left: int = BanquetScript.GLIMPSES
 var composure: int = BanquetScript.START_COMPOSURE
 var kynes_trust: int = 0
@@ -28,16 +40,23 @@ var standings: Dictionary = {}
 var resources: Dictionary = {}
 var heat: int = 0
 var flags: PackedStringArray = []
-## The last reply's reaction line, for the screen.
+## The last reply: the guest's reaction, its grade, and a parent's response.
 var last_reaction: String = ""
+var last_grade: StringName = &""
+var last_parent: Dictionary = {}
+var last_effects: Dictionary = {}
+var last_unaided: bool = false
+## Good replies found with no help: Paul reading the table himself.
+var unaided_reads: int = 0
+var grades: Array[StringName] = []
 var accused: StringName = &""
 ## Plain-words record of what happened, for the results.
 var record: PackedStringArray = []
 
 
 ## `seed_value` sets the hidden agendas and the informant; `extra_glimpses`
-## comes from Paul's prescience growth.
-static func create(seed_value: int, extra_glimpses: int = 0) -> Banquet:
+## comes from Paul's prescience growth, `extra_memories` from his statecraft.
+static func create(seed_value: int, extra_glimpses: int = 0, extra_memories: int = 0) -> Banquet:
 	var banquet: Banquet = Banquet.new()
 	var random: RandomNumberGenerator = RandomNumberGenerator.new()
 	random.seed = seed_value
@@ -50,6 +69,7 @@ static func create(seed_value: int, extra_glimpses: int = 0) -> Banquet:
 	banquet.informant = suspects[random.randi_range(0, suspects.size() - 1)]
 	banquet.agendas[banquet.informant] = &"informant"
 	banquet.glimpses_left += maxi(extra_glimpses, 0)
+	banquet.memories_left += maxi(extra_memories, 0)
 	return banquet
 
 
@@ -61,54 +81,152 @@ func current_guest() -> StringName:
 	return current_course().get("guest", &"")
 
 
-## Jessica reads a guest: his agenda shows, and with it how he will take
-## every reply. Returns false with none left or already read.
-func read(guest_id: StringName) -> bool:
-	if readings_left <= 0 or revealed.has(guest_id) or phase == Phase.DONE:
+func current_agenda() -> StringName:
+	return agendas.get(current_guest(), &"")
+
+
+func _help(kind: String) -> bool:
+	return bool((helped.get(course_index, {}) as Dictionary).get(kind, false))
+
+
+func _use(kind: String) -> void:
+	var entry: Dictionary = helped.get(course_index, {})
+	entry[kind] = true
+	helped[course_index] = entry
+
+
+## What anyone at the table can see of this guest: his tell.
+func tell() -> String:
+	var agenda: StringName = current_agenda()
+	if agenda == &"informant":
+		return BanquetScript.INFORMANT_TELL
+	return (current_course().get("tells", {}) as Dictionary).get(agenda, "")
+
+
+## A glance at Jessica: how this guest will take each reply, and what he wants.
+func read_face() -> bool:
+	if faces_left <= 0 or phase != Phase.COURSE or knows_guest():
 		return false
-	readings_left -= 1
-	revealed[guest_id] = true
-	record.append("Jessica read %s." % BanquetScript.guest(guest_id).name)
+	faces_left -= 1
+	_use("face")
+	revealed[current_guest()] = true
 	return true
 
 
-## Paul glimpses how this course's guest will take each reply.
+## The Duke's lesson recalled: what each reply means around the table.
+func recall() -> bool:
+	if memories_left <= 0 or phase != Phase.COURSE or knows_table():
+		return false
+	memories_left -= 1
+	_use("memory")
+	return true
+
+
+## Paul's prescience: everything at once.
 func glimpse() -> bool:
-	if glimpses_left <= 0 or phase != Phase.COURSE or knows_reactions():
+	if glimpses_left <= 0 or phase != Phase.COURSE or (knows_guest() and knows_table()):
 		return false
 	glimpses_left -= 1
-	glimpsed[course_index] = true
+	_use("glimpse")
 	return true
 
 
-## Whether this course's reactions are known before choosing.
-func knows_reactions() -> bool:
-	return revealed.has(current_guest()) or glimpsed.has(course_index)
+## Jessica's face for this course, once read.
+func face_line() -> String:
+	if not _help("face"):
+		return ""
+	if current_agenda() == &"informant":
+		return BanquetScript.INFORMANT_FACE
+	return (current_course().get("face", {}) as Dictionary).get(current_agenda(), "")
+
+
+func memory_line() -> String:
+	return current_course().get("memory", "") if _help("memory") else ""
+
+
+## Paul is watching his mother this course (her face, not a glimpse).
+func watching_mother() -> bool:
+	return _help("face")
+
+
+## What her face does as Paul weighs a reply: warm for a good one, cool for a
+## poor one, doubtful for a half-good one. Empty unless he is watching her.
+func mother_expression(reply_index: int) -> StringName:
+	if not watching_mother():
+		return &""
+	var reply: Dictionary = current_course().replies[reply_index]
+	match String(reply.reactions.get(current_agenda(), {}).get("grade", "")):
+		"good":
+			return &"approve"
+		"poor":
+			return &"warn"
+		_:
+			return &"doubt"
+
+
+## Her face at rest: composed - or, across from the Baron's man, too still.
+func mother_at_rest() -> StringName:
+	return &"still" if current_agenda() == &"informant" else &"neutral"
+
+
+## How this guest takes the replies is known: Jessica's face, or a glimpse.
+func knows_guest() -> bool:
+	return _help("face") or _help("glimpse")
+
+
+## What the replies mean around the table is known: the Duke's memory, or a glimpse.
+func knows_table() -> bool:
+	return _help("memory") or _help("glimpse")
 
 
 func agenda_text(guest_id: StringName) -> String:
 	return BanquetScript.AGENDAS.get(agendas.get(guest_id, &""), "") if revealed.has(guest_id) else ""
 
 
-## Everything a reply would do, if the guest's agenda is known; otherwise
-## only its certain part. {"effects": {...}, "line": "", "known": bool}.
+## What a reply is known to do before it is said:
+## {"guest": {...} or null, "table": {...} or null, "line": "", "grade": &""}.
 func preview(reply_index: int) -> Dictionary:
 	var reply: Dictionary = current_course().replies[reply_index]
-	if not knows_reactions():
-		return {"effects": reply.effects, "line": "", "known": false}
-	var reaction: Dictionary = reply.reactions.get(agendas[current_guest()], {})
-	return {"effects": _merge(reply.effects, reaction.get("effects", {})), "line": reaction.get("line", ""), "known": true}
+	var reaction: Dictionary = reply.reactions.get(current_agenda(), {})
+	var seen: Dictionary = {"guest": null, "table": null, "line": "", "grade": &""}
+	if knows_guest():
+		seen.guest = reaction.get("effects", {})
+		seen.line = reaction.get("line", "")
+		seen.grade = reaction.get("grade", &"")
+	if knows_table():
+		seen.table = reply.get("beyond", {})
+	return seen
 
 
 func choose(reply_index: int) -> void:
 	if phase != Phase.COURSE:
 		return
 	var reply: Dictionary = current_course().replies[reply_index]
-	var reaction: Dictionary = reply.reactions.get(agendas[current_guest()], {})
-	_apply(_merge(reply.effects, reaction.get("effects", {})))
+	var reaction: Dictionary = reply.reactions.get(current_agenda(), {})
+	last_effects = _merge(reply.get("beyond", {}), reaction.get("effects", {}))
+	_apply(last_effects)
+	if bool((reaction.get("effects", {}) as Dictionary).get("reveal", false)):
+		revealed[current_guest()] = true
 	last_reaction = reaction.get("line", "")
-	record.append("%s: \"%s\"" % [reply.speaker.capitalize(), reply.text])
+	last_grade = reaction.get("grade", &"mixed")
+	grades.append(last_grade)
+	last_unaided = last_grade == &"good" and not (knows_guest() or knows_table())
+	if last_unaided:
+		unaided_reads += 1
+	last_parent = _parent_response(reply)
+	record.append("Paul: \"%s\"" % reply.text)
 	phase = Phase.REACTION
+
+
+## A look, a word, or a parent stepping in - chosen without dice: by course.
+func _parent_response(reply: Dictionary) -> Dictionary:
+	match last_grade:
+		&"poor":
+			return reply.get("rescue", {})
+		&"good":
+			return BanquetScript.APPROVAL[course_index % BanquetScript.APPROVAL.size()]
+		_:
+			return BanquetScript.NUDGE[course_index % BanquetScript.NUDGE.size()]
 
 
 ## After the reaction: the next course, or - the table lost - the dinner ends.
@@ -177,7 +295,8 @@ func outcome() -> MissionOutcome:
 	result.resources = resources.duplicate()
 	result.heat = heat
 	result.flags = flags.duplicate()
-	result.stats = {"composure": composure, "kynes_trust": kynes_trust, "readings_used": BanquetScript.READINGS - readings_left}
+	result.stats = {"composure": composure, "kynes_trust": kynes_trust, "read_unaided": unaided_reads,
+		"faces_used": BanquetScript.FACES - faces_left, "memories_used": maxi(BanquetScript.MEMORIES - memories_left, 0)}
 	return result
 
 
@@ -208,6 +327,8 @@ static func _merge(a: Dictionary, b: Dictionary) -> Dictionary:
 			result[key] = inner
 		elif b[key] is Array:
 			result[key] = (result.get(key, []) as Array) + b[key]
+		elif b[key] is bool:
+			result[key] = bool(result.get(key, false)) or b[key]
 		else:
 			result[key] = int(result.get(key, 0)) + int(b[key])
 	return result
@@ -234,4 +355,6 @@ static func describe(effects: Dictionary) -> String:
 		parts.append("The Baron hears")
 	if (effects.get("flags", []) as Array).has(&"smugglers_channel"):
 		parts.append("Opens a channel to the smugglers")
-	return "   ·   ".join(parts) if not parts.is_empty() else "No clear effect"
+	if bool(effects.get("reveal", false)):
+		parts.append("Shows what he is")
+	return "  ·  ".join(parts) if not parts.is_empty() else "No clear effect"

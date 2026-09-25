@@ -35,9 +35,9 @@ color = Color(1, 0.87, 0.58, 1)
 
 [node name="Status" type="Label" parent="."]
 offset_left = -100.0
-offset_top = -62.0
+offset_top = -86.0
 offset_right = 100.0
-offset_bottom = -25.0
+offset_bottom = -49.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.17, 0.15, 0.13, 1)
 theme_override_font_sizes/font_size = 13

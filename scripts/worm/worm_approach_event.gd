@@ -14,6 +14,9 @@ enum Phase { IDLE, TRAVEL, ERUPT, SUBSIDE }
 ## Where the ridge surfaces from, relative to the target.
 @export var approach_distance: float = 1500.0
 @export var travel_speed: float = 420.0
+## The bearing (degrees) it comes from, so a mission can be planned against it;
+## below zero, a random one.
+@export var approach_degrees: float = -1.0
 @export var erupt_seconds: float = 2.6
 @export var subside_seconds: float = 1.6
 @export var ridge_length: float = 220.0
@@ -39,10 +42,20 @@ func begin(point: Vector2, radius: float) -> void:
 	target = point
 	danger_radius = radius
 	# Arrive from open desert rather than through whatever is behind the player.
-	var bearing: Vector2 = Vector2.RIGHT.rotated(randf() * TAU)
+	var bearing: Vector2 = Vector2.RIGHT.rotated(deg_to_rad(approach_degrees) if approach_degrees >= 0.0 else randf() * TAU)
 	origin = target + bearing * approach_distance
 	position_on_path = origin
 	phase = Phase.TRAVEL
+	phase_time = 0.0
+
+
+## Turns a travelling worm toward a new point - a thumper drumming louder
+## than whatever it was coming for - from wherever it is now.
+func redirect(point: Vector2) -> void:
+	if phase != Phase.TRAVEL or not point.is_finite():
+		return
+	origin = position_on_path
+	target = point
 	phase_time = 0.0
 
 

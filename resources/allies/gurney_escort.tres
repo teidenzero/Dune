@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AllyData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/squad/ally_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/weapons/fremen_rifle.tres" id="2"]
+[resource]
+script = ExtResource("1")
+display_name = "Gurney Halleck"
+max_health = 140.0
+move_speed = 175.0
+preferred_combat_range = 260.0
+aggression_radius = 300.0
+vision_radius = 480.0
+weapon_data = ExtResource("2")
+body_color = Color(0.24, 0.42, 0.26, 1)

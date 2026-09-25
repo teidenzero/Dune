@@ -19,6 +19,10 @@ var campaign: CampaignState = CampaignState.new()
 ## Where a mission's "leave" goes back to: the Council when it was launched
 ## from there, the developer launcher otherwise.
 var return_scene: String = ""
+## Set by whatever launches a mission on purpose (the story, the launcher, the
+## map room); the mission shows its briefing once and clears it. A retry
+## reloads without it, so a failed attempt goes straight back in.
+var pending_briefing: bool = false
 
 ## The campaign's chapters as the player walks them (menu -> intro -> prologue
 ## -> missions). Session-only for now.
@@ -71,6 +75,8 @@ func _ensure_music_player() -> void:
 	_music = AudioStreamPlayer.new()
 	_music.name = "Music"
 	_music.process_mode = Node.PROCESS_MODE_ALWAYS
+	if AudioServer.get_bus_index(&"Music") >= 0:
+		_music.bus = &"Music"
 	add_child(_music)
 
 
@@ -90,6 +96,8 @@ func play_music(path: String = THEME_MUSIC, fade_in: float = 1.5) -> void:
 		return
 	if stream is AudioStreamMP3:
 		(stream as AudioStreamMP3).loop = true
+	elif stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
 	_music_path = path
 	_music.stream = stream
 	_music.volume_db = -40.0
@@ -105,7 +113,8 @@ func stop_music(fade_out: float = 1.2) -> void:
 		return
 	if _music_fade != null:
 		_music_fade.kill()
-	_music_fade = create_tween()
+	# The fade runs even while the world waits (a briefing is up).
+	_music_fade = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	_music_fade.tween_property(_music, "volume_db", -40.0, fade_out)
 	_music_fade.tween_callback(func() -> void:
 		_music.stop()
@@ -113,9 +122,29 @@ func stop_music(fade_out: float = 1.2) -> void:
 
 
 func _ready() -> void:
+	# Escape in play: resume, settings, main menu, quit.
+	var pause_menu: PauseMenu = PauseMenu.new()
+	pause_menu.name = "PauseMenu"
+	add_child(pause_menu)
 	var settings: ConfigFile = ConfigFile.new()
 	if settings.load(SETTINGS_PATH) == OK:
 		music_enabled = settings.get_value("audio", "music", true)
+		# Fullscreen by default (project setting); F11 is remembered.
+		if settings.has_section_key("display", "fullscreen") and DisplayServer.get_name() != "headless":
+			_apply_fullscreen(bool(settings.get_value("display", "fullscreen")))
+
+
+## F11, kept between sessions.
+func set_fullscreen(value: bool) -> void:
+	_apply_fullscreen(value)
+	var settings: ConfigFile = ConfigFile.new()
+	settings.load(SETTINGS_PATH)
+	settings.set_value("display", "fullscreen", value)
+	settings.save(SETTINGS_PATH)
+
+
+func _apply_fullscreen(value: bool) -> void:
+	get_window().mode = Window.MODE_FULLSCREEN if value else Window.MODE_WINDOWED
 
 
 func _save_settings() -> void:
@@ -133,5 +162,5 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_fullscreen") and not event.is_echo():
 		var window: Window = get_window()
 		var fullscreen: bool = window.mode == Window.MODE_FULLSCREEN or window.mode == Window.MODE_EXCLUSIVE_FULLSCREEN
-		window.mode = Window.MODE_WINDOWED if fullscreen else Window.MODE_FULLSCREEN
+		set_fullscreen(not fullscreen)
 		get_viewport().set_input_as_handled()

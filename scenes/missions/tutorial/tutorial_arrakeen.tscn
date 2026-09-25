@@ -25,6 +25,8 @@
 [ext_resource type="Script" path="res://scripts/worm/worm_warning_director.gd" id="wormwarn"]
 [ext_resource type="Script" path="res://scripts/worm/terrain_zone.gd" id="terrain"]
 [ext_resource type="PackedScene" path="res://scenes/environment/spice_machine.tscn" id="machine"]
+[ext_resource type="Script" path="res://scripts/ui/briefing/mission_briefing.gd" id="briefing_host"]
+[ext_resource type="Resource" path="res://resources/missions/prologue_the_yard.tres" id="briefing_def"]
 
 [sub_resource type="RectangleShape2D" id="GateShape"]
 size = Vector2(40.0, 190.0)
@@ -624,6 +626,20 @@ radius = 42.0
 label = "SAFE ROCK"
 color = Color(0.3, 0.8, 1, 1)
 
+[node name="Marker_Route1" type="Node2D" parent="Markers"]
+position = Vector2(4680.0, -480.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "STOP 1"
+color = Color(0.3, 0.8, 1, 1)
+
+[node name="Marker_Route2" type="Node2D" parent="Markers"]
+position = Vector2(4250.0, 400.0)
+script = ExtResource("marker")
+radius = 42.0
+label = "STOP 2"
+color = Color(0.3, 0.8, 1, 1)
+
 [node name="Marker_PrescienceWatch" type="Node2D" parent="Markers"]
 position = Vector2(5980.0, 220.0)
 script = ExtResource("marker")
@@ -820,6 +836,7 @@ text = "FIRING RANGE"
 [node name="Target_Melee" parent="Sections/Melee" instance=ExtResource("dummy") groups=["training_targets"]]
 position = Vector2(760, -150)
 target_name = "PRACTICE DUMMY"
+look = 1
 
 [node name="Highlight_MeleeDummy" type="Node2D" parent="Sections/Melee/Target_Melee"]
 script = ExtResource("marker")
@@ -1481,3 +1498,7 @@ Atreides residency - practice yards"
 manager = NodePath("../TutorialManager")
 
 [editable path="Player"]
+
+[node name="BriefingHost" type="Node" parent="."]
+script = ExtResource("briefing_host")
+definition = ExtResource("briefing_def")

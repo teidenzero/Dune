@@ -1,0 +1,9 @@
+Use case: illustration-story
+Asset type: transparent character animation sprite sheet, idle loop.
+Input image 1: approved canonical character reference; use directly and preserve its identity, anatomy, outfit, equipment, weapon and illustrated style.
+Primary request: FOUR distinct sequential idle animation frames of this exact Atreides drill soldier. One horizontal row, left to right in playback order. Quiet ready stance with a subtle four-phase breathing cycle and restrained jacket movement; stable rifle carry and silhouette. Last frame flows naturally back to first without duplicating it.
+Design: exact light open-face helmet, dark olive padded jacket, hawk shoulder shape, black trousers with knee pads, dark gloves and boots, tan belt pouch and plain dark practice rifle in the reference. Preserve rifle length, rigid geometry, magazine, grips and visible equipment placement. Ordinary disciplined soldier.
+View: every frame faces right, side-on slightly elevated, identical camera and scale. In place; no root translation. Soft upper-left light, clean dark outlines and restrained painted shading.
+Layout: four equally spaced cells with generous transparent clearance between complete figures. Common planted-foot baseline and body-root position within each cell; do not center using the rifle's bounding box. All head, boot and weapon pixels completely inside their own cells. Final export will use four 400x336 cells, body root (200,312), figure height 280. Preserve common scale and subtle breathing motion rather than resizing each pose independently.
+Background: genuine RGBA alpha transparency. No ground or cast shadows.
+Avoid: text, letters, numbers, labels, borders, watermark, checkerboard, scene, UI, weapon effects, muzzle flash, smoke, costume changes, duplicate limbs, clipping or merged adjacent poses.

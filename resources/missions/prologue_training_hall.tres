@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="MissionDefinition" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/mission_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/campaign/objective_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="obj_0"]
+script = ExtResource("2")
+id = &"move"
+title = "Moving"
+description = "Walking, running and dodging through the Residency's lower rooms."
+
+[sub_resource type="Resource" id="obj_1"]
+script = ExtResource("2")
+id = &"unseen"
+title = "Staying unseen"
+description = "Guards see what is in front of them. Crouch, keep to the walls, and time your moves."
+
+[sub_resource type="Resource" id="obj_2"]
+script = ExtResource("2")
+id = &"prescience"
+title = "Prescience"
+description = "See a fight before it happens, then accept that future or take it back."
+
+[sub_resource type="Resource" id="obj_3"]
+script = ExtResource("2")
+id = &"shield"
+title = "Shields and the slow blade"
+description = "A shield stops anything fast. Learn the stroke that gets through."
+
+[sub_resource type="Resource" id="obj_4"]
+script = ExtResource("2")
+id = &"room"
+title = "Using the room"
+description = "Consoles, doors and fuel tanks can fight for you."
+
+[resource]
+script = ExtResource("1")
+id = &"prologue_training_hall"
+title = "The Training Hall"
+briefing = "The house still smells of Harkonnen, lad, and I'd not wager a copper that they left it empty. So before you sleep a night under this roof, you'll walk the lower levels with me and show me you remember. Move the way I taught you. Fight when fighting is the answer, and not one moment before."
+objectives = Array[ExtResource("2")]([SubResource("obj_0"), SubResource("obj_1"), SubResource("obj_2"), SubResource("obj_3"), SubResource("obj_4")])
+solo_scene = "res://scenes/missions/tutorial/solo_training.tscn"
+heading = "PROLOGUE"
+lore = "Gurney Halleck is House Atreides' master of arms: a warrior who sings, and carries a nine-string baliset as readily as a blade. The inkvine scar along his jaw comes from the Harkonnen slave pits, and he has never forgiven them for it. He has taught Paul to fight since the boy could lift a practice knife, and he has no intention of stopping now that they have landed on the most dangerous world in the Imperium."
+objectives_caption = "WHAT YOU WILL PRACTISE"
+show_party = true
+briefing_speaker = "GURNEY"
+briefing_image = "card_prologue"
+intel = PackedStringArray("This is the Solo scope: Paul alone, moving room to room. Fights are turn-based, and every action shows its cost before you commit to it.", "The sparring soldiers are Atreides men with practice weapons. They will not go easy on you, but nothing here is lost for good: a failed lesson can be tried again.", "Gurney calls each lesson as you reach it, and his notes stay until you have read them. L shows everything said so far; Tab hides the panel.")

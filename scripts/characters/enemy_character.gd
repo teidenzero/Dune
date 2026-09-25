@@ -8,6 +8,8 @@ signal enemy_died
 @export var initial_facing_degrees: float = 0.0
 @export var acceleration: float = 900.0
 @export var hit_flash_duration: float = 0.16
+## Drawn look; without it the placeholder shapes draw.
+@export var art: CharacterArt
 
 var move_speed: float = 0.0
 var navigation_destination: Vector2
@@ -48,6 +50,21 @@ func _ready() -> void:
 	health.damage_received.connect(_on_damage_received)
 	health.died.connect(_on_died)
 	ai.setup(self)
+	if art != null and art.has_sprites():
+		_use_drawn_art()
+
+
+func _use_drawn_art() -> void:
+	var sprite: UnitSprite = art.make_sprite(self, ai.patrol_speed if ai.get("patrol_speed") != null else 120.0)
+	(IsoView.part(self, "Visuals") as Node2D).add_child(sprite)
+	art.apply_to(sprite, self)
+	for part in ["Visuals/Body", "Visuals/Helmet"]:
+		var shape: CanvasItem = IsoView.part(self, part) as CanvasItem
+		if shape != null:
+			shape.hide()
+	var label: Node = IsoView.part(self, "NameLabel")
+	if label != null and label.has_method("raise"):
+		label.raise(art.world_height * 0.75)
 
 
 func _physics_process(delta: float) -> void:
@@ -146,8 +163,12 @@ func _on_died() -> void:
 		blade.disable()
 	if _flash != null:
 		_flash.kill()
-	(IsoView.part(self, "Visuals") as Node2D).modulate = Color(0.4, 0.4, 0.4)
-	(IsoView.part(self, "Visuals") as Node2D).scale = Vector2(1.0, 0.3)
+	if IsoView.part(self, "Visuals/Sprite") != null:
+		# The death animation does the falling; just take the life out of it.
+		(IsoView.part(self, "Visuals") as Node2D).modulate = Color(0.8, 0.8, 0.8)
+	else:
+		(IsoView.part(self, "Visuals") as Node2D).modulate = Color(0.4, 0.4, 0.4)
+		(IsoView.part(self, "Visuals") as Node2D).scale = Vector2(1.0, 0.3)
 	$AimPivot.hide()
 	(IsoView.part(self, "NameLabel") as Label).text = display_name + " DOWN"
 	if shield != null:

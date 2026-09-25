@@ -1,0 +1,98 @@
+[
+  {
+    "slot": "desert_explore",
+    "file": "desert_explore_desert_fox_underscore.mp3",
+    "title": "Desert Fox Underscore",
+    "author": "Rafael Krux (via FreePD.com)",
+    "license": "CC0 / Public Domain (FreePD.com)",
+    "source_page_url": "https://web.archive.org/web/2024/https://freepd.com/scoring.php",
+    "download_url": "https://web.archive.org/web/2024id_/https://freepd.com/music/Desert%20Fox%20Underscore.mp3",
+    "duration_seconds_if_known": 133.2,
+    "loopable": "unknown",
+    "notes": "Primary pick. FreePD description: 'Same as Desert Fox track, only without melody.' Middle-Eastern-flavoured underscore with no lead melody, so it sits under gameplay without tiring. Level is flat throughout (about -16 dB RMS), ending in a ~3 s tail, so set the loop end just before the tail. FreePD.com has shut down; the license evidence is the archived category page (Wayback snapshot of Jan 2025), whose banner reads 'Free Public Domain Music Creative Commons 0 ... No Attribution - Copyright Free*', footnote '* It is \"copyright free\" to the extent that the law allows'."
+  },
+  {
+    "slot": "desert_explore",
+    "file": "desert_explore_watch_the_sand.mp3",
+    "title": "Watch the Sand",
+    "author": "SpringySpringo",
+    "license": "CC0 (dual-listed CC-BY 3.0 / CC0 on OGA; we use it under CC0)",
+    "source_page_url": "https://opengameart.org/content/watch-the-sand",
+    "download_url": "https://opengameart.org/sites/default/files/watch_the_sand_0.mp3",
+    "duration_seconds_if_known": 86.3,
+    "loopable": "unknown",
+    "notes": "Alternative pick. Author: 'Keep an eye out, you never know what's lurking beneath. Basic droney ambience with some desert aspect to it.' It is sparse and ominous, with the right worm undertone. The level dips in the middle (about -38 dB around 40 s) and fades at the end, so looping it may need trimming or a crossfade. The OGA page lists two licenses (CC-BY 3.0 and CC0), and the recipient may pick either. Attribution notice: 'Credit isn't required, but appreciated.' A 5.1 MB WAV is also offered; we took the MP3."
+  },
+  {
+    "slot": "stealth_interior",
+    "file": "stealth_interior_ancient_caverns.ogg",
+    "title": "Ancient Caverns (horror ambient loop)",
+    "author": "congusbongus",
+    "license": "CC0",
+    "source_page_url": "https://opengameart.org/content/ancient-caverns-horror-ambient-loop",
+    "download_url": "https://opengameart.org/sites/default/files/caverns_0.ogg",
+    "duration_seconds_if_known": 136.3,
+    "loopable": true,
+    "notes": "Primary pick. Author: 'Dark brassy pads, for a large forboding space.' The page titles it a loop, and its level holds steady at -11 to -16 dB RMS start to end with no fade. It is a low, dark drone that suits creeping through the palace's lower levels at night."
+  },
+  {
+    "slot": "stealth_interior",
+    "file": "stealth_interior_mysterious_lights.mp3",
+    "title": "Mysterious Lights",
+    "author": "Bryan Teoh (via FreePD.com)",
+    "license": "CC0 / Public Domain (FreePD.com; ID3 comment: 'This piece was composed and dedicated to the Public Domain in 2020.')",
+    "source_page_url": "https://web.archive.org/web/2024/https://freepd.com/horror.php",
+    "download_url": "https://web.archive.org/web/2024id_/https://freepd.com/music/Mysterious%20Lights.mp3",
+    "duration_seconds_if_known": 178.9,
+    "loopable": "unknown",
+    "notes": "Alternative pick. FreePD description: 'Creepy foreboding. The aliens are about to land but havent been discovered yet.' A steady, low-tension bed that ends with a ~10 s fade (set the loop end before it). It is a little more sci-fi than oriental. The PD evidence is the archived FreePD page plus the dedication in the file's own ID3 comment."
+  },
+  {
+    "slot": "combat",
+    "file": "combat_guerilla_tactics.mp3",
+    "title": "Guerilla Tactics",
+    "author": "Rafael Krux (via FreePD.com)",
+    "license": "CC0 / Public Domain (FreePD.com)",
+    "source_page_url": "https://web.archive.org/web/2024/https://freepd.com/scoring.php",
+    "download_url": "https://web.archive.org/web/2024id_/https://freepd.com/music/Guerilla%20Tactics.mp3",
+    "duration_seconds_if_known": 109.2,
+    "loopable": "unknown",
+    "notes": "Primary pick. FreePD description: 'Mysterious, suspensful and dark action dramatic track made with hollywood orchestra and light energetic percussion.' It drives without sounding heroic, which suits turn-based fights. It ends with a ~3 s tail, so set the loop end before it."
+  },
+  {
+    "slot": "combat",
+    "file": "combat_evil_incoming.mp3",
+    "title": "Evil Incoming",
+    "author": "Kevin MacLeod (via FreePD.com)",
+    "license": "CC0 / Public Domain (FreePD.com)",
+    "source_page_url": "https://web.archive.org/web/2024/https://freepd.com/epic.php",
+    "download_url": "https://web.archive.org/web/2024id_/https://freepd.com/music/Evil%20Incoming.mp3",
+    "duration_seconds_if_known": 174.6,
+    "loopable": "unknown",
+    "notes": "Alternative pick, heavier. FreePD description: 'Dark, action and dramatic track made with epic dark strings and energetic cinematic drums.' It is loud and dense (about -10 dB RMS), with a quieter 20 s intro, and suits being spotted or a bigger fight. It ends cleanly. Use only the FreePD copy: Kevin MacLeod releases other tracks on incompetech under CC-BY, but this one was published on FreePD as public domain."
+  },
+  {
+    "slot": "council",
+    "file": "council_ancient_rite.mp3",
+    "title": "Ancient Rite",
+    "author": "Kevin MacLeod (via FreePD.com)",
+    "license": "CC0 / Public Domain (FreePD.com)",
+    "source_page_url": "https://web.archive.org/web/2024/https://freepd.com/epic.php",
+    "download_url": "https://web.archive.org/web/2024id_/https://freepd.com/music/Ancient%20Rite.mp3",
+    "duration_seconds_if_known": 113.2,
+    "loopable": "unknown",
+    "notes": "FreePD description: 'A solumn affair. Deep and religious.' Stately and restrained, it fits the Duke's council room and works acceptably for the banquet. It is more ceremonial than courtly-dance. It swells in the last third and ends with a short tail. An optional banquet alternative not downloaded: RandomMind's 'Medieval: King's Feast' (CC0, https://opengameart.org/content/medieval-kings-feast), which sounds more European medieval."
+  },
+  {
+    "slot": "worm_tension",
+    "file": "worm_tension_war_horns.mp3",
+    "title": "War Horns",
+    "author": "Eldritch Grim",
+    "license": "CC0",
+    "source_page_url": "https://opengameart.org/content/war-horns",
+    "download_url": "https://opengameart.org/sites/default/files/war_horns.mp3",
+    "duration_seconds_if_known": 49.0,
+    "loopable": false,
+    "notes": "Author: 'Suspenseful war horns, right before the real battle. Prepare your arms.' At 49 s it is under the 60 s limit. The RMS envelope rises from about -20 dB to -8 dB between 0 and 36 s, then falls away to the end, so it works as a one-shot rising cue (cut near 40 s for a hard stop). Attribution notice: 'Much appreciated, but not necessary. Just Eldritch Grim is all.' A WAV is also offered; we took the MP3."
+  }
+]

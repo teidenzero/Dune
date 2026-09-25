@@ -138,8 +138,8 @@ func _build_top() -> void:
 	top.name = "Top"
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	# Below the tutorial prompt, which owns the very top of the screen.
-	top.offset_top = 212.0
+	# Below the tutorial prompt and the dialogue panel, which own the top.
+	top.offset_top = 262.0
 	top.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	top.alignment = BoxContainer.ALIGNMENT_BEGIN
 	top.add_theme_constant_override("separation", 8)
@@ -367,7 +367,7 @@ func set_solo(value: bool, clicks: bool = false) -> void:
 
 
 func _squad_hints() -> String:
-	return "LEFT-CLICK select / knife an enemy (hold: slow strike)  ·  DRAG box  ·  RIGHT-CLICK move / fire / use  ·  DOUBLE RIGHT-CLICK run  ·  SHIFT queue  ·  CTRL plan, F signal  ·  B fire discipline  ·  WASD pan  ·  SPACE pause"
+	return "LEFT-CLICK select / knife an enemy (hold: slow strike)  ·  DRAG box  ·  RIGHT-CLICK move / fire / use  ·  DOUBLE RIGHT-CLICK run  ·  SHIFT add waypoint (drag one to move it)  ·  CTRL plan, F signal  ·  B fire discipline  ·  WASD pan  ·  SPACE pause"
 
 
 func _build_bottom_line() -> void:

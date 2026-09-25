@@ -4,15 +4,16 @@ extends RefCounted
 ## per mission, the ranks, and what each rank changes in play. Heroes grow
 ## three ways (see docs/design/campaign.md, 63.1):
 ##
-##   by doing      blade, firearms and desert craft grow with use
+##   by doing      blade, firearms and desert craft grow with use; statecraft
+##                 with reading a table right, unhelped
 ##   by spice      saturation builds prescience ranks
 ##   by milestone  discipline and prescience ranks granted by the story
 ##
 ## Everything goes through CampaignState (its `progress`), so growth is kept
 ## between missions like resources and standings.
 
-const SKILLS: Array[StringName] = [&"blade", &"firearms", &"desert_craft"]
-const SKILL_NAMES: Dictionary = {&"blade": "Blade", &"firearms": "Firearms", &"desert_craft": "Desert craft"}
+const SKILLS: Array[StringName] = [&"blade", &"firearms", &"desert_craft", &"statecraft"]
+const SKILL_NAMES: Dictionary = {&"blade": "Blade", &"firearms": "Firearms", &"desert_craft": "Desert craft", &"statecraft": "Statecraft"}
 ## Experience needed for ranks 1..5.
 const RANK_AT: Array[int] = [10, 25, 45, 70, 100]
 ## No skill gains more than this in one mission: growth, not grinding.
@@ -27,7 +28,17 @@ const AWARDS: Dictionary = {
 	&"shot_hit": {&"firearms": 1},
 	&"shot_kill": {&"firearms": 3},
 	&"unseen": {&"desert_craft": 1},
+	# A guest read right with no help from his parents: Paul learning.
+	&"read_unaided": {&"statecraft": 5},
 }
+
+
+## What statecraft changes: every two ranks, one more of the Duke's lessons
+## Paul can recall at a political table.
+static func extra_memories(campaign: CampaignState, hero: StringName = &"paul") -> int:
+	if campaign == null:
+		return 0
+	return campaign.hero_progress(hero).rank(&"statecraft") / 2
 
 
 static func rank_for(points: int) -> int:

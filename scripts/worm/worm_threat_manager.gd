@@ -39,6 +39,13 @@ enum EventState { IDLE, BUILDING, APPROACHING, ARRIVAL, COOLDOWN }
 ## The HUD shows the meter from this much sign, so the player sees their own
 ## noise register long before the first stage.
 @export var visible_from: float = 8.0
+## A homing worm keeps turning toward the loudest place on the sand as it
+## travels, instead of the point it first committed to, and surfaces only when
+## it gets there. Sources close together count as one: a column of men is one
+## loud thing.
+@export var homing: bool = false
+@export var homing_interval: float = 2.0
+@export var cluster_radius: float = 220.0
 
 var worm_sign: float = 0.0
 var stage: Stage = Stage.CALM
@@ -54,6 +61,7 @@ var strongest_strength: float = 0.0
 var _stage_time: float = 0.0
 ## The meter's fill when the worm committed; from there the bar tracks its travel.
 var _commit_ratio: float = 0.0
+var _homing_time: float = 0.0
 
 
 func _ready() -> void:
@@ -107,6 +115,11 @@ func _physics_process(delta: float) -> void:
 	_stage_time += delta
 	_update_stage()
 	_update_event()
+	if homing and state == EventState.APPROACHING:
+		_homing_time += delta
+		if _homing_time >= homing_interval:
+			_homing_time = 0.0
+			_turn_to_loudest()
 
 
 func _update_stage() -> void:
@@ -146,11 +159,32 @@ func _update_event() -> void:
 			if stage >= Stage.APPROACHING:
 				_commit()
 		EventState.APPROACHING:
-			if worm_sign >= threshold and event != null and not event.erupting():
+			if not homing and worm_sign >= threshold and event != null and not event.erupting():
 				event.erupt()
 				state = EventState.ARRIVAL
 		_:
 			pass
+
+
+## Commits at once to whatever is loudest now, if a worm is not already
+## coming: a mission that opens with one on its way (1.3).
+func commit_now() -> bool:
+	if state != EventState.IDLE and state != EventState.BUILDING:
+		return false
+	_update_stage()
+	_commit()
+	return state == EventState.APPROACHING
+
+
+## A worm already on its way turns toward `point` (a thumper). Returns
+## whether it did: one that has surfaced, or is not coming, does not.
+func retarget(point: Vector2) -> bool:
+	if state != EventState.APPROACHING or event == null or event.erupting():
+		return false
+	target = point
+	event.redirect(point)
+	worm_approach_started.emit(target)
+	return true
 
 
 ## The worm commits to whatever has been shaking the sand hardest, aggregated
@@ -167,8 +201,42 @@ func _commit() -> void:
 
 
 func _choose_target() -> Vector2:
+	if homing:
+		return loudest_place()
 	_recompute_strongest()
 	return strongest_position
+
+
+## Where the sand is loudest now: each source's recent total, plus every other
+## source within `cluster_radius` of it.
+func loudest_place() -> Vector2:
+	var totals: Dictionary = {}
+	var latest: Dictionary = {}
+	for entry in recent:
+		var key: Variant = entry["emitter"] if entry["emitter"] != null else entry["label"]
+		totals[key] = float(totals.get(key, 0.0)) + float(entry["strength"])
+		latest[key] = entry
+	var best_point: Vector2 = Vector2.INF
+	var best: float = 0.0
+	for key in totals:
+		var point: Vector2 = latest[key]["position"]
+		var sum: float = 0.0
+		for other in totals:
+			if (latest[other]["position"] as Vector2).distance_to(point) <= cluster_radius:
+				sum += float(totals[other])
+		if sum > best:
+			best = sum
+			best_point = point
+	return best_point
+
+
+func _turn_to_loudest() -> void:
+	if event == null or event.erupting():
+		return
+	var point: Vector2 = loudest_place()
+	if point.is_finite() and point.distance_to(target) > 40.0:
+		target = point
+		event.redirect(point)
 
 
 ## Aggregated per emitter over the memory window, so a machine running steadily
@@ -243,6 +311,7 @@ func _on_event_finished() -> void:
 ## Used by death, checkpoint reloads, and section restarts: no stale event may
 ## survive a reset.
 func reset_threat() -> void:
+	_homing_time = 0.0
 	worm_sign = 0.0
 	stage = Stage.CALM
 	state = EventState.IDLE

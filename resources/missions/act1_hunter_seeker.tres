@@ -20,7 +20,7 @@ description = "Someone guided it from inside the house."
 script = ExtResource("1")
 id = &"act1_hunter_seeker"
 title = "The Hunter-Seeker"
-briefing = "The first night in the Arrakeen Residency. The Harkonnen left more than dust behind them: something small and patient is moving through the house, and someone is guiding it."
+briefing = "A word before you sleep, young master. The Harkonnen left this house in a hurry, and a hurried enemy leaves things behind: hollow walls, forgotten passages, and perhaps a man or a machine. My people have not swept every corner yet. Tonight, trust nothing that moves."
 faction_at_stake = &"fremen"
 objectives = Array[ExtResource("2")]([SubResource("obj_needle"), SubResource("obj_operator")])
 stakes = {
@@ -43,3 +43,8 @@ stakes = {
 }
 }
 solo_scene = "res://scenes/missions/act1/hunter_seeker.tscn"
+heading = "ACT I  ·  1.1"
+briefing_speaker = "THUFIR"
+briefing_image = "card_hunter_seeker"
+intel = PackedStringArray()
+solo_intel = PackedStringArray("A hunter-seeker homes on movement. While you are still, it can only search for you.", "It must come within arm's reach before you can seize it (left-click it). Grab for it too soon and you give yourself away.", "A seeker is guided by an operator, somewhere close, watching through its eye. Find him before he gets out of the house.", "The household staff know this house better than we do. The Fremen housekeeper, Mapes, keeps to the kitchens below.")

@@ -34,3 +34,6 @@ assets/characters/*/generated/source/
 assets/characters/*/generated/*.zip
 assets/characters/*/generated/*.png
 !assets/characters/*/generated/*_reference.png
+
+# Test builds
+build/

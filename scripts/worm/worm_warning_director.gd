@@ -1,6 +1,7 @@
 extends Node
 ## Turns threat stages into things the player can feel without reading a meter:
-## periodic ground tremors through the existing camera, rising with the stage.
+## periodic ground tremors through the existing camera, rising with the stage,
+## and the WORM SIGN! alert with an arrow to the ridge when a worm commits.
 ##
 ## It only calls the camera's public shake entry point, so every camera mode -
 ## FOLLOW_PAUL, FOLLOW_SELECTION, TACTICAL_FREE, prescience, tutorial - keeps
@@ -14,6 +15,7 @@ extends Node
 @export var tremor_interval: PackedFloat32Array = PackedFloat32Array([0.0, 4.0, 2.4, 1.4, 0.8, 0.5])
 @export var arrival_shake: float = 1.0
 
+var alert: WormSignAlert
 var _wait: float = 0.0
 var _camera: TacticalCamera
 
@@ -28,6 +30,19 @@ func _bind() -> void:
 	if is_instance_valid(manager):
 		manager.worm_arrived.connect(_on_arrived)
 		manager.worm_event_finished.connect(_on_finished)
+		_make_alert()
+
+
+## WORM SIGN! and the arrow to the ridge, over everything but menus.
+func _make_alert() -> void:
+	var layer: CanvasLayer = CanvasLayer.new()
+	layer.name = "WormSignLayer"
+	layer.layer = 8
+	add_child(layer)
+	alert = WormSignAlert.new()
+	alert.name = "WormSignAlert"
+	layer.add_child(alert)
+	alert.bind(manager)
 
 
 func _process(delta: float) -> void:

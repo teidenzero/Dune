@@ -354,6 +354,7 @@ func play(scope: MissionOutcome.Scope) -> void:
 	var definition: MissionDefinition = op.definition()
 	game.return_scene = SCENE_PATH
 	game.mission_checkpoint = &""
+	game.pending_briefing = scope != MissionOutcome.Scope.POLITICAL
 	match scope:
 		MissionOutcome.Scope.SQUAD:
 			get_tree().change_scene_to_file(definition.squad_scene)

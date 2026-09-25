@@ -41,8 +41,12 @@ const CHAPTERS: Array[Dictionary] = [
 		"text": "A week in Arrakeen. The Lady Jessica has invited the town's notables to dine: the water-sellers, a trader of no fixed trade, CHOAM, the Guild's banker, and the Emperor's planetologist.\n\nEvery one of them has come to take the measure of House Atreides. Tonight, House Atreides takes theirs."},
 	{"id": "banquet", "kind": "scene", "title": "The Banquet",
 		"path": "res://scenes/campaign/banquet.tscn"},
+	{"id": "harvester_card", "kind": "card", "image": "card_harvester", "heading": "ACT I  ·  1.3", "title": "The Harvester in the Open",
+		"text": "Word comes by radio: a crawler in the open sand, worm sign, and no carryall answering. The Duke goes himself, and takes Paul, Gurney and the planetologist with him.\n\nKynes says nothing on the flight out. He is watching to see what the Duke will value."},
+	{"id": "harvester", "kind": "scene", "title": "The Harvester in the Open",
+		"path": "res://scenes/missions/act1/harvester_open.tscn"},
 	{"id": "to_be_continued", "kind": "card", "image": "menu_background", "heading": "ACT I", "title": "To Be Continued",
-		"text": "The next story mission, 1.3 The Harvester in the Open, is being built.\n\nThank you for playing this far."},
+		"text": "The next story mission, 1.4 The Embassy, is being built.\n\nThank you for playing this far."},
 ]
 
 var active: bool = false
@@ -99,9 +103,12 @@ func go(tree: SceneTree) -> void:
 		"story", "card":
 			tree.change_scene_to_file(STORY_SCREEN)
 		"scene":
+			if game != null:
+				game.pending_briefing = true
 			tree.change_scene_to_file(chapter.path)
 		"council_lesson":
 			if game != null:
+				game.pending_briefing = true
 				game.council_focus = ""
 				game.council_home = ""
 			tree.change_scene_to_file(COUNCIL)

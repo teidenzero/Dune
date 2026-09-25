@@ -224,6 +224,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		command_spice()
 	elif event.physical_keycode == KEY_ESCAPE and distract_armed:
 		arm_distract(false)
+		# Escape spent on the distraction: the pause menu does not open too.
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("reload"):
 		command_reload()
 	elif event.is_action_pressed("shield_toggle"):

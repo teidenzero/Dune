@@ -7,7 +7,8 @@ extends Node2D
 ##   Left click an enemy   crysknife (Paul selected): click = quick strike,
 ##                         hold past the charge threshold = slow strike
 ##   Right click           move / attack / use, depending on what is under it
-##   Double right click    run there; Shift + right click queues a waypoint
+##   Double right click    run there; Shift + right click adds a waypoint
+##   Drag a waypoint       move it (a unit's route, while he is in range)
 ##   1 / 2 / 3 / 4         Paul / Scout / Warrior / everyone (twice: camera)
 ##   E                     arm the crysknife for the next left click
 ##   Z / X                 Paul's weapon slots
@@ -19,6 +20,8 @@ signal signal_given(count: int)
 signal selection_changed
 signal order_issued(order: int)
 signal command_rejected(allies: Array)
+## A waypoint of a unit's route was dragged somewhere new.
+signal route_changed(ally: AllyCharacter)
 signal pause_changed(paused: bool)
 signal targeting_changed(mode: int)
 
@@ -27,6 +30,8 @@ enum Targeting { NONE, STRIKE }
 const DOUBLE_TAP_MS: int = 350
 const DRAG_THRESHOLD: float = 8.0
 const PICK_RADIUS: float = 30.0
+## How near the cursor must be to take hold of a waypoint.
+const WAYPOINT_GRAB: float = 34.0
 
 @export var player: PlayerController
 @export_group("Command link")
@@ -52,6 +57,8 @@ var notice: String = ""
 ## register a named multiplier here instead of rewriting command_range users.
 var command_range_modifiers: Dictionary = {}
 var dragging: bool = false
+## The waypoint being dragged: {ally, index}, or empty.
+var waypoint_drag: Dictionary = {}
 ## Solo scope: the hero is steered directly; this manager only pauses (P).
 var solo_mode: bool = false
 ## The squad's stance: low or standing, the same for everyone. Paul's stance
@@ -328,8 +335,12 @@ func issue_context(point: Vector2, queue: bool = false, run: bool = false) -> vo
 				BarkLayer.ping(get_tree(), point, BarkLayer.WARN)
 				index += 1
 				continue
-			ally.ai.issue_order(AllyAIController.Order.MOVE_TO, destination)
-			BarkLayer.say(ally, "MOVING.", BarkLayer.CALM)
+			if queue and not ally.ai.waypoints().is_empty():
+				ally.ai.queue_move(destination)
+				BarkLayer.say(ally, "THEN THERE.", BarkLayer.CALM)
+			else:
+				ally.ai.issue_order(AllyAIController.Order.MOVE_TO, destination)
+				BarkLayer.say(ally, "MOVING.", BarkLayer.CALM)
 		index += 1
 	if not paul_ordered and recipients.is_empty():
 		return
@@ -826,7 +837,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not is_instance_valid(player):
 		return
 	if event is InputEventMouseMotion:
-		if dragging:
+		if dragging or not waypoint_drag.is_empty():
 			queue_redraw()
 		return
 	if player.health.is_dead:
@@ -911,6 +922,13 @@ func _handle_mouse(event: InputEventMouseButton) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.button_index == MOUSE_BUTTON_LEFT:
+		if not event.pressed and not waypoint_drag.is_empty():
+			drop_waypoint(point)
+			get_viewport().set_input_as_handled()
+			return
+		if event.pressed and targeting == Targeting.NONE and not hero_mode and grab_waypoint(point):
+			get_viewport().set_input_as_handled()
+			return
 		if event.pressed:
 			var hostile: Node2D = hostile_at(point)
 			if targeting != Targeting.NONE:
@@ -1011,6 +1029,7 @@ func _draw() -> void:
 		return
 	_draw_command_range()
 	_draw_links()
+	_draw_routes()
 	_draw_staged()
 	_draw_marker()
 	_draw_box()
@@ -1091,6 +1110,97 @@ func _draw_staged() -> void:
 			draw_circle(to_local(at), 16.0, Color(color, 0.18))
 			draw_arc(to_local(at), 16.0, 0, TAU, 24, color, 2.0, true)
 			IsoView.draw_text(self, font, to_local(at), Vector2(-5, 6), number, 16, color, 4)
+
+
+# --------------------------------------------------------------------------
+# Routes: Shift-queued waypoints, drawn and draggable
+# --------------------------------------------------------------------------
+
+## The waypoint under the cursor: {ally, index}, or empty. Selected units'
+## routes first, so a crowded map picks what the player is working with.
+func waypoint_at(point: Vector2) -> Dictionary:
+	var best: Dictionary = {}
+	var nearest: float = WAYPOINT_GRAB
+	for ally in members:
+		if not _available(ally):
+			continue
+		var points: Array[Vector2] = ally.ai.waypoints()
+		for index in range(points.size()):
+			var distance: float = points[index].distance_to(point) - (4.0 if ally.selected else 0.0)
+			if distance <= nearest:
+				nearest = distance
+				best = {"ally": ally, "index": index}
+	return best
+
+
+## Left button down on a waypoint: take hold of it. Out of range, the route
+## stands as given - he can't hear a change.
+func grab_waypoint(point: Vector2) -> bool:
+	var found: Dictionary = waypoint_at(point)
+	if found.is_empty():
+		return false
+	var ally: AllyCharacter = found.ally
+	if not can_command(ally):
+		_report_rejection([ally])
+		flash_notice("OUT OF COMMAND RANGE - HIS ROUTE STANDS AS GIVEN")
+		return true
+	waypoint_drag = found
+	queue_redraw()
+	return true
+
+
+## Let go: the waypoint moves there, if he can still hear and can get there.
+func drop_waypoint(point: Vector2) -> bool:
+	var held: Dictionary = waypoint_drag
+	waypoint_drag = {}
+	queue_redraw()
+	var ally: AllyCharacter = held.get("ally") as AllyCharacter
+	if ally == null or not _available(ally) or not point.is_finite():
+		return false
+	if not can_command(ally):
+		_report_rejection([ally])
+		return false
+	var destination: Vector2 = NavigationServer2D.map_get_closest_point(ally.agent.get_navigation_map(), point) if ally.navigation_ready() else point
+	if not reachable(ally, destination):
+		BarkLayer.say(ally, "NO WAY THERE.", BarkLayer.WARN)
+		BarkLayer.ping(get_tree(), point, BarkLayer.WARN)
+		return false
+	if not ally.ai.move_waypoint(int(held.index), destination):
+		return false
+	BarkLayer.say(ally, "ROUTE CHANGED.", BarkLayer.CALM)
+	route_changed.emit(ally)
+	return true
+
+
+## Each unit's route: a line from him through numbered waypoints on the
+## ground. Bright for the selection, faint for the rest; the one under the
+## cursor rings, so it reads as something to take hold of.
+func _draw_routes() -> void:
+	var font: Font = HudStyle.body_font(700)
+	var mouse: Vector2 = get_global_mouse_position()
+	var hover: Dictionary = waypoint_at(mouse) if waypoint_drag.is_empty() else {}
+	for ally in members:
+		if not _available(ally):
+			continue
+		var points: Array[Vector2] = ally.ai.waypoints()
+		if points.size() < 2 and not ally.selected:
+			continue
+		if points.is_empty():
+			continue
+		var color: Color = Color(0.55, 0.95, 0.85, 0.95 if ally.selected else 0.6)
+		var previous: Vector2 = ally.global_position
+		for index in range(points.size()):
+			var at: Vector2 = points[index]
+			var held: bool = not waypoint_drag.is_empty() and waypoint_drag.ally == ally and int(waypoint_drag.index) == index
+			if held:
+				at = mouse
+			_draw_dashes(to_local(previous), to_local(at), 16.0, 8.0, color, 3.0)
+			draw_circle(to_local(at), 20.0, Color(color, 0.25))
+			draw_arc(to_local(at), 20.0, 0, TAU, 28, color, 3.0, true)
+			if held or (not hover.is_empty() and hover.ally == ally and int(hover.index) == index):
+				draw_arc(to_local(at), 28.0, 0, TAU, 28, Color(1.0, 0.86, 0.45, 0.95), 3.0, true)
+			IsoView.draw_text(self, font, to_local(at), Vector2(-5, 7), str(index + 1), 18, color, 4)
+			previous = at
 
 
 ## The route a planned unit will walk: a read-only navigation query.

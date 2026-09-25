@@ -1,10 +1,12 @@
 class_name BanquetScreen
 extends Control
-## 1.2 The Banquet on screen: the guests along the table, the table's
-## composure, Jessica's readings and Paul's glimpses, and below, the evening
-## itself - each guest's line, the replies, how it lands. Every reply shows
-## what is certain; how the guest takes it shows only once it is known.
-## At the end Thufir's note, then the results, in plain words.
+## 1.2 The Banquet on screen: the guests along the table and the table's
+## composure; below, the evening - each guest's line and his tell, Paul's
+## three replies, the two helps (a glance at Jessica, a lesson of the Duke's
+## recalled), and how it lands: the guest's reaction, and his parents' - a
+## look for a good answer, a word for a half-good one, a rescue for a bad
+## one. The numbers sit quietly under the people. At the end Thufir's note,
+## then the results, in plain words.
 
 const MAIN_MENU: String = "res://scenes/menu/main_menu.tscn"
 const SCENE: String = "res://scenes/campaign/banquet.tscn"
@@ -18,10 +20,26 @@ var _composure: Label
 var _stock: Label
 var _cards: Dictionary = {}
 var _panel: VBoxContainer
+## Jessica's large face, while Paul watches her; which course it was set for.
+var _mother: VBoxContainer
+var _face: JessicaFace
+var _face_course: int = -1
+## Her reading spelled out in words beside her face, instead of only on it.
+## Off: the face is the reading. (On restores the plain-text version.)
+const FACE_IN_WORDS: bool = false
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Launched on purpose, the evening opens on Jessica's briefing, which
+	# replaces her words at the table.
+	var briefing: MissionBriefing = MissionBriefing.new()
+	briefing.name = "BriefingHost"
+	briefing.definition = load("res://resources/missions/act1_banquet.tres") as MissionDefinition
+	briefing.scene_path = "res://scenes/campaign/banquet.tscn"
+	add_child(briefing)
+	if briefing.opened_at_start:
+		_briefed = true
 	var backdrop: DuneBackdrop = DuneBackdrop.new()
 	backdrop.dim = 0.55
 	add_child(backdrop)
@@ -37,7 +55,9 @@ func _ready() -> void:
 		add_child(image)
 	var campaign: CampaignState = Progression.campaign_of(self)
 	var extra: int = campaign.hero_progress(&"paul").prescience_bonus() if campaign != null else 0
-	banquet = Banquet.create(seed_value if seed_value >= 0 else int(Time.get_ticks_usec()), extra)
+	if campaign != null:
+		campaign.begin_mission()
+	banquet = Banquet.create(seed_value if seed_value >= 0 else int(Time.get_ticks_usec()), extra, Progression.extra_memories(campaign))
 	_build()
 	_refresh()
 
@@ -84,13 +104,28 @@ func _build() -> void:
 	box.set_content_margin_all(24)
 	talk.add_theme_stylebox_override("panel", box)
 	rows.add_child(talk)
+	var side: HBoxContainer = HBoxContainer.new()
+	side.add_theme_constant_override("separation", 24)
+	talk.add_child(side)
 	var scroll: ScrollContainer = ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	talk.add_child(scroll)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	side.add_child(scroll)
 	_panel = VBoxContainer.new()
 	_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel.add_theme_constant_override("separation", 12)
 	scroll.add_child(_panel)
+	# Jessica, large, while Paul watches her: the face he reads.
+	_mother = VBoxContainer.new()
+	_mother.visible = false
+	side.add_child(_mother)
+	_mother.add_child(HudStyle.label("YOUR MOTHER", 14, HudStyle.SPICE_BLUE, HudStyle.body_font(800)))
+	_face = JessicaFace.new()
+	_mother.add_child(_face)
+	var hint: Label = HudStyle.label("Weigh each answer and watch her face.", 14, HudStyle.MUTED, HudStyle.body_font(500))
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size = Vector2(390, 0)
+	_mother.add_child(hint)
 
 
 func _make_card(guest: Dictionary) -> Dictionary:
@@ -133,9 +168,7 @@ func _make_card(guest: Dictionary) -> Dictionary:
 	agenda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	agenda.custom_minimum_size = Vector2(300, 58)
 	rows.add_child(agenda)
-	var read: Button = _button("READ HIM  ·  Jessica", func() -> void: _read(guest.id))
-	rows.add_child(read)
-	return {"root": root, "standing": standing, "agenda": agenda, "read": read, "faction": guest.faction}
+	return {"root": root, "standing": standing, "agenda": agenda, "faction": guest.faction}
 
 
 func _refresh() -> void:
@@ -144,7 +177,10 @@ func _refresh() -> void:
 		pips += "◆ " if index < banquet.composure else "◇ "
 	_composure.text = "THE TABLE   " + pips.strip_edges()
 	_composure.add_theme_color_override("font_color", HudStyle.DANGER if banquet.composure <= 2 else HudStyle.GOLD_LIGHT)
-	_stock.text = "Jessica's readings: %d   ·   Paul's glimpses: %d" % [banquet.readings_left, banquet.glimpses_left]
+	var stock: String = "Jessica's face: %d   ·   The Duke's memory: %d" % [banquet.faces_left, banquet.memories_left]
+	if banquet.glimpses_left > 0:
+		stock += "   ·   Prescience: %d" % banquet.glimpses_left
+	_stock.text = stock
 	var campaign: CampaignState = Progression.campaign_of(self)
 	for guest_id: StringName in _cards:
 		var card: Dictionary = _cards[guest_id]
@@ -157,8 +193,6 @@ func _refresh() -> void:
 		var known: String = banquet.agenda_text(guest_id)
 		card.agenda.text = known if known != "" else "? ? ?   What does he want?"
 		card.agenda.add_theme_color_override("font_color", HudStyle.DANGER if banquet.agendas.get(guest_id) == &"informant" and known != "" else (HudStyle.SPICE_BLUE if known != "" else HudStyle.SAND_DIM))
-		card.read.disabled = banquet.readings_left <= 0 or banquet.revealed.has(guest_id) or banquet.phase == Banquet.Phase.DONE
-		card.read.text = "READ" if not banquet.revealed.has(guest_id) else "READ ✓"
 	_show_panel()
 
 
@@ -166,23 +200,17 @@ func _show_panel() -> void:
 	for child in _panel.get_children():
 		child.queue_free()
 	if not _briefed:
-		_speech("JESSICA", "Five guests, Paul, and every one of them wants something from us - some of them more than they will say. Watch them. I can read two of them for you tonight; your own gift may show you a little of what is coming. And keep the table easy: if it turns cold, your father will end the evening, and we will have learned nothing.")
+		_speech("JESSICA", "Tonight you answer them, Paul - not your father, not I. Every guest wants something, and it shows if you look. If you are unsure, look at me; or remember how your father handled such a man. And keep the table easy: if it turns cold, your father will end the evening, and we will have learned nothing.")
 		_panel.add_child(_button("BEGIN THE DINNER", func() -> void:
 			_briefed = true
 			_refresh()))
 		return
+	_show_mother()
 	match banquet.phase:
 		Banquet.Phase.COURSE:
 			_show_course()
 		Banquet.Phase.REACTION:
-			var guest: Dictionary = BanquetScript.guest(banquet.current_guest())
-			_panel.add_child(HudStyle.label(guest.name.to_upper(), 15, HudStyle.SAND_DIM, HudStyle.body_font(700)))
-			var line: Label = HudStyle.label(banquet.last_reaction if banquet.last_reaction != "" else "The moment passes.", 20, HudStyle.TEXT, HudStyle.body_font(500))
-			line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			_panel.add_child(line)
-			_panel.add_child(_button("CONTINUE", func() -> void:
-				banquet.next()
-				_refresh()))
+			_show_reaction()
 		Banquet.Phase.ACCUSE:
 			_speech("THUFIR (a note under the Duke's plate)", "Someone at this table was bought by the Harkonnen. If you know who, name him to me - quietly. If you are not sure, name no one: an innocent man accused is an enemy made.")
 			for guest in BanquetScript.GUESTS:
@@ -197,6 +225,15 @@ func _show_panel() -> void:
 			_show_results()
 
 
+## Jessica's large face, shown while Paul is watching her this course.
+func _show_mother() -> void:
+	var watching: bool = _briefed and banquet.phase == Banquet.Phase.COURSE and banquet.watching_mother() and _face.has_frames()
+	_mother.visible = watching
+	if watching and _face_course != banquet.course_index:
+		_face_course = banquet.course_index
+		_face.settle(banquet.mother_at_rest())
+
+
 func _show_course() -> void:
 	var course: Dictionary = banquet.current_course()
 	var guest: Dictionary = BanquetScript.guest(course.guest)
@@ -204,29 +241,85 @@ func _show_course() -> void:
 	var line: Label = HudStyle.label("\"%s\"" % course.line, 21, HudStyle.TEXT, HudStyle.body_font(500))
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_panel.add_child(line)
+	# What anyone at the table can see: the player's own reading.
+	_aside(banquet.tell(), HudStyle.SAND)
+	_aside(banquet.face_line(), HudStyle.SPICE_BLUE)
+	_aside(banquet.memory_line(), HudStyle.GOLD_LIGHT)
 	for index in range(course.replies.size()):
 		var reply: Dictionary = course.replies[index]
 		var seen: Dictionary = banquet.preview(index)
-		var text: String = "%d   %s:  %s\n        %s" % [index + 1, reply.speaker, reply.text, Banquet.describe(seen.effects)]
-		if seen.known:
-			text += "\n        He takes it: " + (seen.line if seen.line != "" else "without a sign.")
-		else:
-			text += "\n        How he takes it: unknown"
+		var text: String = "%d   PAUL:  %s" % [index + 1, reply.text]
+		# Watching his mother, Paul reads it on her face; in words only by prescience.
+		if seen.guest != null and (FACE_IN_WORDS or not _mother.visible or banquet._help("glimpse")):
+			text += "\n        He takes it: %s   (%s)" % [seen.line if seen.line != "" else "without a sign", Banquet.describe(seen.guest)]
+		if seen.table != null:
+			text += "\n        Around the table: %s" % Banquet.describe(seen.table)
 		var choice: int = index
-		_panel.add_child(_button(text, func() -> void:
+		var button: Button = _button(text, func() -> void:
 			banquet.choose(choice)
-			_refresh(), true))
-	if not banquet.knows_reactions():
-		var glimpse: Button = _button("GLIMPSE HOW HE WILL TAKE IT  ·  Paul's prescience", func() -> void:
+			_refresh(), true)
+		# Weighing a reply: her face answers, and holds while he does.
+		button.mouse_entered.connect(func() -> void:
+			if _mother.visible:
+				_face.weigh(banquet.mother_expression(choice)))
+		button.mouse_exited.connect(func() -> void:
+			if _mother.visible:
+				_face.release())
+		_panel.add_child(button)
+	var helps: HBoxContainer = HBoxContainer.new()
+	helps.add_theme_constant_override("separation", 12)
+	_panel.add_child(helps)
+	var face: Button = _button("LOOK AT YOUR MOTHER  ·  how he will take it", func() -> void:
+		if banquet.read_face():
+			_refresh())
+	face.disabled = banquet.faces_left <= 0 or banquet.knows_guest()
+	face.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	helps.add_child(face)
+	var memory: Button = _button("REMEMBER YOUR FATHER  ·  what it means around the table", func() -> void:
+		if banquet.recall():
+			_refresh())
+	memory.disabled = banquet.memories_left <= 0 or banquet.knows_table()
+	memory.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	helps.add_child(memory)
+	if banquet.glimpses_left > 0:
+		var glimpse: Button = _button("PRESCIENCE  ·  see it all", func() -> void:
 			if banquet.glimpse():
 				_refresh())
-		glimpse.disabled = banquet.glimpses_left <= 0
-		_panel.add_child(glimpse)
+		glimpse.disabled = banquet.knows_guest() and banquet.knows_table()
+		glimpse.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		helps.add_child(glimpse)
 
 
-func _read(guest_id: StringName) -> void:
-	if banquet.read(guest_id):
-		_refresh()
+## How it landed: the guest first, then Paul's parents, then - quietly - the
+## numbers.
+func _show_reaction() -> void:
+	var guest: Dictionary = BanquetScript.guest(banquet.current_guest())
+	_panel.add_child(HudStyle.label(guest.name.to_upper(), 15, HudStyle.SAND_DIM, HudStyle.body_font(700)))
+	var line: Label = HudStyle.label(banquet.last_reaction if banquet.last_reaction != "" else "The moment passes.", 20, HudStyle.TEXT, HudStyle.body_font(500))
+	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_panel.add_child(line)
+	var parent: Dictionary = banquet.last_parent
+	if not parent.is_empty():
+		var poor: bool = banquet.last_grade == &"poor"
+		_panel.add_child(HudStyle.label(String(parent.speaker) + ("  steps in" if poor else ""), 15, HudStyle.DANGER if poor else HudStyle.SPICE_BLUE, HudStyle.body_font(700)))
+		var said: String = String(parent.line)
+		var words: Label = HudStyle.label("\"%s\"" % said if poor else said, 20 if poor else 18, HudStyle.TEXT, HudStyle.body_font(500))
+		words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_panel.add_child(words)
+	if banquet.last_unaided:
+		_aside("You read him yourself - and your parents noticed.", HudStyle.GOLD_LIGHT)
+	_panel.add_child(HudStyle.label(Banquet.describe(banquet.last_effects), 14, HudStyle.MUTED, HudStyle.body_font(600)))
+	_panel.add_child(_button("CONTINUE", func() -> void:
+		banquet.next()
+		_refresh()))
+
+
+func _aside(text: String, color: Color) -> void:
+	if text == "":
+		return
+	var label: Label = HudStyle.label(text, 16, color, HudStyle.body_font(500))
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_panel.add_child(label)
 
 
 func _close() -> void:
@@ -235,6 +328,9 @@ func _close() -> void:
 		var campaign: CampaignState = Progression.campaign_of(self)
 		if campaign != null:
 			campaign.apply(banquet.outcome())
+			# Each guest Paul read on his own is statecraft learned.
+			for index in range(banquet.unaided_reads):
+				Progression.award(campaign, &"paul", &"read_unaided")
 	_refresh()
 
 
@@ -257,8 +353,10 @@ func _show_results() -> void:
 	if outcome.flags.has("smugglers_channel"):
 		lines.append("The smugglers have a way to reach Gurney.")
 	for entry in banquet.record:
-		if entry.begins_with("Jessica read") or entry.contains("named") or entry.contains("accused") or entry.contains("early"):
+		if entry.contains("named") or entry.contains("accused") or entry.contains("early"):
 			lines.append(entry)
+	if banquet.unaided_reads > 0:
+		lines.append("Paul read %d guest%s on his own. His statecraft grows." % [banquet.unaided_reads, "" if banquet.unaided_reads == 1 else "s"])
 	var text: Label = HudStyle.label("\n".join(lines), 18, HudStyle.TEXT, HudStyle.body_font(500))
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_panel.add_child(text)

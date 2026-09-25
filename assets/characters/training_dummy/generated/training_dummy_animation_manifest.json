@@ -1,0 +1,83 @@
+{
+  "character_name": "training_dummy",
+  "canonical_reference": "assets/characters/training_dummy/training_dummy_idle.png",
+  "frame_size": [
+    400,
+    336
+  ],
+  "reference_ground_anchor": [
+    200,
+    312
+  ],
+  "standing_reference_height": 260,
+  "generation_mode": "built-in image_gen",
+  "animations": [
+    {
+      "name": "hit",
+      "filename": "training_dummy_hit.png",
+      "requested_frame_count": 3,
+      "actual_frame_count": 3,
+      "fps": 12,
+      "loop": false,
+      "dimensions": [
+        1200,
+        336
+      ],
+      "generation_attempt_count": 1,
+      "generation_status": "generated",
+      "validation_status": "technical_and_still_frame_review_passed_playback_pending",
+      "source": "source\\training_dummy_hit_attempt1.png",
+      "source_dimensions": [
+        2172,
+        724
+      ],
+      "source_grid": [
+        3,
+        1
+      ],
+      "packing_scale": 0.39334341906202724,
+      "source_ground_y": [
+        697.0
+      ],
+      "source_row_edges": [
+        0,
+        724
+      ],
+      "source_column_offsets": [
+        9.0,
+        9.5,
+        1.5
+      ],
+      "source_frame_playback_order": [
+        1,
+        2,
+        3
+      ],
+      "low_alpha_noise_pixels_cleared": 15872,
+      "frame_bounds": [
+        [
+          101,
+          57,
+          291,
+          312
+        ],
+        [
+          102,
+          52,
+          287,
+          312
+        ],
+        [
+          106,
+          52,
+          288,
+          312
+        ]
+      ],
+      "issues": [
+        "12 fps playback and transition from idle need human review; browser unavailable."
+      ]
+    }
+  ],
+  "overall_result": "incomplete"
+}

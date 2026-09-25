@@ -9,6 +9,7 @@ const SOLO_TRAINING: String = "res://scenes/missions/tutorial/solo_training.tscn
 const MAP_ROOM: String = "res://scenes/campaign/map_room.tscn"
 const HUNTER_SEEKER: String = "res://scenes/missions/act1/hunter_seeker.tscn"
 const BANQUET: String = "res://scenes/campaign/banquet.tscn"
+const HARVESTER_OPEN: String = "res://scenes/missions/act1/harvester_open.tscn"
 const MAIN_MENU: String = "res://scenes/menu/main_menu.tscn"
 const ARENA: String = "res://scenes/missions/harvester_raid_test.tscn"
 const COUNCIL: String = "res://scenes/campaign/council.tscn"
@@ -22,6 +23,7 @@ func _ready() -> void:
 	$Rows/Buttons/MapRoom.pressed.connect(_open.bind(MAP_ROOM))
 	$Rows/Buttons/HunterSeeker.pressed.connect(_open.bind(HUNTER_SEEKER))
 	$Rows/Buttons/Banquet.pressed.connect(_open.bind(BANQUET))
+	$Rows/Buttons/HarvesterOpen.pressed.connect(_open.bind(HARVESTER_OPEN))
 	$Rows/Buttons/MainMenu.pressed.connect(func() -> void: get_tree().change_scene_to_file(MAIN_MENU))
 	$Rows/Buttons/Arena.pressed.connect(_open.bind(ARENA))
 	$Rows/Buttons/Council.pressed.connect(_open.bind(COUNCIL))
@@ -54,6 +56,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_open(HUNTER_SEEKER)
 	elif event.physical_keycode == KEY_9:
 		_open(BANQUET)
+	elif event.physical_keycode == KEY_0:
+		_open(HARVESTER_OPEN)
 	elif event.physical_keycode == KEY_ESCAPE:
 		get_tree().change_scene_to_file(MAIN_MENU)
 
@@ -65,4 +69,5 @@ func _open(path: String) -> void:
 	game.tutorial_checkpoint = &""
 	game.mission_checkpoint = &""
 	game.return_scene = ""
+	game.pending_briefing = true
 	get_tree().change_scene_to_file(path)

@@ -29,6 +29,11 @@ var _visible: bool = false
 var _combat_leash: float = 360.0
 var _stalled: float = 0.0
 var _progress_position: Vector2
+## Shift + right-click: more waypoints after the one he is walking to, walked
+## in order; he holds at the last. A route given while he can hear Paul is
+## carried out beyond command range too: it is a plan he carries, not a
+## voice he needs to keep hearing.
+var route: Array[Vector2] = []
 
 
 func setup(character: AllyCharacter) -> void:
@@ -40,6 +45,8 @@ func setup(character: AllyCharacter) -> void:
 func issue_order(order: Order, point: Vector2 = Vector2.ZERO, target: Node2D = null) -> void:
 	if behavior == Behavior.DEAD:
 		return
+	# Any direct order replaces the route.
+	route.clear()
 	if order == Order.ATTACK:
 		if not _valid_hostile(target, true):
 			return
@@ -61,6 +68,40 @@ func issue_order(order: Order, point: Vector2 = Vector2.ZERO, target: Node2D = n
 	_following = false
 	actor.stop_moving()
 	order_changed.emit()
+
+
+## Adds a waypoint; if he is not already walking somewhere, it is the first.
+func queue_move(point: Vector2) -> void:
+	if behavior == Behavior.DEAD:
+		return
+	if current_order != Order.MOVE_TO:
+		issue_order(Order.MOVE_TO, point)
+		return
+	route.append(point)
+	order_changed.emit()
+
+
+## Where he is going, in order: the point he is walking to, then the route.
+func waypoints() -> Array[Vector2]:
+	var points: Array[Vector2] = []
+	if current_order == Order.MOVE_TO:
+		points.append(order_position)
+		points.append_array(route)
+	return points
+
+
+## Moves one waypoint of the route (0 is the one he is walking to now).
+func move_waypoint(index: int, point: Vector2) -> bool:
+	if current_order != Order.MOVE_TO or index < 0 or index > route.size() or not point.is_finite():
+		return false
+	if index == 0:
+		order_position = point
+		_stalled = 0.0
+		_progress_position = actor.global_position
+	else:
+		route[index - 1] = point
+	order_changed.emit()
+	return true
 
 
 func _physics_process(delta: float) -> void:
@@ -146,7 +187,12 @@ func _execute_order() -> void:
 			actor.is_crouching = actor.sneaking
 			actor.navigate_to(order_position, _order_speed())
 			if actor.global_position.distance_to(order_position) < 20:
-				issue_order(Order.HOLD, order_position)
+				if route.is_empty():
+					issue_order(Order.HOLD, order_position)
+				else:
+					# On to the next waypoint, without stopping.
+					order_position = route.pop_front()
+					order_changed.emit()
 		Order.HOLD:
 			behavior = Behavior.HOLD
 			var settled: bool = actor.global_position.distance_to(hold_position) <= 22
